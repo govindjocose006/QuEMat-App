@@ -3,8 +3,9 @@
 Use the existing checkout at `/workspace/QuEMat-App` with Node.js 24. Each cloud
 task is isolated; do not create another checkout or worktree unless requested.
 Read `README.md`, `docs/progress.md`, `docs/deployment.md`, and any applicable
-`AGENTS.md` before starting. Phase 1 targets Vercel and Neon; later phases require
-a separate request.
+`AGENTS.md` before starting. Phase 1 is deployed to Vercel and Neon. Phase 2 is implemented on a feature branch
+for review; use the isolated development/test commands in [phase-2.md](phase-2.md).
+Do not deploy Phase 2 or migrate production during development.
 
 ## Installation script
 

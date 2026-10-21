@@ -5,6 +5,23 @@ build, and `/api/*` runs through a Node.js Vercel Function. All persistent accou
 sessions, rate limits, instruments, and audit history live in Neon PostgreSQL.
 Nothing depends on a Vercel instance's filesystem or process staying alive.
 
+## Current release and Phase 2 review
+
+Phase 1 is deployed to https://quemat-app.vercel.app in the existing Vercel project
+`quemat-app`, linked to `govindjocose006/QuEMat-App` branch `main`, Node.js 24, region
+`sin1` (Singapore). Production variables are managed in Vercel. The user confirmed
+healthy database-backed operation after initializing the production database.
+
+Phase 2 is a feature-branch change only. **Do not deploy it to production yet.**
+See [phase-2.md](phase-2.md) for isolated development/test commands and the release
+migration checklist. Preview environments require a separate database; the saved
+Production DATABASE_URL must never be used in preview or automated tests.
+
+A future Phase 2 release requires the additive `002_scheduling.sql` migration and
+`btree_gist` extension. Run this only as an explicitly authorized operator step,
+after backup and isolated validation. No migration runs during a Vercel build or
+function cold start. The Phase 2 health check requires the new schema.
+
 ## 1. Link the existing Neon database
 
 Reuse organization `org-ancient-moon-23673941`, project

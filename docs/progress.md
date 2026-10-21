@@ -5,7 +5,42 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Only Phase 1 is implemented. Later workflows are described, not presented as working.
+Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it has not been deployed to production. Later phases remain unimplemented.
+
+## Phase 2 implementation (2026-10-22)
+
+- Shared samples with permanent IDs, batch/project/handling information, ownership,
+  versioned edits, archival, and booking/result history with sample snapshots.
+- Day/week/month instrument calendar and phone agenda; actual operators, multiple
+  samples, participants, measurement/process details and IST/UTC conversion.
+- PPMS/SQUID, furnace and sputtering forms; configured furnace temperature limits.
+- PostgreSQL exclusion constraint, buffer trigger, maintenance blocks, requested
+  approvals, allocated windows and unique active-usage constraint.
+- Rescheduling, cancellation, check-in, completion/interruption, explicit furnace
+  unloading, overrun impact, handover notes and result links.
+- Actual-usage/next-booking overview and persistent private booking notifications.
+- Phase 1 authentication, approval, CSRF, membership and historical records retained.
+- Implementation and operating assumptions: [Phase 2 guide](phase-2.md).
+- All automated tests use isolated synthetic databases. Production has not been
+  migrated or modified during Phase 2 implementation.
+- Validation: production build/type checks passed; all 40 API/configuration tests
+  passed; 8 native PostgreSQL 18 checks passed across independent connections;
+  10 desktop/phone browser tests passed, including automated WCAG checks and
+  no-horizontal-overflow assertions. All data was isolated and synthetic.
+- Browser validation covers samples, PPMS and sputtering forms, furnace maximum
+  rejection/unloading, rescheduling, actual usage, handover, maintenance and the
+  persistent inbox. Native tests cover conflict exclusion, buffer adjacency,
+  released cancellations, concurrent rescheduling and unique actual usage.
+- No Phase 2 production migration or deployment has been performed. In-app
+  notifications refresh while open; email/push and scheduled reminders are deferred.
+
+## Phase 1 production status
+
+The first Vercel Production deployment was created from `main` at `dc40148`.
+The user confirmed https://quemat-app.vercel.app/api/health returns
+`{"status":"ok"}` and the app opens correctly. The user completed hosted migrations,
+seeding and first-administrator creation and updated the production password.
+These user-confirmed live results supersede the earlier connection blockers below.
 
 ## Completed features
 
@@ -104,6 +139,5 @@ Only Phase 1 is implemented. Later workflows are described, not presented as wor
 
 ## Next phase
 
-Phase 2: shared sample identities, conflict-protected reservations, instrument-
-specific measurement details, and explicit check-in/completion. Implement booking
-concurrency constraints and tests then; Phase 1 does not claim scheduling readiness.
+Phase 2 review and a separately authorized release. Phase 3 (weekly progress,
+issues, announcements and meetings) has not been started.

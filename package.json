@@ -17,7 +17,8 @@
     "account:reset-password": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts reset-password",
     "db:backup": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts backup",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:postgres": "tsx tests/postgres-concurrency.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",

@@ -1526,3 +1526,140 @@ fieldset > label:last-child {
     scroll-behavior: auto !important;
   }
 }
+
+/* Phase 2: readable agenda on phones, compact calendar on larger screens. */
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.schedule-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+.schedule-controls label {
+  flex: 1 1 170px;
+}
+.calendar {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+.calendar-week,
+.calendar-month {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.calendar-day {
+  min-width: 0;
+  border: 1px solid var(--border, #dce4e5);
+  border-radius: 10px;
+  padding: 8px;
+  background: white;
+}
+.calendar-day h3 {
+  font-size: 13px;
+  margin: 3px 0 12px;
+}
+.calendar-day p {
+  font-size: 12px;
+  color: #526568;
+}
+.booking-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #aac7c9;
+  background: #f0f7f7;
+  text-align: left;
+  margin: 8px 0;
+  border-radius: 7px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.booking-tile.in_progress {
+  border-left: 4px solid #087d6e;
+  background: #e3f5ef;
+}
+.booking-tile.cancelled,
+.booking-tile.rejected {
+  background: #f4f4f4;
+  text-decoration: line-through;
+}
+.booking-tile.requested {
+  border-style: dashed;
+}
+.measurement-fields,
+.choices {
+  padding: 16px;
+  border: 1px solid #cbdadb;
+  border-radius: 10px;
+  margin: 20px 0;
+  min-width: 0;
+}
+.measurement-fields legend,
+.choices legend {
+  font-weight: 650;
+  padding: 0 6px;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+.check-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.panel,
+.dialog-body {
+  overflow-wrap: anywhere;
+}
+.panel details {
+  margin-top: 12px;
+}
+.panel details summary {
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .calendar-week,
+  .calendar-month {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .calendar-week,
+  .calendar-month {
+    grid-template-columns: 1fr;
+  }
+  .booking-tile {
+    font-size: 14px;
+  }
+  .calendar-day h3 {
+    font-size: 16px;
+  }
+  .schedule-controls {
+    align-items: stretch;
+  }
+  .section-title {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+.check-row {
+  flex-direction: row;
+  justify-content: flex-start;
+}
