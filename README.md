@@ -35,6 +35,11 @@ PostgreSQL engine, under ignored `data/postgres/`. This is a local development
 backend, not a hosted shared database. Stop the development server before running
 CLI database commands. No external keys are needed for local development.
 
+Startup and operator commands load `.env` followed by `.env.local` (Neon CLI's
+alternative output file); process variables override both. The app uses pooled
+`DATABASE_URL`; database/admin commands prefer `DATABASE_URL_UNPOOLED` when set.
+For local-only work, clear **both** variables to avoid targeting a hosted database.
+
 `admin:create` is an interactive, trusted-operator command that prompts for an
 email, hidden password with confirmation, and full name. There is **no default
 login**. It creates only the first administrator. Additional privileged access
@@ -68,6 +73,9 @@ function cold starts do not mutate the schema or create accounts. See the
 
 Deployment configuration is included; no live Vercel deployment or Neon connection
 has been verified in this workspace.
+The specified existing Neon project/production branch and browser-login recovery
+steps are documented in the deployment guide. Cloud login is currently blocked
+by a network proxy rejection; an offline CLI link is not a verified connection.
 
 ## Built local server
 

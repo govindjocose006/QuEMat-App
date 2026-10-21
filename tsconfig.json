@@ -15,6 +15,7 @@
     "src",
     "shared",
     "vite.config.ts",
+    "neon.ts",
     "playwright.config.ts",
     "tests"
   ]

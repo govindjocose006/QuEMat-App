@@ -45,7 +45,7 @@ async function promptCredentials() {
     rl.close();
   }
 }
-const db = await openDatabase(config().database);
+const db = await openDatabase(config("operator").database);
 try {
   switch (process.argv[2]) {
     case "migrate":

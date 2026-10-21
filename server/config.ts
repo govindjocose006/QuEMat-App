@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { z } from "zod";
-export function config() {
+export function config(mode: "runtime" | "operator" = "runtime") {
   const vercel = process.env.VERCEL === "1";
   const production = process.env.NODE_ENV === "production" || vercel;
   const originValue =
@@ -43,7 +43,10 @@ export function config() {
       .max(5)
       .parse(process.env.TRUST_PROXY_HOPS ?? 0),
     database: {
-      url: process.env.DATABASE_URL || undefined,
+      url:
+        (mode === "operator" && process.env.DATABASE_URL_UNPOOLED) ||
+        process.env.DATABASE_URL ||
+        undefined,
       localPath: resolve(process.env.LOCAL_DATABASE_PATH ?? "data/postgres"),
       vercel,
       production,

@@ -5,25 +5,80 @@ build, and `/api/*` runs through a Node.js Vercel Function. All persistent accou
 sessions, rate limits, instruments, and audit history live in Neon PostgreSQL.
 Nothing depends on a Vercel instance's filesystem or process staying alive.
 
-## 1. Create the database
+## 1. Link the existing Neon database
 
-Create a Neon project in your account. Choose a region appropriate for the lab and
-align the Vercel function region with the database to reduce latency. No paid plan,
-region, project, or database has been created automatically.
+Reuse organization `org-ancient-moon-23673941`, project
+`wandering-truth-11355959`, and its existing `production` branch. Do not create a
+replacement project or branch. Keep Vercel for the frontend and Node API, `pg`
+for database access, and the app's existing authentication and approval controls.
+Align the Vercel function region with the existing database region.
+
+Install `npm i -g neon@latest`, or use `npx --yes neon@latest` in place of `neon`
+if the global installation fails. From the repository root:
+
+```sh
+neon login
+neon init -y --org-id org-ancient-moon-23673941 --project-id wandering-truth-11355959 --branch production --services postgres
+```
+
+Finish any browser sign-in yourself; never send credentials in chat. If optional
+plugin installation fails, repeat `init` with `--no-agent-setup`. An offline
+`.neon` link is **not verification**. After login, verify the exact project and
+existing branch through the CLI and review the plan before applying:
+
+```sh
+neon projects get wandering-truth-11355959
+neon branches list --project-id wandering-truth-11355959
+neon config plan --project-id wandering-truth-11355959 --branch production
+neon deploy --project-id wandering-truth-11355959 --branch production
+```
+
+The plan must target the existing production branch. Do not accept creation of a
+replacement project/branch, unrelated setting changes, or optional services.
+`neon.ts` refuses a new or non-production branch and declares no Neon Auth,
+Functions, Realtime, Object Storage, Data API, or AI Gateway. Postgres already
+exists on the branch. The policy does not remove unrelated existing services.
+No `--update-existing` or blanket `--yes` deploy override is needed.
+
+`deploy` pulls credentials into `.env` when it exists, otherwise `.env.local`.
+Both files and the CLI's `.neon` context are ignored by Git. All app startup and
+database scripts load `.env`, then `.env.local`; the latter wins on duplicate
+keys. Existing process variables take precedence over both files, including
+empty values. Check for stale overrides privately; do not print either file.
+Restrict credential files to their owner (for example, `chmod 600 .env`).
+
+In the Codex cloud workspace the CLI uses the private config directory
+`/workspace/.neon-cli`; append `--config-dir /workspace/.neon-cli` to **every**
+Neon command there, including login. Use
+`npm --cache /workspace/.cache/npm exec --yes --package=neon@latest -- neon`
+as the CLI prefix when the global install/cache directories are unavailable.
+
+The attempted cloud login on 2026-10-21 failed before a browser URL was issued:
+the environment's network proxy returned HTTP 403 for `console.neon.tech`.
+Restore access in the cloud environment's network settings and sign in before
+retrying. Postgres also needs outbound connectivity to the project's actual
+database endpoint (normally TCP 5432). Do not change drivers or disable TLS to
+work around network policy. No live target, migration, seed, or administrator
+creation was verified during that attempt.
 
 Obtain the **pooled PostgreSQL connection string** from Neon for the Vercel runtime.
-Use the direct connection string for operator tooling when recommended by Neon.
+The CLI also pulls `DATABASE_URL_UNPOOLED`, the direct operator connection.
 Keep both private. TLS certificate verification remains enabled by the app;
 provider `sslmode` query parameters cannot disable it.
 
-Use separate Neon databases/branches for production and previews. Never let
-unreviewed preview code connect to the production database.
+Preview code must not connect to this production database. Preview database
+provisioning is outside this connection task; leave previews unconfigured until
+an isolated target is explicitly selected.
 
 ## 2. Prepare the database from a trusted terminal
 
 Install Node 24 and dependencies. Store the selected Neon connection string in a
-private local `.env` as `DATABASE_URL`, or inject it through your approved secret
-manager. Do not put the value in Git, shell arguments, screenshots, logs, or chat.
+private local `.env` or `.env.local` as `DATABASE_URL`, or use the CLI-pulled file.
+The application uses pooled `DATABASE_URL`. All operator commands prefer
+`DATABASE_URL_UNPOOLED` and fall back to `DATABASE_URL` when no direct variable
+exists. For a manual setup, put the direct connection in
+`DATABASE_URL_UNPOOLED`. Both must point to the verified same branch/database.
+Do not put values in Git, shell arguments, screenshots, logs, or chat.
 Do not add a `VITE_` prefix: that would expose a variable to the browser build.
 
 From the repository root:
@@ -38,6 +93,9 @@ npm run admin:create
 The final command prompts interactively for the real first administrator. Passwords
 are hidden and never accepted as command-line arguments. No public bootstrap
 endpoint or default credentials exist. Repeat seeding does not overwrite edits.
+Run this command yourself in a trusted interactive terminal; an agent cannot
+collect your password in chat. Do not replace an existing administrator or
+create a synthetic production administrator for testing.
 
 Run these commands with the intended database selected. They are deliberately
 **not** included in the Vercel build command or function initialization. This

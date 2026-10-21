@@ -9,5 +9,5 @@ if [ ! -f .env ]; then
 fi
 npm run build
 # Prepare only the local development database. Hosted Neon changes are explicit operator steps.
-DATABASE_URL= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres npm run db:migrate
-DATABASE_URL= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres npm run db:seed
+DATABASE_URL= DATABASE_URL_UNPOOLED= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres npm run db:migrate
+DATABASE_URL= DATABASE_URL_UNPOOLED= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres npm run db:seed

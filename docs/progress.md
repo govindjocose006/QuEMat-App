@@ -31,6 +31,35 @@ Only Phase 1 is implemented. Later workflows are described, not presented as wor
 
 ## Validation
 
+### Existing Neon connection preparation (2026-10-21)
+
+- Selected organization `org-ancient-moon-23673941`, project
+  `wandering-truth-11355959`, and existing branch `production`. The CLI wrote an
+  **offline, unverified** local link only. No duplicate resources were created.
+- Added a Postgres-only `neon.ts` policy that rejects new/non-production branches.
+  Vercel hosting, `pg`, authentication, approvals, and administrator controls remain.
+- App and operator scripts now load `.env` and `.env.local`, with process env
+  taking precedence. Operators prefer direct `DATABASE_URL_UNPOOLED`; runtime
+  continues to use pooled `DATABASE_URL`. Local cloud setup explicitly clears both.
+- Build/type checks passed; 28 API/configuration/environment tests and all 6
+  desktop/phone browser tests passed using isolated local PostgreSQL data.
+- Global Neon CLI installation failed because its global directory was unavailable;
+  the npm-exec fallback worked. Optional plugin/skill installation failed because
+  the `plugins` and `skills` helpers were absent; consulted official Neon skill
+  sources from GitHub instead.
+- Browser login failed before issuing a sign-in URL. A direct diagnostic through
+  the environment's proxy returned HTTP 403 for `console.neon.tech`. Network access
+  and user browser authentication must be restored before proceeding.
+- **Blocked:** live project/branch verification, `neon deploy`, credential pull,
+  actual Neon queries, hosted migrations/seeding, and first-administrator creation.
+  No local test is evidence of a successful Neon connection. The administrator
+  must enter their password directly in the documented interactive CLI, never chat.
+- Updated the saved cloud configuration draft to clear both connection variables
+  for local setup. Review/save/publish in environment settings is still required
+  to activate that draft. Phase 2 remains unstarted.
+
+### Phase 1 baseline
+
 - PostgreSQL backend build/type checks passed.
 - 25 API/integration/configuration tests passed after the PostgreSQL conversion, covering access
   boundaries, privilege escalation, sessions, CSRF, shared throttling, concurrent

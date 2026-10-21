@@ -7,15 +7,15 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "concurrently -k \"tsx watch --env-file-if-exists=.env server/index.ts\" \"vite --host 0.0.0.0\"",
+    "dev": "concurrently -k \"tsx watch --env-file-if-exists=.env --env-file-if-exists=.env.local server/index.ts\" \"vite --host 0.0.0.0\"",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
-    "start": "node --env-file-if-exists=.env dist/server/server/index.js",
-    "db:migrate": "tsx --env-file-if-exists=.env server/cli.ts migrate",
-    "db:seed": "tsx --env-file-if-exists=.env server/cli.ts seed",
-    "admin:create": "tsx --env-file-if-exists=.env server/cli.ts admin",
-    "account:reset-password": "tsx --env-file-if-exists=.env server/cli.ts reset-password",
-    "db:backup": "tsx --env-file-if-exists=.env server/cli.ts backup",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local dist/server/server/index.js",
+    "db:migrate": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts migrate",
+    "db:seed": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts seed",
+    "admin:create": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts admin",
+    "account:reset-password": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts reset-password",
+    "db:backup": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts backup",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@neon/config": "^1.9.3",
     "@playwright/test": "^1.64.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",

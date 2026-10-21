@@ -33,7 +33,7 @@ Start the credential-free local development services and keep them running:
 
 ```sh
 cd /workspace/QuEMat-App
-DATABASE_URL= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres APP_ORIGIN=http://localhost:5173 npm run dev
+DATABASE_URL= DATABASE_URL_UNPOOLED= VERCEL=0 NODE_ENV=development LOCAL_DATABASE_PATH=/workspace/QuEMat-App/data/postgres APP_ORIGIN=http://localhost:5173 npm run dev
 ```
 
 The frontend uses port 5173 and proxies API requests to port 3100. Verify
