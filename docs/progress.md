@@ -31,6 +31,10 @@ Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it h
   rejection/unloading, rescheduling, actual usage, handover, maintenance and the
   persistent inbox. Native tests cover conflict exclusion, buffer adjacency,
   released cancellations, concurrent rescheduling and unique actual usage.
+- Native concurrency validation also passed 50 consecutive isolated runs after
+  hardening teardown to wait for disconnected clients. Concurrent GiST updates
+  can abort the loser with either exclusion violation or deadlock detection;
+  tests verify exactly one committed reschedule and no overlapping reservations.
 - No Phase 2 production migration or deployment has been performed. In-app
   notifications refresh while open; email/push and scheduled reminders are deferred.
 

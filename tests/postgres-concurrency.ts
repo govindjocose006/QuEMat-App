@@ -21,6 +21,12 @@ const admin = new Client({ ...connection, database: "postgres" });
 await admin.connect();
 await admin.query(`CREATE DATABASE ${name} TEMPLATE template0 ENCODING 'UTF8'`);
 const pool = new Pool({ ...connection, database: name, max: 4 });
+const disconnected: Promise<void>[] = [];
+pool.on("connect", (client) => {
+  disconnected.push(
+    new Promise<void>((resolve) => client.once("end", resolve)),
+  );
+});
 const sql = (c: Pool | import("pg").PoolClient): SQL => ({
   query: async (q, v) => (await c.query(q, v)).rows,
   exec: async (q) => {
@@ -148,10 +154,31 @@ try {
       ),
     ]);
     assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+    // Concurrent GiST checks may reject the loser through deadlock detection
+    // rather than an exclusion violation. Both abort that transaction; verify
+    // the committed invariant as well as the specific allowed SQLSTATEs.
+    assert.ok(
+      ["23P01", "40P01"].includes(
+        (results.find((r) => r.status === "rejected") as PromiseRejectedResult)
+          .reason.code,
+      ),
+    );
     assert.equal(
-      (results.find((r) => r.status === "rejected") as PromiseRejectedResult)
-        .reason.code,
-      "23P01",
+      (
+        await db.query(
+          "SELECT id FROM bookings WHERE starts_at='2030-01-04T10:00Z'",
+        )
+      ).length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(`SELECT a.id FROM bookings a JOIN bookings b
+        ON a.id<b.id AND a.instrument_id=b.instrument_id
+        AND tstzrange(a.reserved_start,a.reserved_end,'[)') && tstzrange(b.reserved_start,b.reserved_end,'[)')
+        WHERE a.status<>'cancelled' AND b.status<>'cancelled'`)
+      ).length,
+      0,
     );
     count++;
     const actual = await Promise.allSettled(
@@ -178,6 +205,10 @@ try {
   );
 } finally {
   await pool.end();
-  await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);
+  // Pool.end removes clients before their sockets necessarily finish closing.
+  // Wait for every backend disconnect before dropping the isolated database;
+  // FORCE can otherwise kill a closing client and emit an unhandled pool error.
+  await Promise.all(disconnected);
+  await admin.query(`DROP DATABASE ${name}`);
   await admin.end();
 }
