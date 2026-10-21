@@ -132,3 +132,6 @@ then deploy and verify the live `/api/health` and booking lifecycle. The Phase 2
 health endpoint requires `002_scheduling.sql`. Builds and function cold starts
 never migrate production. Preview deployments must have a separate database and
 must never inherit the Production DATABASE_URL.
+
+For PR #1 preview provisioning, guarded preview commands, secure synthetic login
+and the separate-checkout Windows fallback, see [phase-2-preview.md](phase-2-preview.md).

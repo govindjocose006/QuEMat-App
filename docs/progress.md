@@ -38,6 +38,28 @@ Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it h
 - No Phase 2 production migration or deployment has been performed. In-app
   notifications refresh while open; email/push and scheduled reminders are deferred.
 
+## PR #1 preview preparation
+
+- Read the Phase 2 and deployment guides and verified the existing Neon project
+  and Vercel project through their APIs. Production still targets Phase 1 commit
+  `dc40148`; its variables have not been changed.
+- Neon schema-only branch creation is blocked by HTTP 412 at `console.neon.tech`
+  because the existing project has a legacy `anonymous` web role. The available
+  key is project-scoped and cannot create a separate project. No preview branch
+  or data-bearing clone was created.
+- Added guarded preview-only migration/fixture/verification commands and a
+  [Windows fallback](phase-2-preview.md) using a separate checkout, private
+  configuration, synthetic accounts and private interactive password setup.
+- Preview preparation requires an empty, independently selected database; later
+  operations verify its stored preview identity. Production endpoints and
+  connection-query overrides are rejected; ordinary `.env` files are not loaded.
+- A new empty Neon project and its privately saved `NEON_PREVIEW_API_KEY` are the
+  remaining account step. No live preview health, connectivity, persistence or
+  booking workflow has yet been verified. Local tests do not establish those.
+- Local validation passed: build/type checks and 52 API/configuration/tool tests,
+  including 12 new preview checks for safe target selection, empty-database
+  preparation, identity mismatch rejection and repeatable private fixtures.
+
 ## Phase 1 production status
 
 The first Vercel Production deployment was created from `main` at `dc40148`.

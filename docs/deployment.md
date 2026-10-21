@@ -17,6 +17,10 @@ See [phase-2.md](phase-2.md) for isolated development/test commands and the rele
 migration checklist. Preview environments require a separate database; the saved
 Production DATABASE_URL must never be used in preview or automated tests.
 
+The PR #1 preview procedure and Windows fallback are in
+[phase-2-preview.md](phase-2-preview.md). Use its explicit preview configuration,
+not the production Neon policy or the ordinary `.env`-loading database commands.
+
 A future Phase 2 release requires the additive `002_scheduling.sql` migration and
 `btree_gist` extension. Run this only as an explicitly authorized operator step,
 after backup and isolated validation. No migration runs during a Vercel build or

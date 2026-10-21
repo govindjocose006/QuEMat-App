@@ -1,5 +1,6 @@
 .git
 .neon
+.preview
 .env
 .env.*
 data
