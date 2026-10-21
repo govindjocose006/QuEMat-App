@@ -1,0 +1,6 @@
+docs/requirements.md
+node_modules/
+dist/
+data/
+test-results/
+package-lock.json

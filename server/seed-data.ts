@@ -1,0 +1,28 @@
+export const initialInstruments: [
+  string,
+  string,
+  number | null,
+  string[],
+  string?,
+][] = [
+  ["PPMS", "Magnetic & transport", null, []],
+  ["SQUID", "Magnetic & transport", null, ["Akhil N"]],
+  ["Indufurr Furnace 1", "Furnace", 1050, []],
+  ["Indufurr Furnace 2", "Furnace", 1050, []],
+  ["Ants Furnace", "Furnace", 1200, []],
+  ["Carbolyte Furnace", "Furnace", 1400, []],
+  ["RF / Magnetron sputtering", "Thin films", null, ["Saptaparna"]],
+  [
+    "P-XRD — user-provided label “Brooker XRD”",
+    "Diffraction",
+    null,
+    ["Akhil N"],
+  ],
+  ["Single-crystal XRD", "Diffraction", null, [], "None currently listed"],
+  ["Thin-film XRD", "Diffraction", null, ["Saptaparna", "Aparna"]],
+  ["Raman", "Spectroscopy", null, ["Akhil N"]],
+  ["UV", "Spectroscopy", null, ["Akhil N"]],
+  ["BET", "Surface analysis", null, ["Akhila"]],
+  ["Arc melting and sealing setup", "Preparation", null, ["Aparna", "Jaydev"]],
+  ["Cryostat", "Low temperature", null, ["Akhil N", "Saptaparna"]],
+];

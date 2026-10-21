@@ -1,32 +1,114 @@
 # QuEMat Lab Hub
 
-A laboratory coordination app for the QuEMat group at IISER Thiruvananthapuram.
+Private laboratory coordination for the QuEMat group at IISER Thiruvananthapuram,
+supervised by Dr Deepshikha Jaiswal Nagar.
+[Group website](https://sites.google.com/iisertvm.ac.in/quemat).
 
-Supervisor: Dr Deepshikha Jaiswal Nagar.
+**Phase 1:** accounts, approval-gated onboarding, membership administration, and
+an editable register of the 15 supplied instruments. The app uses TypeScript,
+React, Express, and PostgreSQL, with **Vercel + Neon** as the deployment target.
+Bookings, samples, measurements, and later phases are not implemented yet.
 
-Group website: https://sites.google.com/iisertvm.ac.in/quemat
+- [Deploy to Vercel and Neon](docs/deployment.md)
+- [Reusable cloud environment setup](docs/cloud-environment.md)
+- [Full requirements](docs/requirements.md) · [Progress and validation](docs/progress.md)
+- [Architecture and permissions](docs/architecture.md) · [Operations and recovery](docs/operations.md)
 
-## Project status
+## Local development
 
-Repository initialized so Codex can check out the `main` branch. Application implementation has not started.
+Use Node.js **24** and npm. Run from the repository root:
 
-## Planned implementation
+```sh
+npm ci
+cp .env.example .env
+npm run db:migrate
+npm run db:seed
+npm run admin:create
+npm run dev
+```
 
-1. Foundation, authentication, member onboarding, and instrument register.
-2. Shared sample register, instrument bookings, and measurement tracking.
-3. Weekly progress, issues, supervisor announcements, and meetings.
+Do not overwrite an existing `.env`. In this cloud workspace, use
+`npm --cache /workspace/.cache/npm ci` if the default npm cache is unwritable.
+
+Without `DATABASE_URL`, development uses persistent **PGlite**, an embedded
+PostgreSQL engine, under ignored `data/postgres/`. This is a local development
+backend, not a hosted shared database. Stop the development server before running
+CLI database commands. No external keys are needed for local development.
+
+`admin:create` is an interactive, trusted-operator command that prompts for an
+email, hidden password with confirmation, and full name. There is **no default
+login**. It creates only the first administrator. Additional privileged access
+must be assigned by an approved administrator through **Members & access**, with
+a reason and audit history.
+
+The frontend uses port 5173 and proxies `/api` to port 3100. `APP_ORIGIN` must
+exactly match the browser's frontend origin, default `http://localhost:5173`.
+The development proxy expects API port 3100.
+
+Members register, complete their profiles, and wait for approval. Administrators
+verify identity and email ownership through a trusted lab channel before approval.
+Academic “Supervisor” never grants application privileges. Automatic verification
+emails and password-reset emails are not configured.
+
+`db:seed` adds instrument configuration, never accounts or sample records. Repeating
+it preserves edits and archives. Initial “available” values are **unverified
+configuration**, not live operating state or free booking slots. Review statuses,
+limits, policies, training names, and buffers before operational use.
+
+## Vercel deployment
+
+`vercel.json` builds the Vite client and routes `/api/*` to the Node function in
+`api/index.ts`. Vercel requires a **Neon PostgreSQL connection** in the server-only
+`DATABASE_URL` environment variable. The function refuses to use local storage.
+
+Set the production `APP_ORIGIN` to the exact HTTPS domain. Run database migrations,
+seeding, and administrator bootstrap as explicit operator steps; builds and
+function cold starts do not mutate the schema or create accounts. See the
+[deployment guide](docs/deployment.md) for exact steps and preview isolation.
+
+Deployment configuration is included; no live Vercel deployment or Neon connection
+has been verified in this workspace.
+
+## Built local server
+
+```sh
+npm run build
+APP_ORIGIN=http://localhost:3100 npm start
+```
+
+This serves the compiled frontend and API together for local verification. Keep
+`NODE_ENV` unset (or `development`) for a local PGlite database. Production requires HTTPS and
+`DATABASE_URL` and cannot silently fall back to development storage.
+
+## Validation
+
+```sh
+npm run build
+npm test
+npx playwright install chromium
+npm run test:e2e
+```
+
+In the cloud environment, use the existing browser:
+
+```sh
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
+```
+
+API/browser tests use temporary PostgreSQL databases and synthetic accounts,
+separate from development and hosted data. Browser tests cover desktop and phone
+workflows, keyboard focus, and automated accessibility checks. CI is configured in
+`.github/workflows/ci.yml`; a hosted CI run has not been verified here.
+
+## Phase boundaries
+
+1. **Implemented:** foundation, accounts, approval, instrument register.
+2. **Next:** samples, database-protected reservations, measurement details, check-in
+   and completion.
+3. Weekly progress, issues, supervisor announcements, meetings.
 4. Chemical orders and incoming external samples.
-5. External facility calls and proposal tracking.
-6. Reminders, PWA installation, and release checks.
+5. Facility calls and proposals.
+6. Server-scheduled reminders, PWA installation, and release verification.
 
-Prioritize PPMS, SQUID, four individual furnaces, and RF/magnetron sputtering. Keep trained-user information secondary to the actual operator, sample, compound, measurement, and schedule.
-
-Default timezone: Asia/Kolkata. Default currency: INR.
-
-## Next step
-
-Open this repository in Codex on `main`, provide the full QuEMat Lab Hub master specification and Phase 1 prompt, and implement Phase 1 first.
-
-## Data handling
-
-Do not commit credentials, environment secrets, private lab records, sample data, personal contact information, or private attachments. Configure authenticated access and persistent private data storage during implementation.
+Defaults: **Asia/Kolkata** and **INR**. Never commit credentials, lab records,
+contact data, database exports, or private attachments.
