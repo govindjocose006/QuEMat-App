@@ -10,6 +10,8 @@ data/
 *.db
 *.db-*
 *.dump
+*.dump.enc
+release-receipt.json
 *.pem
 *.key
 playwright-report/

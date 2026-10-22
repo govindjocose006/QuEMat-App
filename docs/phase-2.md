@@ -1,8 +1,9 @@
 # Phase 2: samples and instrument scheduling
 
-Phase 2 is implemented on `feature/phase-2-bookings` for review. Production remains
-Phase 1 at https://quemat-app.vercel.app. Do not merge, migrate production, or
-promote a Phase 2 deployment until the lab approves a release.
+Phase 2 is implemented on `feature/phase-2-bookings`. The user approved its preview
+and authorized release. Production remains Phase 1 at https://quemat-app.vercel.app
+until the private backup, migration and required checks succeed. Follow the
+[guarded production release procedure](phase-2-release.md) before merge/deployment.
 
 ## Daily workflow
 
@@ -126,7 +127,7 @@ privileges using `PG_TEST_HOST`, `PG_TEST_PORT` (default 55432), `PG_TEST_USER`
 PostgreSQL 18 service. A locally installed PostgreSQL 18 instance was also used
 for validation; it is separate from both Neon and development PGlite.
 
-Before a future release: back up production, verify the additive migration in an
+Before release: back up production, verify the additive migration in an
 isolated PostgreSQL/Neon database, apply it explicitly with an authorized operator,
 then deploy and verify the live `/api/health` and booking lifecycle. The Phase 2
 health endpoint requires `002_scheduling.sql`. Builds and function cold starts

@@ -12,9 +12,11 @@ Phase 1 is deployed to https://quemat-app.vercel.app in the existing Vercel proj
 `sin1` (Singapore). Production variables are managed in Vercel. The user confirmed
 healthy database-backed operation after initializing the production database.
 
-Phase 2 is a feature-branch change only. **Do not deploy it to production yet.**
-See [phase-2.md](phase-2.md) for isolated development/test commands and the release
-migration checklist. Preview environments require a separate database; the saved
+The user has approved the Phase 2 preview and authorized its production release.
+Backup, migration, merge and deployment are still pending. Follow the guarded
+[Phase 2 release procedure](phase-2-release.md); cloud PostgreSQL DNS is blocked,
+so the private backup and migration require the Windows operator steps there.
+See [phase-2.md](phase-2.md) for isolated development/test commands. Preview environments require a separate database; the saved
 Production DATABASE_URL must never be used in preview or automated tests.
 
 The PR #1 preview procedure and Windows fallback are in
@@ -28,9 +30,10 @@ preview redeployment passed live checks. Vercel authentication protects the
 preview; then sign into the app with `preview-admin@example.test` and the password
 set privately in the trusted terminal. The preview uses existing free resources;
 do not upgrade plans, enable paid services/trials or provision extra infrastructure.
-These preview results do not authorize a production release or migration.
+The user's subsequent release instruction authorizes production work, subject to
+successful private backup, migration, verification and CI before merge/deployment.
 
-A future Phase 2 release requires the additive `002_scheduling.sql` migration and
+A Phase 2 release requires the additive `002_scheduling.sql` migration and
 `btree_gist` extension. Run this only as an explicitly authorized operator step,
 after backup and isolated validation. No migration runs during a Vercel build or
 function cold start. The Phase 2 health check requires the new schema.

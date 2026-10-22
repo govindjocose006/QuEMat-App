@@ -5,7 +5,36 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it has not been deployed to production. Later phases remain unimplemented.
+Phase 1 is deployed. The user approved the Phase 2 preview and authorized release;
+production backup, migration, merge and deployment are pending. Later phases
+remain unimplemented.
+
+## Phase 2 release preparation (2026-10-23)
+
+- PR #1 was open, mergeable and green at `539141e`; latest release-tool changes
+  require their own successful CI before merge. Production remains `dc40148`.
+- Verified existing Vercel Hobby/basic configuration, no trial, `main` production
+  branch, and separate branch-specific Preview variables. No variables changed.
+- Read-only Neon metadata verified production project `wandering-truth-11355959`,
+  branch `br-flat-band-a1umhh3i`, direct endpoint
+  `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech`, database `neondb`, role
+  `neondb_owner`, PostgreSQL 18. Native DNS still fails `EAI_AGAIN/getaddrinfo`.
+  Metadata verification is not a successful SQL connection.
+- Added [private Windows release steps](phase-2-release.md) and explicit-target
+  tooling: free local encrypted `pg_dump`, roundtrip checksums/full archive read,
+  backup-gated pinned Phase 2 migration, transactional legacy-record preservation
+  checks and post-migration verification. No seeds, fixtures or production tests.
+- Nineteen new isolated release tests passed for target rejection, encryption,
+  damaged/wrong-password backup rejection, receipt gating, CRLF handling,
+  additive migration preservation/idempotency and rollback on failure. The
+  Windows PowerShell wrapper and native `pg_dump` still require execution on the
+  trusted Windows machine; no live backup/restore or migration is claimed.
+- Full local validation passed: 71 API/configuration/tool tests, production build,
+  application type checks and a separate strict release-tool TypeScript check.
+- **Waiting for successful Windows backup, migration and verification outputs.**
+  No production schema, data, deployment or configuration has been changed.
+  No paid resources, trials or additional infrastructure were used. Phase 3 is
+  unstarted. A complete restore drill remains separate from archive-read checks.
 
 ## Phase 2 implementation (2026-10-22)
 
@@ -196,5 +225,6 @@ These user-confirmed live results supersede the earlier connection blockers belo
 
 ## Next phase
 
-Phase 2 review and a separately authorized release. Phase 3 (weekly progress,
+Complete the authorized Phase 2 release after its backup and migration gates.
+Phase 3 (weekly progress,
 issues, announcements and meetings) has not been started.
