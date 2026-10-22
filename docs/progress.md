@@ -53,9 +53,20 @@ Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it h
 - Preview preparation requires an empty, independently selected database; later
   operations verify its stored preview identity. Production endpoints and
   connection-query overrides are rejected; ordinary `.env` files are not loaded.
-- A new empty Neon project and its privately saved `NEON_PREVIEW_API_KEY` are the
-  remaining account step. No live preview health, connectivity, persistence or
-  booking workflow has yet been verified. Local tests do not establish those.
+- The new preview key is now verified for separate project
+  `sparkling-meadow-75486459` (QuEMat PR1 Preview), branch `br-patient-shape-a1fnddux`.
+  Created dedicated role and empty database `quemat_pr1_preview` without using
+  production credentials or copying accounts/data.
+- Saved owner-only ignored preview credentials. Added Vercel Preview-only,
+  feature-branch-scoped DATABASE_URL and APP_ORIGIN bindings; Production variables
+  remain unchanged. Vercel's saved authentication refreshed successfully.
+- Hosted migrations remain blocked: native DNS fails with EAI_AGAIN/getaddrinfo
+  for `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, including with expanded
+  execution access. A configured-proxy PostgreSQL attempt terminated before
+  queries. No TLS checks or application driver were changed.
+- Updated the Windows fallback with the existing preview resources. No live
+  preview health, connectivity, persistence or booking workflow has yet been
+  verified. Local tests do not establish those.
 - Local validation passed: build/type checks and 52 API/configuration/tool tests,
   including 12 new preview checks for safe target selection, empty-database
   preparation, identity mismatch rejection and repeatable private fixtures.

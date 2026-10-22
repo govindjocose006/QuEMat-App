@@ -1,27 +1,48 @@
 # PR #1 preview setup
 
-Use `feature/phase-2-bookings`, existing Vercel project `quemat-app`, and a **new
-empty Neon project** dedicated to this preview. Do not clone production data,
+Use `feature/phase-2-bookings`, existing Vercel project `quemat-app`, and the
+dedicated **QuEMat PR1 Preview** Neon project below. Do not clone production data,
 reuse production passwords, apply the production `neon.ts` policy, or run the
 ordinary `npm run db:*` commands for this procedure.
 
 ## Current cloud blocker
 
-The available Neon key is scoped to project `wandering-truth-11355959`. It cannot
-list/create separate projects (HTTP 404: actions outside its scope are forbidden).
-Schema-only branch creation failed at `console.neon.tech` with HTTP 412:
+The new privately saved preview key has been verified. These resources now exist;
+reuse them rather than creating another project, role or database:
+
+| Resource | Preview value |
+| --- | --- |
+| Project | `sparkling-meadow-75486459` — QuEMat PR1 Preview |
+| Branch | `br-patient-shape-a1fnddux` (named `production` within this separate preview project) |
+| Region / PostgreSQL | Singapore / 18 |
+| Role and database | `quemat_pr1_preview` |
+| Direct endpoint | `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech` |
+| Pooled endpoint | `ep-old-haze-a1w10w9n-pooler.ap-southeast-1.aws.neon.tech` |
+
+The role and empty database were created using only the preview project's API
+key. Fresh credentials are stored in an ignored owner-only preview configuration;
+no production credentials or account/data exports were used. Vercel Preview now
+has branch-specific DATABASE_URL and APP_ORIGIN bindings for
+`feature/phase-2-bookings`. Production bindings are unchanged.
+
+Native PostgreSQL access from this cloud workspace remains blocked. The guarded
+preparation command, including an expanded-access attempt, fails with:
 
 ```text
-project with a legacy web access role do not support schema-only branches; role:"anonymous"
+EAI_AGAIN / getaddrinfo
+ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech
 ```
 
-No preview branch was created. Removing a production role or cloning a
-data-bearing branch is not a workaround. In Neon, create **QuEMat PR1 Preview**
-with Postgres only (Singapore if available). Save its project-scoped API key
-privately as cloud secret `NEON_PREVIEW_API_KEY` and provide only the project ID
-in chat. Review/save/publish the environment to apply that secret. New endpoint
-and deployment hostnames may also need allowlisting. API access and actual
-PostgreSQL transport connectivity are separate checks.
+Native DNS also fails for console.neon.tech and api.vercel.com; HTTPS API calls
+work through the configured proxy. A PostgreSQL attempt through that proxy
+terminated before queries. TLS verification and the application's pg driver were
+preserved. New preview hostnames were saved in the environment network draft;
+review/save/publish applies them, but actual transport must still be verified.
+Migrations, fixtures, deployment acceptance and live persistence remain pending.
+
+Previously, production-project schema-only branching failed with HTTP 412 due to
+a legacy `anonymous` web role. The separate preview project resolves that resource
+creation blocker without modifying the production role or copying its data.
 
 ## Windows: isolated checkout and private configuration
 
@@ -42,9 +63,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 Remove-Item Env:DATABASE_URL,Env:DATABASE_URL_UNPOOLED -ErrorAction SilentlyContinue
 ```
 
-In the **new preview project**, create a new Postgres role `quemat_pr1_preview`
-and an empty database **`quemat_pr1_preview`** owned by that role. Select them in
-Neon's Connect dialog when copying the pooled and direct URLs. Its initial branch
+In **QuEMat PR1 Preview**, select the existing role and database
+**`quemat_pr1_preview`** in Neon's Connect dialog when copying pooled and direct
+URLs privately. Do not create duplicates. Its initial branch
 may itself be named `production`; the new project, branch ID and endpoint must
 all differ from real production. Copy no real accounts or lab data.
 
@@ -62,11 +83,11 @@ function Read-PrivateValue([string]$Prompt) {
   try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($privatePointer) }
   finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($privatePointer) }
 }
-$previewProject = Read-Host 'NEW preview project ID'
-$previewBranch = Read-Host 'NEW preview branch ID (br-...)'
-$previewHost = Read-Host 'NEW direct endpoint hostname (no -pooler, scheme or path)'
-$previewPooled = Read-PrivateValue 'NEW pooled URL for quemat_pr1_preview'
-$previewDirect = Read-PrivateValue 'NEW direct URL for quemat_pr1_preview'
+$previewProject = 'sparkling-meadow-75486459'
+$previewBranch = 'br-patient-shape-a1fnddux'
+$previewHost = 'ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech'
+$previewPooled = Read-PrivateValue 'Preview pooled URL for quemat_pr1_preview'
+$previewDirect = Read-PrivateValue 'Preview direct URL for quemat_pr1_preview'
 $previewFile = Join-Path (Get-Location) '.preview/.env.preview'
 $previewLines = @(
   'PREVIEW_ONLY=quemat-pr1-synthetic'
@@ -134,16 +155,16 @@ The URL flows directly into Vercel's stdin. If this exact branch Preview variabl
 already exists, confirm its scope and rerun that command with `--force`. Do not
 upload the direct operator URL or alter Production variables.
 
-Leave **Preview APP_ORIGIN unset** so the app uses its exact generated HTTPS
-`VERCEL_URL`. Production APP_ORIGIN stays untouched. Check the dashboard for a
-global Preview APP_ORIGIN and remove only its Preview binding if present. Use
-the **immutable URL** printed by deployment; other aliases will fail Origin/CSRF.
+The branch-specific **Preview APP_ORIGIN is already configured** as
+`https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app`.
+Production APP_ORIGIN stays untouched. Visit this stable branch URL after the
+Preview deployment assigns its aliases. Immutable deployment URLs will fail
+Origin/CSRF for writes because this setup explicitly selects the branch origin.
 
 ```powershell
 npx vercel@65.0.0 deploy --environment preview --yes
 if ($LASTEXITCODE -ne 0) { throw 'Preview deployment failed.' }
-$previewUrl = (Read-Host 'Exact immutable https://...vercel.app deployment URL').TrimEnd('/')
-if ($previewUrl -eq 'https://quemat-app.vercel.app') { throw 'Production URL is forbidden.' }
+$previewUrl = 'https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app'
 Start-Process "$previewUrl/api/health"
 Start-Process $previewUrl
 ```
@@ -173,9 +194,9 @@ These require the actual preview; local tests do not establish them.
    workspace. Obtain these synthetic passwords locally from the private account
    file; do not paste that file into chat.
 5. Record the sample code and booking/handover state. Redeploy using the same
-   Preview command and branch variable. Sign in at the **new immutable URL** and
-   verify those records remain. Browser cookies are hostname-specific, so a new
-   immutable hostname requires sign-in even though sessions live in PostgreSQL.
+   Preview command and branch variable. Reopen the stable branch URL and verify
+   those records and the signed-in session remain. The same hostname is retained;
+   both records and sessions must persist in the preview database.
 6. Rerun `verify` to confirm the selected database and persistent row counts.
    Record only checks actually completed and exact HTTP/network errors.
 
