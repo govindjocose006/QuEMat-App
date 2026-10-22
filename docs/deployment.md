@@ -21,6 +21,15 @@ The PR #1 preview procedure and Windows fallback are in
 [phase-2-preview.md](phase-2-preview.md). Use its explicit preview configuration,
 not the production Neon policy or the ordinary `.env`-loading database commands.
 
+The isolated Phase 2 preview is now live at
+https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app.
+Health, database-backed workflows, access controls and persistence across a
+preview redeployment passed live checks. Vercel authentication protects the
+preview; then sign into the app with `preview-admin@example.test` and the password
+set privately in the trusted terminal. The preview uses existing free resources;
+do not upgrade plans, enable paid services/trials or provision extra infrastructure.
+These preview results do not authorize a production release or migration.
+
 A future Phase 2 release requires the additive `002_scheduling.sql` migration and
 `btree_gist` extension. Run this only as an explicitly authorized operator step,
 after backup and isolated validation. No migration runs during a Vercel build or

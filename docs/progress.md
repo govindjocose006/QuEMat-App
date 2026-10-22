@@ -60,13 +60,33 @@ Phase 1 is deployed. Phase 2 is implemented on a feature branch for review; it h
 - Saved owner-only ignored preview credentials. Added Vercel Preview-only,
   feature-branch-scoped DATABASE_URL and APP_ORIGIN bindings; Production variables
   remain unchanged. Vercel's saved authentication refreshed successfully.
-- Hosted migrations remain blocked: native DNS fails with EAI_AGAIN/getaddrinfo
+- Direct operator access from the cloud remains blocked: native DNS fails with EAI_AGAIN/getaddrinfo
   for `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, including with expanded
   execution access. A configured-proxy PostgreSQL attempt terminated before
   queries. No TLS checks or application driver were changed.
-- Updated the Windows fallback with the existing preview resources. No live
-  preview health, connectivity, persistence or booking workflow has yet been
-  verified. Local tests do not establish those.
+- The user initialized the preview from their Windows checkout: both migrations,
+  15 instruments, four synthetic accounts and two initial samples. The synthetic
+  administrator password was set privately.
+- Deployed and redeployed PR #1 to Vercel Preview using existing Hobby/basic
+  resources. Live `/api/health` returns 200 with `{"status":"ok"}`. Sample/booking
+  writes and reads confirm hosted PostgreSQL connectivity through Vercel.
+- Live checks passed for sample ownership/shared access; PPMS details and actual
+  operator; overlapping and simultaneous booking rejection; cancellation/reuse;
+  furnace maximum/check-in/unloading/completion/handover; member/pending access
+  boundaries; cross-origin denial; protected session cookies; and notifications.
+- After redeployment, the existing session, sample `QEM-3`, completed furnace
+  actual usage/handover, cancellation history and notifications persisted.
+  Logout then denied protected access. Synthetic check members were approved by
+  the user through the existing administrator UI; no administrator password was
+  shared and no extra administrator was created.
+- Preview: https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app
+  Verified deployment `dpl_Ckr5hscapdbKUT2UL3NmKQVqDCsq`, source `bbbf774`.
+  Production variables and deployment remain unchanged; PR #1 remains open.
+- Budget ₹0: no upgrades, paid services, trials, purchases or additional cloud
+  infrastructure. Temporary automation authentication was revoked after checks.
+- Cloud Chromium live screenshots were blocked by proxy certificate trust
+  (`ERR_CERT_AUTHORITY_INVALID`); TLS verification was preserved. Live API results
+  and earlier isolated phone/desktop browser tests are separate evidence.
 - Local validation passed: build/type checks and 52 API/configuration/tool tests,
   including 12 new preview checks for safe target selection, empty-database
   preparation, identity mismatch rejection and repeatable private fixtures.

@@ -5,7 +5,58 @@ dedicated **QuEMat PR1 Preview** Neon project below. Do not clone production dat
 reuse production passwords, apply the production `neon.ts` policy, or run the
 ordinary `npm run db:*` commands for this procedure.
 
-## Current cloud blocker
+## Live preview status
+
+Preview: https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app
+
+The isolated database was initialized from the user's Windows checkout: both
+migrations, 15 instrument seeds, four original synthetic accounts and two initial
+samples were confirmed. The user set the synthetic administrator's password
+privately. No administrator password was supplied to the agent or recorded here.
+
+The feature branch was deployed to the existing Vercel **Preview** target and
+redeployed to verify persistence. The verified deployment is
+`dpl_Ckr5hscapdbKUT2UL3NmKQVqDCsq`, source `bbbf774965106988c0972497c3396ae1dacd8513`.
+The stable branch alias was verified to point to that new deployment.
+
+Actual live checks passed:
+
+- `/api/health`: HTTP 200 with `{"status":"ok"}`. This queries the hosted migration
+  table; subsequent sample and booking writes/readbacks also confirmed database
+  connectivity through Vercel's unchanged `pg` driver and verified TLS.
+- Synthetic-member login; session cookies are Secure, HttpOnly and SameSite=Strict.
+  API responses use `no-store`; cross-origin writes are denied.
+- Unique sample creation (`QEM-3`), shared visibility and denied cross-owner edits.
+- Detailed PPMS booking, operator/sample snapshots and confirmed scheduled status.
+  An overlap returns 409; simultaneous live requests produce exactly one 201 and
+  one 409. Another member cannot cancel the reservation.
+- Cancellation is retained and the released interval can be booked again.
+- Furnace temperature 1051 °C is rejected for the seeded 1050 °C furnace. Valid
+  booking/check-in records actual usage. Completion without unloading returns 400
+  and leaves it in progress; explicit unloading, summary and handover completes it.
+- Pending members cannot access approved lab APIs. Role/status injection cannot
+  self-approve an account. Approved members cannot manage members or instruments.
+  Booking-change notifications persist in the private inbox.
+- After redeployment: the existing session works without login, `QEM-3`, completed
+  furnace state/actual end/handover, cancellation history and notifications remain.
+  Logout then denies further protected access.
+
+Three additional synthetic test accounts were registered through normal onboarding.
+The user approved **Preview Checks Member** and **Preview Checks Other** as ordinary
+members; **Preview Checks Pending** remains pending. No extra administrator was
+created. Automation sessions were signed out and its temporary Vercel authentication
+credential was revoked after checks. Deployment protection stays enabled.
+
+The budget is ₹0: existing Neon/Vercel resources only, Vercel Hobby plan, basic
+builds, no upgrades, paid features, trials, purchases or new infrastructure.
+Production variables and deployment were compared with the baseline and unchanged;
+production remains Phase 1 at `dc40148`. PR #1 is not merged.
+
+Automated live browser screenshots were blocked by this cloud's proxy trust:
+`ERR_CERT_AUTHORITY_INVALID` in Chromium at the preview hostname. Certificate
+verification was not disabled. The live checks above used the trusted HTTPS API
+client; earlier isolated desktop/phone tests are separate evidence. The user
+successfully signed in and managed approvals in their own browser.
 
 The new privately saved preview key has been verified. These resources now exist;
 reuse them rather than creating another project, role or database:
@@ -19,13 +70,13 @@ reuse them rather than creating another project, role or database:
 | Direct endpoint | `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech` |
 | Pooled endpoint | `ep-old-haze-a1w10w9n-pooler.ap-southeast-1.aws.neon.tech` |
 
-The role and empty database were created using only the preview project's API
+The role and initially empty database were created using only the preview project's API
 key. Fresh credentials are stored in an ignored owner-only preview configuration;
 no production credentials or account/data exports were used. Vercel Preview now
 has branch-specific DATABASE_URL and APP_ORIGIN bindings for
 `feature/phase-2-bookings`. Production bindings are unchanged.
 
-Native PostgreSQL access from this cloud workspace remains blocked. The guarded
+Direct operator PostgreSQL access from this cloud workspace remains blocked. The guarded
 preparation command, including an expanded-access attempt, fails with:
 
 ```text
@@ -38,7 +89,9 @@ work through the configured proxy. A PostgreSQL attempt through that proxy
 terminated before queries. TLS verification and the application's pg driver were
 preserved. New preview hostnames were saved in the environment network draft;
 review/save/publish applies them, but actual transport must still be verified.
-Migrations, fixtures, deployment acceptance and live persistence remain pending.
+Windows initialization resolved the setup blocker. Vercel runtime connectivity
+and persistence are verified above; direct cloud operator access is still not
+established and must not be inferred from those runtime results.
 
 Previously, production-project schema-only branching failed with HTTP 412 due to
 a legacy `anonymous` web role. The separate preview project resolves that resource
@@ -124,6 +177,11 @@ production database export. Generated passwords are saved only in the ignored
 private `.preview/.env.preview-accounts.json` file. Repeating fixtures does not
 reset passwords or overwrite accounts/samples. No default password or public
 bootstrap endpoint is introduced.
+
+This initial setup has already been completed. Do not repeat `fixtures` now that
+additional test accounts exist: its safety guard rejects accounts outside the
+original four-account fixture set. For continued review, use `verify` and the
+interactive `reset-password` command as needed; do not reset or recreate the database.
 
 For your own preview sign-in, run this interactive command and select
 **`preview-admin@example.test`**. Enter a unique password privately. This resets
