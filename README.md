@@ -4,10 +4,12 @@ Private laboratory coordination for the QuEMat group at IISER Thiruvananthapuram
 supervised by Dr Deepshikha Jaiswal Nagar.
 [Group website](https://sites.google.com/iisertvm.ac.in/quemat).
 
-**Phase 1:** accounts, approval-gated onboarding, membership administration, and
-an editable register of the 15 supplied instruments. The app uses TypeScript,
+**Phase 1 (deployed):** accounts, approval-gated onboarding, membership administration, and
+an editable register of the 15 supplied instruments. **Phase 2 (feature branch, not deployed):**
+shared samples, calendars, conflict-protected bookings, actual usage and notifications.
+See [Phase 2 workflows and isolated validation](docs/phase-2.md). The app uses TypeScript,
 React, Express, and PostgreSQL, with **Vercel + Neon** as the deployment target.
-Bookings, samples, measurements, and later phases are not implemented yet.
+Later phases remain unimplemented.
 
 - [Deploy to Vercel and Neon](docs/deployment.md)
 - [Reusable cloud environment setup](docs/cloud-environment.md)
@@ -71,11 +73,10 @@ seeding, and administrator bootstrap as explicit operator steps; builds and
 function cold starts do not mutate the schema or create accounts. See the
 [deployment guide](docs/deployment.md) for exact steps and preview isolation.
 
-Deployment configuration is included; no live Vercel deployment or Neon connection
-has been verified in this workspace.
-The specified existing Neon project/production branch and browser-login recovery
-steps are documented in the deployment guide. Cloud login is currently blocked
-by a network proxy rejection; an offline CLI link is not a verified connection.
+Phase 1 is deployed at https://quemat-app.vercel.app. The user verified its health
+endpoint and application startup after production database initialization. Phase 2
+remains on a feature branch for review. Deployment and isolated-database guidance
+are in the deployment and Phase 2 guides.
 
 ## Built local server
 
@@ -111,8 +112,8 @@ workflows, keyboard focus, and automated accessibility checks. CI is configured 
 ## Phase boundaries
 
 1. **Implemented:** foundation, accounts, approval, instrument register.
-2. **Next:** samples, database-protected reservations, measurement details, check-in
-   and completion.
+2. **Implemented for review:** samples, database-protected reservations, measurement details, check-in
+   and completion. No production Phase 2 deployment yet.
 3. Weekly progress, issues, supervisor announcements, meetings.
 4. Chemical orders and incoming external samples.
 5. Facility calls and proposals.

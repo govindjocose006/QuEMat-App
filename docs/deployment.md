@@ -5,6 +5,39 @@ build, and `/api/*` runs through a Node.js Vercel Function. All persistent accou
 sessions, rate limits, instruments, and audit history live in Neon PostgreSQL.
 Nothing depends on a Vercel instance's filesystem or process staying alive.
 
+## Current release and Phase 2 review
+
+Phase 1 is deployed to https://quemat-app.vercel.app in the existing Vercel project
+`quemat-app`, linked to `govindjocose006/QuEMat-App` branch `main`, Node.js 24, region
+`sin1` (Singapore). Production variables are managed in Vercel. The user confirmed
+healthy database-backed operation after initializing the production database.
+
+The user has approved the Phase 2 preview and authorized its production release.
+Backup, migration, merge and deployment are still pending. Follow the guarded
+[Phase 2 release procedure](phase-2-release.md); cloud PostgreSQL DNS is blocked,
+so the private backup and migration require the Windows operator steps there.
+See [phase-2.md](phase-2.md) for isolated development/test commands. Preview environments require a separate database; the saved
+Production DATABASE_URL must never be used in preview or automated tests.
+
+The PR #1 preview procedure and Windows fallback are in
+[phase-2-preview.md](phase-2-preview.md). Use its explicit preview configuration,
+not the production Neon policy or the ordinary `.env`-loading database commands.
+
+The isolated Phase 2 preview is now live at
+https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app.
+Health, database-backed workflows, access controls and persistence across a
+preview redeployment passed live checks. Vercel authentication protects the
+preview; then sign into the app with `preview-admin@example.test` and the password
+set privately in the trusted terminal. The preview uses existing free resources;
+do not upgrade plans, enable paid services/trials or provision extra infrastructure.
+The user's subsequent release instruction authorizes production work, subject to
+successful private backup, migration, verification and CI before merge/deployment.
+
+A Phase 2 release requires the additive `002_scheduling.sql` migration and
+`btree_gist` extension. Run this only as an explicitly authorized operator step,
+after backup and isolated validation. No migration runs during a Vercel build or
+function cold start. The Phase 2 health check requires the new schema.
+
 ## 1. Link the existing Neon database
 
 Reuse organization `org-ancient-moon-23673941`, project

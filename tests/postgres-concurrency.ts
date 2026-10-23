@@ -1,0 +1,214 @@
+// Native PostgreSQL integration test. Never reads DATABASE_URL or .env.
+// Creates/drops only a fresh random database on a loopback server.
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { Client, Pool } from "pg";
+import { migrate, seed, type DB, type SQL } from "../server/db.js";
+const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
+assert.ok(
+  ["127.0.0.1", "::1", "localhost"].includes(host),
+  "Native tests require a loopback PostgreSQL server",
+);
+const connection = {
+  host,
+  port: Number(process.env.PG_TEST_PORT ?? 55432),
+  user: process.env.PG_TEST_USER ?? "quemat_test",
+  password: process.env.PG_TEST_PASSWORD,
+  connectionTimeoutMillis: 5000,
+};
+const name = "quemat_test_" + randomUUID().replaceAll("-", "");
+const admin = new Client({ ...connection, database: "postgres" });
+await admin.connect();
+await admin.query(`CREATE DATABASE ${name} TEMPLATE template0 ENCODING 'UTF8'`);
+const pool = new Pool({ ...connection, database: name, max: 4 });
+const disconnected: Promise<void>[] = [];
+pool.on("connect", (client) => {
+  disconnected.push(
+    new Promise<void>((resolve) => client.once("end", resolve)),
+  );
+});
+const sql = (c: Pool | import("pg").PoolClient): SQL => ({
+  query: async (q, v) => (await c.query(q, v)).rows,
+  exec: async (q) => {
+    await c.query(q);
+  },
+});
+const db: DB = {
+  ...sql(pool),
+  transaction: async (fn) => {
+    const c = await pool.connect();
+    try {
+      await c.query("BEGIN");
+      const result = await fn(sql(c));
+      await c.query("COMMIT");
+      return result;
+    } catch (e) {
+      await c.query("ROLLBACK");
+      throw e;
+    } finally {
+      c.release();
+    }
+  },
+  write: async (fn) =>
+    db.transaction(async (tx) => {
+      await tx.query("SELECT id FROM write_lock WHERE id=1 FOR UPDATE");
+      return fn(tx);
+    }),
+  close: () => pool.end(),
+};
+let count = 0;
+try {
+  await migrate(db);
+  await seed(db);
+  const user = randomUUID(),
+    instrument = (
+      await db.query<{ id: string }>(
+        "SELECT id FROM instruments WHERE seed_key='initial-0'",
+      )
+    )[0].id;
+  await db.query(
+    "INSERT INTO users(id,email,password_hash,full_name,status,onboarded,created_at) VALUES ($1,'native@example.test','unused','Native test','approved',1,now())",
+    [user],
+  );
+  await migrate(db);
+  assert.equal((await db.query("SELECT id FROM users")).length, 1);
+  count++;
+  const a = await pool.connect(),
+    b = await pool.connect();
+  try {
+    const insert = `INSERT INTO bookings(id,instrument_id,booked_by,operator_id,kind,status,starts_at,ends_at,measurement_type) VALUES ($1,$2,$3,$3,'booking','confirmed',$4,$5,'Native concurrency test')`;
+    const row = (id: string, start: string, end: string) => [
+      id,
+      instrument,
+      user,
+      start,
+      end,
+    ];
+    // Hold an uncommitted reservation while a separate backend attempts the same slot.
+    const first = randomUUID();
+    await a.query("BEGIN");
+    await a.query(insert, row(first, "2030-01-01T10:00Z", "2030-01-01T11:00Z"));
+    const pending = b
+      .query(
+        insert,
+        row(randomUUID(), "2030-01-01T10:00Z", "2030-01-01T11:00Z"),
+      )
+      .then(
+        () => ({ code: "unexpected success" }),
+        (e) => e,
+      );
+    await a.query("COMMIT");
+    assert.equal((await pending).code, "23P01");
+    count++;
+    await b.query(
+      insert,
+      row(randomUUID(), "2030-01-01T11:00Z", "2030-01-01T12:00Z"),
+    );
+    count++;
+    await db.query(
+      "UPDATE instruments SET setup_minutes=10,cleanup_minutes=15 WHERE id=$1",
+      [instrument],
+    );
+    await a.query(
+      insert,
+      row(randomUUID(), "2030-01-02T10:00Z", "2030-01-02T11:00Z"),
+    );
+    await assert.rejects(
+      b.query(
+        insert,
+        row(randomUUID(), "2030-01-02T11:00Z", "2030-01-02T12:00Z"),
+      ),
+      { code: "23P01" },
+    );
+    count++;
+    await b.query(
+      insert,
+      row(randomUUID(), "2030-01-02T11:25Z", "2030-01-02T12:00Z"),
+    );
+    count++;
+    await db.query("UPDATE bookings SET status='cancelled' WHERE id=$1", [
+      first,
+    ]);
+    await b.query(
+      insert,
+      row(randomUUID(), "2030-01-01T10:10Z", "2030-01-01T10:40Z"),
+    );
+    count++;
+    const ids = [randomUUID(), randomUUID()];
+    await a.query(
+      insert,
+      row(ids[0], "2030-01-03T10:00Z", "2030-01-03T11:00Z"),
+    );
+    await b.query(
+      insert,
+      row(ids[1], "2030-01-03T12:00Z", "2030-01-03T13:00Z"),
+    );
+    const results = await Promise.allSettled([
+      a.query(
+        "UPDATE bookings SET starts_at='2030-01-04T10:00Z',ends_at='2030-01-04T11:00Z' WHERE id=$1",
+        [ids[0]],
+      ),
+      b.query(
+        "UPDATE bookings SET starts_at='2030-01-04T10:00Z',ends_at='2030-01-04T11:00Z' WHERE id=$1",
+        [ids[1]],
+      ),
+    ]);
+    assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+    // Concurrent GiST checks may reject the loser through deadlock detection
+    // rather than an exclusion violation. Both abort that transaction; verify
+    // the committed invariant as well as the specific allowed SQLSTATEs.
+    assert.ok(
+      ["23P01", "40P01"].includes(
+        (results.find((r) => r.status === "rejected") as PromiseRejectedResult)
+          .reason.code,
+      ),
+    );
+    assert.equal(
+      (
+        await db.query(
+          "SELECT id FROM bookings WHERE starts_at='2030-01-04T10:00Z'",
+        )
+      ).length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(`SELECT a.id FROM bookings a JOIN bookings b
+        ON a.id<b.id AND a.instrument_id=b.instrument_id
+        AND tstzrange(a.reserved_start,a.reserved_end,'[)') && tstzrange(b.reserved_start,b.reserved_end,'[)')
+        WHERE a.status<>'cancelled' AND b.status<>'cancelled'`)
+      ).length,
+      0,
+    );
+    count++;
+    const actual = await Promise.allSettled(
+      ids.map((id, i) =>
+        (i ? a : b).query(
+          "UPDATE bookings SET status='in_progress',actual_start=now() WHERE id=$1",
+          [id],
+        ),
+      ),
+    );
+    assert.equal(actual.filter((r) => r.status === "fulfilled").length, 1);
+    assert.equal(
+      (actual.find((r) => r.status === "rejected") as PromiseRejectedResult)
+        .reason.code,
+      "23505",
+    );
+    count++;
+  } finally {
+    a.release();
+    b.release();
+  }
+  console.log(
+    `${count} native PostgreSQL checks passed: additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+  );
+} finally {
+  await pool.end();
+  // Pool.end removes clients before their sockets necessarily finish closing.
+  // Wait for every backend disconnect before dropping the isolated database;
+  // FORCE can otherwise kill a closing client and emit an unhandled pool error.
+  await Promise.all(disconnected);
+  await admin.query(`DROP DATABASE ${name}`);
+  await admin.end();
+}

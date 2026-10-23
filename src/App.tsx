@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { Instrument, Member, Session } from "../shared/schema.js";
 import { api, setSessionToken } from "./api.js";
+import { Schedule, Samples, LiveUsage, Notifications } from "./Scheduling.js";
 import { Auth, Onboarding } from "./Auth.js";
 import {
   Brand,
@@ -10,7 +11,7 @@ import {
   Status,
   messageOf,
 } from "./components.js";
-import { InstrumentCard, InstrumentRegister } from "./Instruments.js";
+import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
 
 export function App() {
@@ -115,9 +116,20 @@ export function App() {
     </>
   );
 }
-type Page = "overview" | "instruments" | "members" | "audit" | "settings";
+type Page =
+  | "overview"
+  | "instruments"
+  | "calendar"
+  | "samples"
+  | "notifications"
+  | "members"
+  | "audit"
+  | "settings";
 const pageLabels = {
   overview: "Overview",
+  calendar: "Calendar",
+  samples: "Samples",
+  notifications: "Notifications",
   instruments: "Instruments",
   members: "Members & access",
   audit: "Audit history",
@@ -159,8 +171,24 @@ function Workspace({
     if (!admin && (page === "members" || page === "audit")) setPage("overview");
   }, [admin, page]);
   const pages: Page[] = admin
-    ? ["overview", "instruments", "members", "audit", "settings"]
-    : ["overview", "instruments", "settings"];
+    ? [
+        "overview",
+        "calendar",
+        "samples",
+        "notifications",
+        "instruments",
+        "members",
+        "audit",
+        "settings",
+      ]
+    : [
+        "overview",
+        "calendar",
+        "samples",
+        "notifications",
+        "instruments",
+        "settings",
+      ];
   const active = items?.filter((i) => !i.archived) ?? [];
   return (
     <div className="app-shell">
@@ -256,7 +284,7 @@ function Workspace({
                   <h2>Welcome, {user.fullName.split(" ")[0]}.</h2>
                   <p>Your laboratory’s people and instruments, in one place.</p>
                 </div>
-                <span className="phase-label">Foundation · Phase 1</span>
+                <span className="phase-label">Lab operations · Phase 2</span>
               </div>
               <div className="stats">
                 <div>
@@ -291,56 +319,13 @@ function Workspace({
                   <small>Maintenance or out of service</small>
                 </div>
               </div>
-              <div className="section-title">
-                <div>
-                  <h2>Priority instruments</h2>
-                  <p>Core resources for the group’s daily work.</p>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => setPage("instruments")}
-                >
-                  View register <span aria-hidden="true">→</span>
-                </button>
-              </div>
-              <div className="notice subtle">
-                <Icon name="instruments" />
-                <span>
-                  Operational status is manually maintained and needs lab
-                  verification. “Available” is a configuration value, not a live
-                  reading or a free booking slot.
-                </span>
-              </div>
-              {items ? (
-                active.some((i) => i.priority) ? (
-                  <div className="instrument-grid priority-grid">
-                    {active
-                      .filter((i) => i.priority)
-                      .map((i) => (
-                        <InstrumentCard key={i.id} instrument={i} />
-                      ))}
-                  </div>
-                ) : (
-                  <Empty title="No priority instruments configured">
-                    An administrator can add instruments or mark existing ones
-                    as priorities.
-                  </Empty>
-                )
-              ) : (
-                <p role="status">Loading instruments…</p>
+              {items && (
+                <LiveUsage
+                  items={items}
+                  user={user}
+                  onCalendar={() => setPage("calendar")}
+                />
               )}
-              <div className="next-phase">
-                <div>
-                  <p className="eyebrow">NEXT · PHASE 2</p>
-                  <h3>Schedules & measurement tracking</h3>
-                  <p>
-                    Sample records, conflict-protected bookings, and operator
-                    check-in will be added in the next phase. No reservations
-                    are being tracked yet.
-                  </p>
-                </div>
-                <span aria-hidden="true">↗</span>
-              </div>
             </>
           )}
           {page === "instruments" &&
@@ -355,6 +340,11 @@ function Workspace({
             ) : (
               <p role="status">Loading instruments…</p>
             ))}
+          {page === "calendar" && items && (
+            <Schedule user={user} items={items} />
+          )}
+          {page === "samples" && <Samples user={user} />}
+          {page === "notifications" && <Notifications />}
           {page === "members" && admin && <Members onChanged={refresh} />}
           {page === "audit" && admin && <AuditLog />}
           {page === "settings" && <Account user={user} onSession={onSession} />}

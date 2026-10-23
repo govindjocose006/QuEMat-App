@@ -118,14 +118,17 @@ accessories, operating recipes, or institute allocations are invented.
 
 ## Later phases
 
-- Add migrations for samples and bookings, with database constraints/triggers
-  protecting overlapping resource reservations, buffers, maintenance, cancellation,
-  and simultaneous attempts. PostgreSQL exclusion constraints are a suitable
-  option. Booking concurrency is not claimed in Phase 1 because bookings do not
-  exist yet; current concurrency tests cover membership/configuration edits.
-- Snapshot measurement/sample descriptions for historical bookings.
 - Use exact decimals or integer minor units for money, never floating-point totals.
 - Add private object storage and authenticated, validated uploads/downloads when
   attachments are implemented. Vercel filesystem persistence is never suitable.
   Phase 1 SOP URLs must refer to independently access-controlled documents.
 - PWA, email/push, automated facility watchers, and server reminders are deferred.
+
+## Phase 2 scheduling implementation
+
+See [Phase 2 rules](phase-2.md) for booking permissions, exclusion constraints,
+actual usage, buffers and notifications. `server/scheduling.ts` installs routes
+behind the existing session, Origin/CSRF and approved-member guards. Write
+transactions re-read the actor after acquiring the existing write lock.
+`002_scheduling.sql` is additive and preserves all foundation records.
+Reservation conflicts are also enforced by PostgreSQL independently of the app.

@@ -26,6 +26,7 @@ import {
   type SQL,
 } from "./db.js";
 import { digest, hashPassword, verifyPassword } from "./auth.js";
+import { installScheduling } from "./scheduling.js";
 
 type Options = {
   origin: string;
@@ -92,7 +93,7 @@ export function createApp(db: DB, options: Options) {
     if (
       !(
         await db.query(
-          "SELECT 1 FROM schema_migrations WHERE name='001_foundation.sql'",
+          "SELECT 1 FROM schema_migrations WHERE name='002_scheduling.sql'",
         )
       ).length
     )
@@ -200,11 +201,9 @@ export function createApp(db: DB, options: Options) {
         "Retry-After",
         String(Math.max(1, Math.ceil((row.reset_at - now) / 1000))),
       );
-      res
-        .status(429)
-        .json({
-          error: "Too many sign-in attempts. Please try again in 15 minutes.",
-        });
+      res.status(429).json({
+        error: "Too many sign-in attempts. Please try again in 15 minutes.",
+      });
       return;
     }
     next();
@@ -524,6 +523,7 @@ export function createApp(db: DB, options: Options) {
       ),
     );
   });
+  installScheduling(app, db, approved, (res) => context(res).user!, fail);
   app.use("/api", (_req, _res, next) =>
     next(new HttpError(404, "This endpoint does not exist.")),
   );
@@ -536,18 +536,36 @@ export function createApp(db: DB, options: Options) {
   app.use(
     (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
       if (error instanceof z.ZodError) {
-        res
-          .status(400)
-          .json({
-            error: error.issues
-              .map((i) => `${i.path.join(".")}: ${i.message}`)
-              .join(" "),
-          });
+        res.status(400).json({
+          error: error.issues
+            .map((i) => `${i.path.join(".")}: ${i.message}`)
+            .join(" "),
+        });
         return;
       }
       if (error instanceof HttpError) {
         res.status(error.status).json({ error: error.message });
         return;
+      }
+      if (error && typeof error === "object" && "code" in error) {
+        if (error.code === "23P01" || error.code === "23505") {
+          res
+            .status(409)
+            .json({
+              error:
+                "This slot conflicts with another booking, maintenance, buffers, or active usage. Refresh the schedule and choose another time.",
+            });
+          return;
+        }
+        if (error.code === "23514" || error.code === "23503") {
+          res
+            .status(400)
+            .json({
+              error:
+                "The record violates a database rule. Check samples, members, furnace limits, and unloading confirmation.",
+            });
+          return;
+        }
       }
       if (error instanceof SyntaxError && "body" in error) {
         res.status(400).json({ error: "Invalid JSON request." });
@@ -566,12 +584,10 @@ export function createApp(db: DB, options: Options) {
         "Request failed:",
         error instanceof Error ? error.name : "unknown error",
       );
-      res
-        .status(500)
-        .json({
-          error:
-            "The request could not be completed. Please retry or contact the administrator.",
-        });
+      res.status(500).json({
+        error:
+          "The request could not be completed. Please retry or contact the administrator.",
+      });
     },
   );
   return app;

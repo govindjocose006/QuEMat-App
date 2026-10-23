@@ -89,6 +89,8 @@ export async function openDatabase(options: DatabaseOptions = {}): Promise<DB> {
     close = () => pool.end();
   } else {
     const { PGlite } = await import("@electric-sql/pglite");
+    const { btree_gist } =
+      await import("@electric-sql/pglite/contrib/btree_gist");
     const path = options.localPath ?? "data/postgres";
     if (path !== ":memory:")
       mkdirSync(resolve(path), { recursive: true, mode: 0o700 });
@@ -108,6 +110,7 @@ export async function openDatabase(options: DatabaseOptions = {}): Promise<DB> {
     try {
       local = await PGlite.create(
         path === ":memory:" ? undefined : resolve(path),
+        { extensions: { btree_gist } },
       );
     } catch (error) {
       await release?.();

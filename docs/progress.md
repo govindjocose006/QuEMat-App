@@ -5,7 +5,128 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Only Phase 1 is implemented. Later workflows are described, not presented as working.
+Phase 1 is deployed. The user approved the Phase 2 preview and authorized release;
+production backup, migration, merge and deployment are pending. Later phases
+remain unimplemented.
+
+## Phase 2 release preparation (2026-10-23)
+
+- PR #1 was open, mergeable and green at `539141e`; latest release-tool changes
+  require their own successful CI before merge. Production remains `dc40148`.
+- Verified existing Vercel Hobby/basic configuration, no trial, `main` production
+  branch, and separate branch-specific Preview variables. No variables changed.
+- Read-only Neon metadata verified production project `wandering-truth-11355959`,
+  branch `br-flat-band-a1umhh3i`, direct endpoint
+  `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech`, database `neondb`, role
+  `neondb_owner`, PostgreSQL 18. Native DNS still fails `EAI_AGAIN/getaddrinfo`.
+  Metadata verification is not a successful SQL connection.
+- Added [private Windows release steps](phase-2-release.md) and explicit-target
+  tooling: free local encrypted `pg_dump`, roundtrip checksums/full archive read,
+  backup-gated pinned Phase 2 migration, transactional legacy-record preservation
+  checks and post-migration verification. No seeds, fixtures or production tests.
+- Nineteen new isolated release tests passed for target rejection, encryption,
+  damaged/wrong-password backup rejection, receipt gating, CRLF handling,
+  additive migration preservation/idempotency and rollback on failure. The
+  Windows PowerShell wrapper and native `pg_dump` still require execution on the
+  trusted Windows machine; no live backup/restore or migration is claimed.
+- Full local validation passed: 71 API/configuration/tool tests, production build,
+  application type checks and a separate strict release-tool TypeScript check.
+- **Waiting for successful Windows backup, migration and verification outputs.**
+  No production schema, data, deployment or configuration has been changed.
+  No paid resources, trials or additional infrastructure were used. Phase 3 is
+  unstarted. A complete restore drill remains separate from archive-read checks.
+
+## Phase 2 implementation (2026-10-22)
+
+- Shared samples with permanent IDs, batch/project/handling information, ownership,
+  versioned edits, archival, and booking/result history with sample snapshots.
+- Day/week/month instrument calendar and phone agenda; actual operators, multiple
+  samples, participants, measurement/process details and IST/UTC conversion.
+- PPMS/SQUID, furnace and sputtering forms; configured furnace temperature limits.
+- PostgreSQL exclusion constraint, buffer trigger, maintenance blocks, requested
+  approvals, allocated windows and unique active-usage constraint.
+- Rescheduling, cancellation, check-in, completion/interruption, explicit furnace
+  unloading, overrun impact, handover notes and result links.
+- Actual-usage/next-booking overview and persistent private booking notifications.
+- Phase 1 authentication, approval, CSRF, membership and historical records retained.
+- Implementation and operating assumptions: [Phase 2 guide](phase-2.md).
+- All automated tests use isolated synthetic databases. Production has not been
+  migrated or modified during Phase 2 implementation.
+- Validation: production build/type checks passed; all 40 API/configuration tests
+  passed; 8 native PostgreSQL 18 checks passed across independent connections;
+  10 desktop/phone browser tests passed, including automated WCAG checks and
+  no-horizontal-overflow assertions. All data was isolated and synthetic.
+- Browser validation covers samples, PPMS and sputtering forms, furnace maximum
+  rejection/unloading, rescheduling, actual usage, handover, maintenance and the
+  persistent inbox. Native tests cover conflict exclusion, buffer adjacency,
+  released cancellations, concurrent rescheduling and unique actual usage.
+- Native concurrency validation also passed 50 consecutive isolated runs after
+  hardening teardown to wait for disconnected clients. Concurrent GiST updates
+  can abort the loser with either exclusion violation or deadlock detection;
+  tests verify exactly one committed reschedule and no overlapping reservations.
+- No Phase 2 production migration or deployment has been performed. In-app
+  notifications refresh while open; email/push and scheduled reminders are deferred.
+
+## PR #1 preview preparation
+
+- Read the Phase 2 and deployment guides and verified the existing Neon project
+  and Vercel project through their APIs. Production still targets Phase 1 commit
+  `dc40148`; its variables have not been changed.
+- Neon schema-only branch creation is blocked by HTTP 412 at `console.neon.tech`
+  because the existing project has a legacy `anonymous` web role. The available
+  key is project-scoped and cannot create a separate project. No preview branch
+  or data-bearing clone was created.
+- Added guarded preview-only migration/fixture/verification commands and a
+  [Windows fallback](phase-2-preview.md) using a separate checkout, private
+  configuration, synthetic accounts and private interactive password setup.
+- Preview preparation requires an empty, independently selected database; later
+  operations verify its stored preview identity. Production endpoints and
+  connection-query overrides are rejected; ordinary `.env` files are not loaded.
+- The new preview key is now verified for separate project
+  `sparkling-meadow-75486459` (QuEMat PR1 Preview), branch `br-patient-shape-a1fnddux`.
+  Created dedicated role and empty database `quemat_pr1_preview` without using
+  production credentials or copying accounts/data.
+- Saved owner-only ignored preview credentials. Added Vercel Preview-only,
+  feature-branch-scoped DATABASE_URL and APP_ORIGIN bindings; Production variables
+  remain unchanged. Vercel's saved authentication refreshed successfully.
+- Direct operator access from the cloud remains blocked: native DNS fails with EAI_AGAIN/getaddrinfo
+  for `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, including with expanded
+  execution access. A configured-proxy PostgreSQL attempt terminated before
+  queries. No TLS checks or application driver were changed.
+- The user initialized the preview from their Windows checkout: both migrations,
+  15 instruments, four synthetic accounts and two initial samples. The synthetic
+  administrator password was set privately.
+- Deployed and redeployed PR #1 to Vercel Preview using existing Hobby/basic
+  resources. Live `/api/health` returns 200 with `{"status":"ok"}`. Sample/booking
+  writes and reads confirm hosted PostgreSQL connectivity through Vercel.
+- Live checks passed for sample ownership/shared access; PPMS details and actual
+  operator; overlapping and simultaneous booking rejection; cancellation/reuse;
+  furnace maximum/check-in/unloading/completion/handover; member/pending access
+  boundaries; cross-origin denial; protected session cookies; and notifications.
+- After redeployment, the existing session, sample `QEM-3`, completed furnace
+  actual usage/handover, cancellation history and notifications persisted.
+  Logout then denied protected access. Synthetic check members were approved by
+  the user through the existing administrator UI; no administrator password was
+  shared and no extra administrator was created.
+- Preview: https://quemat-app-git-feature-phase-2-bookings-govindjocose-2552.vercel.app
+  Verified deployment `dpl_Ckr5hscapdbKUT2UL3NmKQVqDCsq`, source `bbbf774`.
+  Production variables and deployment remain unchanged; PR #1 remains open.
+- Budget ₹0: no upgrades, paid services, trials, purchases or additional cloud
+  infrastructure. Temporary automation authentication was revoked after checks.
+- Cloud Chromium live screenshots were blocked by proxy certificate trust
+  (`ERR_CERT_AUTHORITY_INVALID`); TLS verification was preserved. Live API results
+  and earlier isolated phone/desktop browser tests are separate evidence.
+- Local validation passed: build/type checks and 52 API/configuration/tool tests,
+  including 12 new preview checks for safe target selection, empty-database
+  preparation, identity mismatch rejection and repeatable private fixtures.
+
+## Phase 1 production status
+
+The first Vercel Production deployment was created from `main` at `dc40148`.
+The user confirmed https://quemat-app.vercel.app/api/health returns
+`{"status":"ok"}` and the app opens correctly. The user completed hosted migrations,
+seeding and first-administrator creation and updated the production password.
+These user-confirmed live results supersede the earlier connection blockers below.
 
 ## Completed features
 
@@ -104,6 +225,6 @@ Only Phase 1 is implemented. Later workflows are described, not presented as wor
 
 ## Next phase
 
-Phase 2: shared sample identities, conflict-protected reservations, instrument-
-specific measurement details, and explicit check-in/completion. Implement booking
-concurrency constraints and tests then; Phase 1 does not claim scheduling readiness.
+Complete the authorized Phase 2 release after its backup and migration gates.
+Phase 3 (weekly progress,
+issues, announcements and meetings) has not been started.
