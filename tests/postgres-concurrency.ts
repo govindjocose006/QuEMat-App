@@ -2,8 +2,14 @@
 // Creates/drops only a fresh random database on a loopback server.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { Client, Pool } from "pg";
 import { migrate, seed, type DB, type SQL } from "../server/db.js";
+import {
+  applyReviewedPhase3A,
+  fingerprints,
+  verifyRetained,
+} from "../scripts/phase3a-production-release-core.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -58,7 +64,17 @@ const db: DB = {
 };
 let count = 0;
 try {
-  await migrate(db);
+  // Exercise the release guard on a populated Phase 2 database, never a hosted DB.
+  await db.exec(
+    "CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,applied_at TEXT NOT NULL);CREATE TABLE write_lock(id INTEGER PRIMARY KEY);INSERT INTO write_lock VALUES(1)",
+  );
+  for (const migration of ["001_foundation.sql", "002_scheduling.sql"]) {
+    await db.exec(readFileSync("server/migrations/" + migration, "utf8"));
+    await db.query(
+      "INSERT INTO schema_migrations VALUES($1,'synthetic-native-baseline')",
+      [migration],
+    );
+  }
   await seed(db);
   const user = randomUUID(),
     instrument = (
@@ -67,9 +83,45 @@ try {
       )
     )[0].id;
   await db.query(
-    "INSERT INTO users(id,email,password_hash,full_name,status,onboarded,created_at) VALUES ($1,'native@example.test','unused','Native test','approved',1,now())",
+    "INSERT INTO users(id,email,password_hash,full_name,status,onboarded,created_at,app_role) VALUES ($1,'native@example.test','unused','Native test','approved',1,now(),'administrator')",
     [user],
   );
+  const preservedBooking = randomUUID(),
+    preservedSample = randomUUID();
+  await db.query(
+    "INSERT INTO samples(id,owner_id,compound,origin) VALUES($1,$2,'Synthetic native preserved sample','internal')",
+    [preservedSample, user],
+  );
+  await db.query(
+    "INSERT INTO bookings(id,instrument_id,booked_by,operator_id,kind,status,starts_at,ends_at,measurement_type,actual_start,actual_end,completion_summary) VALUES($1,$2,$3,$3,'booking','completed','2026-10-20T10:00Z','2026-10-20T11:00Z','Synthetic preserved usage','2026-10-20T10:05Z','2026-10-20T10:55Z','Preserve actual outcome')",
+    [preservedBooking, instrument, user],
+  );
+  await db.query("INSERT INTO booking_samples VALUES($1,$2)", [
+    preservedBooking,
+    preservedSample,
+  ]);
+  await db.query(
+    "INSERT INTO notifications(id,user_id,booking_id,event_key,message) VALUES($1,$2,$3,'synthetic-native','Preserve this notification')",
+    [randomUUID(), user, preservedBooking],
+  );
+  const before = await fingerprints(db);
+  const guarded = await applyReviewedPhase3A(
+    db,
+    readFileSync("server/migrations/003_weekly_progress.sql", "utf8"),
+  );
+  assert.deepEqual(guarded.before, before);
+  assert.deepEqual(guarded.after, before);
+  assert.equal(
+    (
+      await applyReviewedPhase3A(
+        db,
+        readFileSync("server/migrations/003_weekly_progress.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await verifyRetained(db, before);
+  count++;
   await migrate(db);
   assert.equal((await db.query("SELECT id FROM users")).length, 1);
   count++;
@@ -201,7 +253,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: guarded Phase 3A preservation/idempotency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();

@@ -78,7 +78,8 @@ function cold starts do not mutate the schema or create accounts. See the
 
 Phases 1 and 2 are deployed at https://quemat-app.vercel.app. Phase 3A requires
 `003_weekly_progress.sql` in the isolated preview database before its health check
-can pass. No production migration or deployment is authorized for Phase 3A.
+can pass. Phase 3A production release requires the [guarded fresh-backup and
+migration procedure](docs/phase-3a-release.md) before merge/deployment.
 
 ## Built local server
 

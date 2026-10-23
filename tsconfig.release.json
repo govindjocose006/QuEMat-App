@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.server.json",
+  "compilerOptions": { "noEmit": true },
+  "include": [
+    "scripts/production-release.ts",
+    "scripts/phase3a-production-release.ts"
+  ]
+}

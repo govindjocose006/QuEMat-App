@@ -65,10 +65,12 @@ Phase 2. Do not copy production data, run the old initial-account fixtures again
 or create infrastructure. The `weekly-fixtures` action adds scoped synthetic
 mentor/member/supervisor test accounts without changing existing accounts.
 
-No Phase 3A production migration, merge or production deployment is authorized.
-A future release needs separate authorization, a private verified backup and a
-reviewed migration procedure. The pinned Phase 2 release tool deliberately does
-not authorize migration 003.
+The user accepted the preview and authorized the Phase 3A release subject to a
+fresh private verified backup, reviewed migration 003, preservation verification
+and final CI before merge/deployment. Follow [the guarded Phase 3A release steps](phase-3a-release.md).
+Production remains Phase 2 until these prerequisites succeed. The pinned Phase 2
+release tool deliberately does not authorize migration 003; use the separate
+Phase 3A tool, never preview fixtures or the general migration CLI.
 
 ## 1. Link the existing Neon database
 

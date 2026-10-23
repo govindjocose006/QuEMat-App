@@ -10,6 +10,37 @@ release after a private production backup and migration. Phase 3A weekly progres
 is now implemented for review/isolated preview. Production remains Phase 2;
 Phase 3B/3C and later phases remain unimplemented.
 
+## Phase 3A production release preparation (2026-10-23)
+
+- The user accepted the tested preview and authorized release of PR #2, subject to
+  a fresh private encrypted backup, reviewed 003 migration, preservation checks
+  and successful final CI before merge/deployment. Phase 3B/3C remain out of scope.
+- PR #2 was open, mergeable and green at `3f67fc0`; the application code remains
+  the tested `4b57d02` implementation. New release tooling needs its own final CI.
+- Added an independent guarded `phase3a-production-release` tool and
+  [private Windows release instructions](phase-3a-release.md). The old Phase 2
+  tool remains pinned to 002. The new tool pins the reviewed 003 SHA-256,
+  production identity, baseline 001/002 history, fresh Phase 3A-specific encrypted
+  receipt and a separate unique backup folder. It does not overwrite old backups.
+- Preservation checks cover full rows of accounts, instruments, samples, bookings
+  (including actual usage/outcomes/handover), sample links, availability windows,
+  notifications, training/SOPs, audit history, sessions, rate limits and the
+  original ledger. The expected new NULL notification column is normalized;
+  sample numbering is checked. DDL and preservation checks are atomic, and
+  failure rolls back. Seeds/fixtures/data creation are never run.
+- Local build/application type checks, strict release-tool type checks and all
+  **96 isolated tests** passed, including 12 new release checks for target/hash/
+  receipt rejection, preservation, rollback, idempotency, schema verification,
+  backup protection and offline CLI gating. Native PostgreSQL CI now additionally
+  exercises guarded 003 on populated synthetic Phase 2 records (expected 9 checks).
+- Production DNS still fails `EAI_AGAIN/getaddrinfo` for
+  `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech`, including an outside-sandbox
+  read-only retry. Production backup/migration must therefore run in the trusted
+  Windows terminal. No backup or production SQL operation has run from the cloud.
+- **Waiting for successful fresh Windows backup, migration and verification.**
+  PR #2 is not merged, and production remains Phase 2. Preview remains separate.
+  No paid resource, upgrade, trial, purchase or additional infrastructure.
+
 ## Phase 3A live preview validation
 
 - The user successfully ran guarded Windows preview preparation, weekly fixtures

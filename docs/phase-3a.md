@@ -2,8 +2,10 @@
 
 Implemented for review and isolated preview on `feature/phase-3a-weekly-progress`.
 [PR #2](https://github.com/govindjocose006/QuEMat-App/pull/2) is open.
-Production remains Phase 2. No merge, production migration, production deployment,
-paid service, trial or additional infrastructure is part of this work.
+The user accepted the preview and authorized production release subject to the
+[guarded backup/migration procedure](phase-3a-release.md) and final CI. Production
+remains Phase 2 until those prerequisites succeed. No paid service, trial or
+additional infrastructure is permitted.
 
 ## Writing and submitting
 

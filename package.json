@@ -10,6 +10,7 @@
     "dev": "concurrently -k \"tsx watch --env-file-if-exists=.env --env-file-if-exists=.env.local server/index.ts\" \"vite --host 0.0.0.0\"",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "typecheck:release": "tsc -p tsconfig.release.json",
     "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local dist/server/server/index.js",
     "db:migrate": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts migrate",
     "db:seed": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local server/cli.ts seed",
