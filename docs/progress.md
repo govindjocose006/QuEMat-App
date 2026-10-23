@@ -31,9 +31,22 @@ Phase 3B/3C and later phases remain unimplemented.
   cancellation and reuse of the freed slot. No actual instrument usage was recorded.
   Both agent-created bookings were cancelled; sample `QEM-6` was archived. Synthetic
   report `e687f345-561a-4ab3-b625-117bd733ffd1` remains for review with its history.
-- Supervisor/assigned-mentor live review is pending the user's private role checks;
-  those new fixture passwords exist only on their Windows computer. Automated
-  lifecycle/role/mentor/follow-up tests already passed in isolated databases.
+- The user confirmed all private reviewer checks succeeded after the logout fix:
+  mentee submission; assigned-mentor scope, comment, follow-up and review;
+  supervisor person/project/week filters and printable meeting summary; then
+  member notification, reply and follow-up completion. These are user-confirmed
+  live browser results. Passwords remained private on Windows. The corresponding
+  automated lifecycle/permission/mentor/follow-up tests passed in isolated databases.
+- After preview redeployment `dpl_4Pg5Ttc4RiPNEF8a2q5VrrnszmbW`, live health,
+  all 15 instruments, both agent-test report revisions, the original submission
+  timestamp, author reply, cancelled booking history, archived sample and
+  notifications persisted. Hosted JS/CSS matched the tested local build exactly.
+  Logout then denied authenticated report access. No additional test data was
+  created for that persistence check.
+- Both branch and [PR CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39962423194)
+  passed at application commit `4b57d02`: build/type checks, 84 isolated tests,
+  14 desktop/phone browser checks and 8 native PostgreSQL checks. PR #2 remains
+  open and unmerged. Later documentation-only commits do not alter app behavior.
 - The user could not find desktop logout. The feature branch now presents a visible
   **Sign out** button at the top-right on both desktop and phone, replacing the
   desktop icon-only control. This is a preview-only usability correction. Build/type
@@ -93,17 +106,12 @@ Phase 3B/3C and later phases remain unimplemented.
 - Verified every prior environment binding is identical, production still points
   to `dpl_2FN7wRhEKb8weaFCbf42vFHTZwK9`, and preview protection remains enabled.
   Temporary automation access was revoked; no bypass secret remains active.
-- **Preview migration/live checks pending:** cloud native access previously failed
-  with `EAI_AGAIN/getaddrinfo` for
-  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`; the expanded-access read-only
-  retry was interrupted without a result. No live Phase 3A database connection,
-  migration or hosted workflow check is claimed. Use the explicit guarded Windows
-  preview procedure if cloud access remains unavailable. The new preview hostname
-  `quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app`
-  is also blocked by the environment proxy: `Tunnel connection failed: 403 Forbidden`,
-  including an expanded-access retry. Windows preview migration confirmation and
-  hostname allowlisting have been requested. Live health, persistence and weekly
-  workflow checks remain pending; there is no claim that the preview is usable yet.
+- Initial preparation was blocked by cloud PostgreSQL DNS (`EAI_AGAIN/getaddrinfo`)
+  and HTTP 403 for the preview hostname. The user subsequently applied the guarded
+  Windows migration/fixtures and allowed the preview hostname. Those initial
+  readiness blockers are resolved by the live validation recorded above. Direct
+  cloud SQL and cloud Chromium certificate trust remain operator-tool limitations;
+  hosted database connectivity and user browser workflows have been verified.
 - No production migration, merge or production deployment. No Phase 3B/3C,
   uploads, background reminders or research-quality rankings.
 
