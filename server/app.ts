@@ -27,6 +27,7 @@ import {
 } from "./db.js";
 import { digest, hashPassword, verifyPassword } from "./auth.js";
 import { installScheduling } from "./scheduling.js";
+import { installWeekly } from "./weekly.js";
 
 type Options = {
   origin: string;
@@ -93,7 +94,7 @@ export function createApp(db: DB, options: Options) {
     if (
       !(
         await db.query(
-          "SELECT 1 FROM schema_migrations WHERE name='002_scheduling.sql'",
+          "SELECT 1 FROM schema_migrations WHERE name='003_weekly_progress.sql'",
         )
       ).length
     )
@@ -524,6 +525,7 @@ export function createApp(db: DB, options: Options) {
     );
   });
   installScheduling(app, db, approved, (res) => context(res).user!, fail);
+  installWeekly(app, db, approved, (res) => context(res).user!, fail);
   app.use("/api", (_req, _res, next) =>
     next(new HttpError(404, "This endpoint does not exist.")),
   );

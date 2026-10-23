@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { previewConfig } from "./preview-config.js";
 import { openDatabase, migrate, seed, type DB } from "../server/db.js";
 import { bootstrapAdmin, hashPassword } from "../server/auth.js";
+import { weeklyPreviewFixtures } from "./weekly-preview-fixtures.js";
 
 process.umask(0o077);
 const file = resolve(process.argv[2] ?? ".env.preview");
@@ -14,9 +15,18 @@ const action = process.argv[3];
 const target = previewConfig(file);
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 if (
-  !["prepare", "fixtures", "verify", "admin", "reset-password"].includes(action)
+  ![
+    "prepare",
+    "fixtures",
+    "weekly-fixtures",
+    "verify",
+    "admin",
+    "reset-password",
+  ].includes(action)
 )
-  throw new Error("Choose prepare, fixtures, verify, admin or reset-password.");
+  throw new Error(
+    "Choose prepare, fixtures, weekly-fixtures, verify, admin or reset-password.",
+  );
 let db: DB | undefined;
 async function marker() {
   const rows = await db!.query<{
@@ -148,6 +158,15 @@ try {
       );
     console.log(
       "Synthetic preview accounts and samples ready. Passwords saved only in .env.preview-accounts.json beside the selected config.",
+    );
+  }
+  if (action === "weekly-fixtures") {
+    await weeklyPreviewFixtures(
+      db,
+      resolve(dirname(file), ".env.weekly-accounts.json"),
+    );
+    console.log(
+      "Synthetic weekly mentor, mentee, supervisor and other member ready. Passwords are only in .env.weekly-accounts.json beside the private preview config. Existing accounts were preserved.",
     );
   }
   if (action === "verify") {

@@ -175,7 +175,8 @@ export type Availability = {
 };
 export type Notification = {
   id: string;
-  bookingId: string;
+  bookingId: string | null;
+  weeklyReportId: string | null;
   message: string;
   createdAt: string;
   readAt: string | null;

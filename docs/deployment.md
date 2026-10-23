@@ -50,6 +50,26 @@ A Phase 2 release requires the additive `002_scheduling.sql` migration and
 after backup and isolated validation. No migration runs during a Vercel build or
 function cold start. The Phase 2 health check requires the new schema.
 
+## Phase 3A preview only
+
+Phase 3A is a separate feature-branch change; production remains Phase 2. Follow
+[Phase 3A preview steps](phase-3a.md#existing-isolated-preview) using the existing
+`quemat_pr1_preview` database in project `sparkling-meadow-75486459`. Apply
+`003_weekly_progress.sql` there before deploying the new preview. The Phase 3A
+health check requires this migration and never runs it automatically.
+
+Use Preview-only variables scoped to `feature/phase-3a-weekly-progress`. Preserve
+Production and the existing Phase 2 Preview bindings. Both preview branches share
+the existing synthetic database; the migration is additive and compatible with
+Phase 2. Do not copy production data, run the old initial-account fixtures again,
+or create infrastructure. The `weekly-fixtures` action adds scoped synthetic
+mentor/member/supervisor test accounts without changing existing accounts.
+
+No Phase 3A production migration, merge or production deployment is authorized.
+A future release needs separate authorization, a private verified backup and a
+reviewed migration procedure. The pinned Phase 2 release tool deliberately does
+not authorize migration 003.
+
 ## 1. Link the existing Neon database
 
 Reuse organization `org-ancient-moon-23673941`, project

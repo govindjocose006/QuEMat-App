@@ -6,8 +6,51 @@ The complete original specification is saved in [requirements.md](requirements.m
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
 Phases 1 and 2 are deployed. The user approved the Phase 2 preview and authorized
-release after a private production backup and migration. Later phases remain
-unimplemented.
+release after a private production backup and migration. Phase 3A weekly progress
+is now implemented for review/isolated preview. Production remains Phase 2;
+Phase 3B/3C and later phases remain unimplemented.
+
+## Phase 3A implementation (2026-10-23)
+
+- Confirmed final Phase 2 CI run [39914900067](https://github.com/govindjocose006/QuEMat-App/actions/runs/39914900067)
+  completed successfully at `bf12ebf`. Started `feature/phase-3a-weekly-progress`
+  from that updated `main`; no Phase 2 CI failures required repair.
+- Added private weekly drafts, six report sections, explicit selection of relevant
+  bookings/samples, review-before-submit, immutable submitted snapshots, original
+  submission timestamps and revision history. Weeks use Monday–Sunday IST with
+  half-open interval boundaries; scheduled reservations and actual usage are distinct.
+- Added server-scoped supervisor/administrator review and assigned-mentor review,
+  person/project/week filters, eligible active-member missing indicators, comments,
+  follow-up actions/state history, per-revision review acknowledgement, printable
+  meeting summary, dashboard summaries and persistent in-app notifications.
+  Academic Supervisor selection grants no review privilege. Drafts remain private.
+- Added `003_weekly_progress.sql`; existing migrations are unchanged. A preservation
+  test retains actual legacy user, instrument, training, audit, sample, booking and
+  notification rows and checks the booking exclusion constraint after migration.
+- Local build/type checks passed. All **84 API/configuration/tool tests** passed,
+  including 12 weekly tests and an additional guarded-preview fixture test.
+  Coverage includes lifecycle/history, roles, mentor reassignment, private drafts,
+  concurrent/stale requests, snapshot changes, source relevance, week boundaries,
+  follow-up history, notifications and migration preservation.
+- All **14 desktop/phone browser tests** passed, including Phase 1/2 regressions
+  and four weekly tests for drafts/selection/submission/revisions, mentor review,
+  follow-ups, notification links, filters and print layout. Automated WCAG checks
+  and no-horizontal-overflow assertions passed. Tests used only local temporary
+  databases with synthetic records; they are not live Neon verification.
+- Added [workflow, eligibility and Windows preview instructions](phase-3a.md).
+  Preview fixture tooling reuses the existing database and adds four synthetic
+  weekly-role accounts and a sample, preserving existing accounts/passwords.
+- Existing Vercel `quemat-app` remains Hobby with no trial and `main` as production
+  branch. Production and Phase 2 Preview bindings were inspected without changes.
+  No additional infrastructure, purchases, upgrades, paid services or trials.
+- **Preview migration/live checks pending:** cloud native access previously failed
+  with `EAI_AGAIN/getaddrinfo` for
+  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`; the expanded-access read-only
+  retry was interrupted without a result. No live Phase 3A database connection,
+  migration or hosted workflow check is claimed. Use the explicit guarded Windows
+  preview procedure if cloud access remains unavailable.
+- No production migration, merge or production deployment. No Phase 3B/3C,
+  uploads, background reminders or research-quality rankings.
 
 ## Phase 2 production release (2026-10-23)
 

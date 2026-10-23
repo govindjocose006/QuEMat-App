@@ -13,6 +13,7 @@ import {
 } from "./components.js";
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
+import { Weekly, WeeklyOverview } from "./Weekly.js";
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -121,6 +122,7 @@ type Page =
   | "instruments"
   | "calendar"
   | "samples"
+  | "weekly"
   | "notifications"
   | "members"
   | "audit"
@@ -129,6 +131,7 @@ const pageLabels = {
   overview: "Overview",
   calendar: "Calendar",
   samples: "Samples",
+  weekly: "Weekly Progress",
   notifications: "Notifications",
   instruments: "Instruments",
   members: "Members & access",
@@ -147,6 +150,7 @@ function Workspace({
   onSession: (s: Session) => void;
 }) {
   const [page, setPage] = useState<Page>("overview");
+  const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [items, setItems] = useState<Instrument[] | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
   const [error, setError] = useState("");
@@ -175,6 +179,7 @@ function Workspace({
         "overview",
         "calendar",
         "samples",
+        "weekly",
         "notifications",
         "instruments",
         "members",
@@ -185,6 +190,7 @@ function Workspace({
         "overview",
         "calendar",
         "samples",
+        "weekly",
         "notifications",
         "instruments",
         "settings",
@@ -284,7 +290,7 @@ function Workspace({
                   <h2>Welcome, {user.fullName.split(" ")[0]}.</h2>
                   <p>Your laboratory’s people and instruments, in one place.</p>
                 </div>
-                <span className="phase-label">Lab operations · Phase 2</span>
+                <span className="phase-label">Lab operations</span>
               </div>
               <div className="stats">
                 <div>
@@ -326,6 +332,12 @@ function Workspace({
                   onCalendar={() => setPage("calendar")}
                 />
               )}
+              <WeeklyOverview
+                onOpen={() => {
+                  setWeeklyId(null);
+                  setPage("weekly");
+                }}
+              />
             </>
           )}
           {page === "instruments" &&
@@ -344,7 +356,15 @@ function Workspace({
             <Schedule user={user} items={items} />
           )}
           {page === "samples" && <Samples user={user} />}
-          {page === "notifications" && <Notifications />}
+          {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
+          {page === "notifications" && (
+            <Notifications
+              onWeekly={(id) => {
+                setWeeklyId(id);
+                setPage("weekly");
+              }}
+            />
+          )}
           {page === "members" && admin && <Members onChanged={refresh} />}
           {page === "audit" && admin && <AuditLog />}
           {page === "settings" && <Account user={user} onSession={onSession} />}
