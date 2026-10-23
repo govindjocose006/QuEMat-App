@@ -43,12 +43,30 @@ Phase 3B/3C and later phases remain unimplemented.
 - Existing Vercel `quemat-app` remains Hobby with no trial and `main` as production
   branch. Production and Phase 2 Preview bindings were inspected without changes.
   No additional infrastructure, purchases, upgrades, paid services or trials.
+- Pushed implementation `964109a` and opened [PR #2](https://github.com/govindjocose006/QuEMat-App/pull/2).
+  Both [branch CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39959334262)
+  and [PR CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39959396510)
+  passed, including build/type checks, all 84 tests, 14 browser checks and the
+  eight native PostgreSQL regression checks with migration 003 applied.
+- Configured only `DATABASE_URL` and `APP_ORIGIN` Preview bindings for the new
+  feature branch. Deployed `964109a` to Vercel Preview, deployment
+  `dpl_9fjz69RxCsugBgzEFukjeyyKnFB3`, READY. Preview address:
+  https://quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app.
+  READY confirms the build, not healthy application/database operation.
+- Verified every prior environment binding is identical, production still points
+  to `dpl_2FN7wRhEKb8weaFCbf42vFHTZwK9`, and preview protection remains enabled.
+  Temporary automation access was revoked; no bypass secret remains active.
 - **Preview migration/live checks pending:** cloud native access previously failed
   with `EAI_AGAIN/getaddrinfo` for
   `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`; the expanded-access read-only
   retry was interrupted without a result. No live Phase 3A database connection,
   migration or hosted workflow check is claimed. Use the explicit guarded Windows
-  preview procedure if cloud access remains unavailable.
+  preview procedure if cloud access remains unavailable. The new preview hostname
+  `quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app`
+  is also blocked by the environment proxy: `Tunnel connection failed: 403 Forbidden`,
+  including an expanded-access retry. Windows preview migration confirmation and
+  hostname allowlisting have been requested. Live health, persistence and weekly
+  workflow checks remain pending; there is no claim that the preview is usable yet.
 - No production migration, merge or production deployment. No Phase 3B/3C,
   uploads, background reminders or research-quality rankings.
 

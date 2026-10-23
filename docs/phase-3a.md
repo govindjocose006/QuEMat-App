@@ -1,6 +1,7 @@
 # Phase 3A: Weekly Progress
 
 Implemented for review and isolated preview on `feature/phase-3a-weekly-progress`.
+[PR #2](https://github.com/govindjocose006/QuEMat-App/pull/2) is open.
 Production remains Phase 2. No merge, production migration, production deployment,
 paid service, trial or additional infrastructure is part of this work.
 
@@ -85,6 +86,12 @@ Reuse only the existing synthetic target:
 The new migration is additive, so the existing Phase 2 preview remains compatible
 with this shared synthetic preview database. Production is a different database.
 No production credentials or records are needed. No cloud resource is created.
+
+The preview build is deployed at
+https://quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app.
+**Live readiness is pending:** migration 003 still needs operator confirmation and
+cloud access to this hostname is blocked by the network proxy. A successful
+Vercel build is not a successful database/health check. See [progress](progress.md).
 
 ### Windows operator steps if cloud PostgreSQL is blocked
 
