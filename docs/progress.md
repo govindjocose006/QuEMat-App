@@ -33,10 +33,18 @@ unimplemented.
   Samples, Calendar, notifications, check-in and handover interfaces. This proves
   deployed code/schema connectivity, not every authenticated workflow.
 - Live anonymous requests to instruments, samples, bookings, notifications and
-  member administration return 401 with `Cache-Control: no-store`. Existing
-  administrator sign-in, all 15 instruments in the UI and a small create/persist/
-  cancel/archive workflow are awaiting the user's private browser check.
-  The agent has created no production sample, booking or account records.
+  member administration return 401 with `Cache-Control: no-store`.
+- The user completed the private production browser check successfully: existing
+  administrator sign-in, all 15 instruments, Samples/Calendar, creation of the
+  sample named `Phase 2 release check 2026-10-23`, a future PPMS booking with the
+  administrator as operator, persistence after refresh, cancellation and sample
+  archival. These are user-confirmed authenticated results; credentials were
+  never shared. The user cleaned up that check through cancellation/archival,
+  retaining audit/history, and recorded no actual instrument usage. The agent
+  created no production sample, booking or account records.
+- Post-merge CI also passed at `4d34d54`. Documentation-only follow-up commits
+  record the release and authenticated results; application/runtime code is
+  identical to the checked merge. The live client matches the validated build.
 - Verified Production and branch-specific Preview variable bindings and hosting
   settings remain unchanged. Existing Vercel Hobby/basic plan, no trial, no paid
   services or additional infrastructure. Preview remains separate and Phase 3
@@ -259,6 +267,6 @@ These user-confirmed live results supersede the earlier connection blockers belo
 
 ## Next phase
 
-Complete the private authenticated production check for the released Phase 2.
+Phase 2 is released and its private authenticated production check passed.
 Phase 3 (weekly progress,
 issues, announcements and meetings) has not been started.

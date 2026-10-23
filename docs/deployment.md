@@ -21,8 +21,10 @@ Their results retained 1 user, 15 instruments, 12 training entries and 18 audit
 events, with the Phase 2 constraints verified. No preview fixtures were run.
 Live Phase 2 health returns HTTP 200 and checks `002_scheduling.sql` through Neon;
 the deployed client contains the Phase 2 interface and protected APIs reject
-anonymous access. Existing-administrator login and an authenticated production
-booking check are awaiting the user's private browser verification.
+anonymous access. The user then verified existing-administrator login, all 15
+instruments, Samples/Calendar, sample creation, PPMS booking persistence after
+refresh, cancellation and archival in the production browser. Their release-check
+booking was cancelled and sample archived; no actual usage was recorded.
 
 Production and branch-specific Preview variables, hosting settings and the
 Hobby/basic plan were preserved. See [phase-2.md](phase-2.md) for isolated

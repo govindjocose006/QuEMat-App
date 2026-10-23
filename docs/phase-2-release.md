@@ -4,7 +4,8 @@
 verification below successfully on Windows. Existing records were retained. After
 all PR checks passed, PR #1 was merged at `4d34d5408207babb78d6cfa59108dfa872287534`
 and deployed to https://quemat-app.vercel.app. See [progress.md](progress.md) for
-the verification evidence and remaining authenticated check.
+the verification evidence, including the user's successful private administrator
+sign-in and production sample/booking check.
 
 The steps below record the one-time Phase 1-to-Phase 2 procedure and recovery
 material. Retain the existing encrypted backup and receipt; an already migrated
