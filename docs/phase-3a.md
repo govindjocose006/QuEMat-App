@@ -89,9 +89,14 @@ No production credentials or records are needed. No cloud resource is created.
 
 The preview build is deployed at
 https://quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app.
-**Live readiness is pending:** migration 003 still needs operator confirmation and
-cloud access to this hostname is blocked by the network proxy. A successful
-Vercel build is not a successful database/health check. See [progress](progress.md).
+Migration 003 and synthetic fixtures were applied successfully from Windows. Live
+health and member/report/booking API checks pass. Reviewer-role browser checks
+are pending private user confirmation; cloud Chromium has a certificate-trust
+blocker. See [progress](progress.md) for the separate validation results.
+
+Sign in to Vercel if prompted, then use a synthetic app account. **Sign out** is
+visible at the top-right on desktop and phone. Production passwords are never
+needed for this preview.
 
 ### Windows operator steps if cloud PostgreSQL is blocked
 

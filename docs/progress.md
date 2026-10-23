@@ -10,6 +10,43 @@ release after a private production backup and migration. Phase 3A weekly progres
 is now implemented for review/isolated preview. Production remains Phase 2;
 Phase 3B/3C and later phases remain unimplemented.
 
+## Phase 3A live preview validation
+
+- The user successfully ran guarded Windows preview preparation, weekly fixtures
+  and verification against `quemat_pr1_preview` at
+  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`. Their sanitized result lists
+  all three migrations, 15 instruments, 11 synthetic accounts and 5 samples.
+  Those are operator-reported SQL results; no credentials were shared.
+- After the user allowed the preview hostname, the agent verified live HTTP 200
+  `{"status":"ok"}` from `/api/health`. The hosted health query requires migration
+  003, proving Vercel-to-Neon connectivity. All 15 instruments are present.
+- Automated live checks using existing synthetic member accounts passed: private
+  draft persistence and edits; unrelated/pending access denial; selected sample
+  and booking snapshots; review-before-submit; stale/repeat submission rejection;
+  first submission timestamp and two immutable revisions; source-change review
+  guard; author reply persistence; member review/follow-up assignment denial;
+  notification persistence; and logout.
+- Phase 2 live regressions passed: PPMS booking with the actual operator, two
+  simultaneous overlapping requests rejected, configured furnace maximum rejected,
+  cancellation and reuse of the freed slot. No actual instrument usage was recorded.
+  Both agent-created bookings were cancelled; sample `QEM-6` was archived. Synthetic
+  report `e687f345-561a-4ab3-b625-117bd733ffd1` remains for review with its history.
+- Supervisor/assigned-mentor live review is pending the user's private role checks;
+  those new fixture passwords exist only on their Windows computer. Automated
+  lifecycle/role/mentor/follow-up tests already passed in isolated databases.
+- The user could not find desktop logout. The feature branch now presents a visible
+  **Sign out** button at the top-right on both desktop and phone, replacing the
+  desktop icon-only control. This is a preview-only usability correction. Build/type
+  checks and all 14 desktop/phone browser regressions passed after this change.
+- Direct cloud Chromium access to the hosted preview is still blocked by
+  `ERR_CERT_AUTHORITY_INVALID`; TLS verification remains enabled. Local browser
+  checks and live HTTPS API checks are distinct evidence. Native cloud PostgreSQL
+  DNS still returns `EAI_AGAIN/getaddrinfo`, including outside the sandbox; this
+  does not prevent the verified Vercel-to-Neon runtime connection.
+- Existing Vercel Hobby plan, no trial, production deployment and prior environment
+  bindings are unchanged. Only synthetic preview records were used. No production
+  migration/deployment, merge, paid service or additional infrastructure.
+
 ## Phase 3A implementation (2026-10-23)
 
 - Confirmed final Phase 2 CI run [39914900067](https://github.com/govindjocose006/QuEMat-App/actions/runs/39914900067)

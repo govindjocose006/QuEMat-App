@@ -235,14 +235,6 @@ function Workspace({
               <strong>{user.fullName}</strong>
               <small>{user.appRole}</small>
             </div>
-            <button
-              className="icon-button"
-              aria-label="Sign out"
-              title="Sign out"
-              onClick={onLogout}
-            >
-              <Icon name="logout" />
-            </button>
           </div>
         </div>
       </aside>
@@ -254,7 +246,7 @@ function Workspace({
           <span className="private-label">
             <Icon name="lock" /> Members only
           </span>
-          <button className="mobile-logout secondary" onClick={onLogout}>
+          <button className="workspace-logout secondary" onClick={onLogout}>
             Sign out
           </button>
         </header>
