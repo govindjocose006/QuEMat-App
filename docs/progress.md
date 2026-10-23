@@ -5,9 +5,43 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Phase 1 is deployed. The user approved the Phase 2 preview and authorized release;
-production backup, migration, merge and deployment are pending. Later phases
-remain unimplemented.
+Phases 1 and 2 are deployed. The user approved the Phase 2 preview and authorized
+release after a private production backup and migration. Later phases remain
+unimplemented.
+
+## Phase 2 production release (2026-10-23)
+
+- The user completed the private Windows backup, migration and verification.
+  The encrypted archive was 30,605 bytes and passed the release tool's validation.
+  Migration reported `APPLIED` and `recordPreservation: PASSED`; before/after
+  counts matched: 1 user, 15 instruments, 12 training entries, 0 SOP links,
+  18 audit events and 1 write-lock row. Verification retained all original IDs,
+  found both migrations and verified the booking constraints. No fixtures ran.
+  These are user-reported operator results; credentials and the archive stayed
+  on their Windows computer. A complete database restore drill was not performed.
+- Checked PR #1 at `4cb3ed1eef87dd00655576c69d7e5e989a269f02`: open, mergeable,
+  clean and all CI checks successful. Validation includes the build, 71 isolated
+  API/configuration/tool tests, 10 desktop/phone browser tests and 8 native
+  PostgreSQL concurrency checks. No automated suite ran against production.
+- Merged the exact checked head to `main`, producing release commit
+  `4d34d5408207babb78d6cfa59108dfa872287534`. Its tree matches the checked PR head.
+  The existing Vercel Git integration created Production deployment
+  `dpl_4DmeLq3AoQEHfFJKwV5uDiamPaKB`, READY with the canonical alias assigned.
+- Live URL: https://quemat-app.vercel.app. `/api/health` returns HTTP 200 and
+  `{"status":"ok"}`; this Phase 2 endpoint queries the Neon migration ledger for
+  `002_scheduling.sql`. The client asset `index-CaPwyogW.js` is served and contains
+  Samples, Calendar, notifications, check-in and handover interfaces. This proves
+  deployed code/schema connectivity, not every authenticated workflow.
+- Live anonymous requests to instruments, samples, bookings, notifications and
+  member administration return 401 with `Cache-Control: no-store`. Existing
+  administrator sign-in, all 15 instruments in the UI and a small create/persist/
+  cancel/archive workflow are awaiting the user's private browser check.
+  The agent has created no production sample, booking or account records.
+- Verified Production and branch-specific Preview variable bindings and hosting
+  settings remain unchanged. Existing Vercel Hobby/basic plan, no trial, no paid
+  services or additional infrastructure. Preview remains separate and Phase 3
+  has not started. The historical cloud DNS blocker does not affect the verified
+  Vercel-to-Neon health query.
 
 ## Phase 2 release preparation (2026-10-23)
 
@@ -225,6 +259,6 @@ These user-confirmed live results supersede the earlier connection blockers belo
 
 ## Next phase
 
-Complete the authorized Phase 2 release after its backup and migration gates.
+Complete the private authenticated production check for the released Phase 2.
 Phase 3 (weekly progress,
 issues, announcements and meetings) has not been started.

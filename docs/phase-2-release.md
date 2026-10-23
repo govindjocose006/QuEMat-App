@@ -1,11 +1,17 @@
 # Phase 2 production release: private Windows operator steps
 
-The user has approved the tested PR #1 preview and authorized this release.
-Production is still Phase 1. **Do not merge or deploy until the backup, migration,
-verification and PR checks succeed.** The cloud workspace cannot resolve the
-production PostgreSQL hostname (`EAI_AGAIN`, `getaddrinfo`), so these database
-steps must run from the trusted Windows terminal. No production backup or
-migration has yet been completed by the cloud agent.
+**Release completed on 2026-10-23:** the user ran the private backup, migration and
+verification below successfully on Windows. Existing records were retained. After
+all PR checks passed, PR #1 was merged at `4d34d5408207babb78d6cfa59108dfa872287534`
+and deployed to https://quemat-app.vercel.app. See [progress.md](progress.md) for
+the verification evidence and remaining authenticated check.
+
+The steps below record the one-time Phase 1-to-Phase 2 procedure and recovery
+material. Retain the existing encrypted backup and receipt; an already migrated
+database cannot produce a pre-Phase-2 backup. The release required successful
+backup, migration, verification and CI before merge/deployment. Native cloud
+PostgreSQL DNS failed with `EAI_AGAIN/getaddrinfo`, so database operations were
+performed in the trusted Windows terminal. Vercel runtime connectivity is healthy.
 
 Budget: ₹0. Reuse the existing Neon database and Vercel Hobby project. Do not
 create a branch, snapshot service, database, server, trial or paid backup service.

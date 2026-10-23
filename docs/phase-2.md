@@ -1,9 +1,10 @@
 # Phase 2: samples and instrument scheduling
 
-Phase 2 is implemented on `feature/phase-2-bookings`. The user approved its preview
-and authorized release. Production remains Phase 1 at https://quemat-app.vercel.app
-until the private backup, migration and required checks succeed. Follow the
-[guarded production release procedure](phase-2-release.md) before merge/deployment.
+Phase 2 was released on 2026-10-23 at https://quemat-app.vercel.app through PR #1,
+merge commit `4d34d5408207babb78d6cfa59108dfa872287534`. The user approved the
+isolated preview and completed the private production backup and migration before
+merge. See [release verification](progress.md) and the
+[guarded production release procedure](phase-2-release.md).
 
 ## Daily workflow
 

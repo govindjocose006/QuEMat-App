@@ -4,8 +4,9 @@ Private laboratory coordination for the QuEMat group at IISER Thiruvananthapuram
 supervised by Dr Deepshikha Jaiswal Nagar.
 [Group website](https://sites.google.com/iisertvm.ac.in/quemat).
 
-**Phase 1 (deployed):** accounts, approval-gated onboarding, membership administration, and
-an editable register of the 15 supplied instruments. **Phase 2 (feature branch, not deployed):**
+**Phase 1 and Phase 2 are deployed** at https://quemat-app.vercel.app. Phase 1 provides
+accounts, approval-gated onboarding, membership administration, and an editable
+register of the 15 supplied instruments. Phase 2 provides
 shared samples, calendars, conflict-protected bookings, actual usage and notifications.
 See [Phase 2 workflows and isolated validation](docs/phase-2.md). The app uses TypeScript,
 React, Express, and PostgreSQL, with **Vercel + Neon** as the deployment target.
