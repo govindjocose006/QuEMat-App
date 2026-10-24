@@ -12,6 +12,10 @@ merge. See [release verification](progress.md) and the
    booking. The database assigns a permanent `QEM-<sequence>` code and UUID.
    Different batches may share a compound. Only the owner or a lab manager can
    edit/archive a sample; historical booking descriptions remain unchanged.
+   The register opens in **Active** view. Use **Sample status** to select
+   **Archived** or **All**; search applies within the selected view. Archiving
+   removes a sample from Active without deleting its identity or history. An
+   authorized editor can restore it by clearing **Archive sample** and saving.
 2. Open **Calendar**, select day/week/month and an instrument, and reserve a slot.
    All entered/displayed times use Asia/Kolkata; storage uses UTC timestamps.
    Phone layouts show a daily agenda. Choose the actual operator, participants,
