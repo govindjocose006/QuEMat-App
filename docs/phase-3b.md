@@ -163,3 +163,24 @@ Preserve all Production and older preview bindings. Complete Vercel protection
 sign-in yourself, then app sign-in privately. This phase is not a production
 release. Final preview URL, live checks and remaining blockers are recorded in
 [progress.md](progress.md).
+
+## Validation and preview status (2026-10-24)
+
+At implementation head `6f88eb4`, branch and PR #4 CI passed build/type checks,
+security audit, 123 isolated tests, 18 desktop/phone browser checks and 13 native
+PostgreSQL checks. The local delayed-response browser scenarios also pass and
+phone/desktop captures were inspected. No automated suite targets production.
+
+The operator verified the Windows preview migration: 001/002/003/004, 15
+instruments, 11 synthetic accounts and 6 samples. The existing Vercel preview is
+built at https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app
+with branch-specific preview database/origin bindings. Older bindings remain
+unchanged. Cloud HTTP verification is currently blocked by proxy tunnel HTTP 403
+for that hostname, including an outside-sandbox retry. Do not claim live issue
+workflow/health success until the access check succeeds. Direct native preview
+SQL also fails EAI_AGAIN/getaddrinfo; Windows preparation is operator-confirmed.
+
+All preview branches share the existing synthetic database. Use the Phase 3B
+preview to open issue notifications; older preview code does not understand that
+new notification source. Historical booking/weekly data remain in the same preview
+database. Production is separate and remains on its released 003-compatible code.

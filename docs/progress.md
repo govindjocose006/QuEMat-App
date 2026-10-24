@@ -24,15 +24,27 @@ merge or deployment is authorized. Phase 3C and later phases remain unimplemente
   No privilege comes from academic Supervisor selection. Additive 004 extends
   notification sources without changing old booking/weekly sources. No files,
   scheduler, email/push, purchases, instrument control or Phase 3C.
-- Local build/application/release type checks and security audits pass (zero
-  known vulnerabilities). The full 122-test suite passed before adding the extra
-  synthetic-preview guard check; all 5 preview guard tests then passed. The new
-  four desktop/phone workflows passed before extending the slow-response check;
-  that check fixed independent-form clearing and final browser/hosted CI is pending.
-  All tests are isolated and synthetic; live preview is not yet claimed. Native cloud preview verification
-  failed `EAI_AGAIN/getaddrinfo` at
+- Exact-head branch and PR CI passed at `6f88eb4`: build/application/release type
+  checks, audit (zero known vulnerabilities), all **123 isolated tests**, all
+  **18 desktop/phone browser checks** and **13 native PostgreSQL checks**. Native
+  checks exercise 004 preservation and concurrent acknowledgements as well as
+  previous booking safeguards. A delayed-comment browser regression verifies
+  that saving discussion cannot erase a status reason typed in the other form.
+- The operator applied/verified 004 in the existing isolated preview from Windows:
+  migrations 001/002/003/004, 15 instruments, 11 synthetic accounts and 6 samples.
+  No initial/weekly fixtures or password resets were required. This is an
+  operator-reported result, not a cloud-native SQL connectivity claim.
+- Configured only two new Vercel Preview variables (DATABASE_URL/APP_ORIGIN) scoped
+  to `feature/phase-3b-issues-requests`; all existing bindings compare unchanged.
+  Preview deployment `dpl_6uuxmZ2zGbzFkEJ93haVWJRzErpJ` is READY at
+  https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app.
+  Hosted build readiness is not yet live health/workflow verification. Requests
+  to that hostname fail proxy tunnel **HTTP 403**, including outside-sandbox;
+  its network allowance is requested. Live checks remain pending that access.
+- Native cloud preview verification failed `EAI_AGAIN/getaddrinfo` at
   `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, including an outside-sandbox
-  retry. Windows preview-only preparation is required if this route stays blocked.
+  retry. The successful Windows preview-only migration above resolves database
+  preparation; direct SQL from this cloud environment remains unverified.
 - Production remains `ec8a4fe` with unchanged environment bindings. Existing
   preview resources only, strictly ₹0; no paid services or extra infrastructure.
 
