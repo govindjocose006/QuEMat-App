@@ -592,7 +592,11 @@ it("adds Phase 3A without altering existing Phase 1/2 records or booking constra
         `SELECT * FROM ${t} ORDER BY id`,
       );
       if (t === "notifications")
-        after.forEach((r) => delete r.weekly_report_id);
+        after.forEach((r) => {
+          expect(r.issue_id).toBeNull();
+          delete r.issue_id;
+          delete r.weekly_report_id;
+        });
       expect(after).toEqual(before[t]);
     }
     expect(

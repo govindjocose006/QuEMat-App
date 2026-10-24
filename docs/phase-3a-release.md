@@ -215,6 +215,20 @@ Reviewer-role permission tests and user acceptance already passed in the isolate
 preview. Additional real reviewer validation needs an existing authorized reviewer
 using their own private account. Never select an academic role to grant permission.
 
+## Completed release and private acceptance (2026-10-24)
+
+PR #2 merged at `fd1c42ec554434fa6990cb93c838eda35841ee36` and the existing
+Vercel production project deployed it successfully. Exact-head and post-merge
+CI passed. Agent live checks confirmed healthy 003-ledger database access,
+matching deployed client and denied anonymous protected access. Production and
+preview environment bindings were preserved; no migration was rerun.
+
+The user confirmed private production instruments/existing records, PPMS booking
+persistence/cancellation, sample archival, weekly draft persistence,
+submission/correction history, the original submission timestamp and sign-out
+protection. These are user-confirmed signed-in results; no credentials were shared.
+PR #3 later added the independently tested sample status views without a migration.
+
 ## Private recovery material
 
 Keep both Phase 2 and Phase 3A encrypted backups and their separate receipts,

@@ -17,7 +17,12 @@ export function Brand({ small = false }: { small?: boolean }) {
 }
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, ReactNode> = {
-    weekly: <><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5" /></>,
+    weekly: (
+      <>
+        <path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5" />
+      </>
+    ),
+    issues: <path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1" />,
     overview: (
       <>
         <rect x="3" y="3" width="7" height="7" rx="1" />

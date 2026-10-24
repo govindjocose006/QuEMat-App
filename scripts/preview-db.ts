@@ -69,6 +69,17 @@ try {
       });
     }
     await marker();
+    if (
+      (await db.query("SELECT to_regclass('public.users') AS name"))[0].name &&
+      (
+        await db.query(
+          "SELECT id FROM users WHERE email NOT LIKE '%@example.test'",
+        )
+      ).length
+    )
+      throw new Error(
+        "Refusing preview migration: non-synthetic accounts detected.",
+      );
     await migrate(db);
     await seed(db);
     console.log("Preview-only migrations and 15 instrument seeds applied.");

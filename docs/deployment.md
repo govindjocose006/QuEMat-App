@@ -7,14 +7,23 @@ Nothing depends on a Vercel instance's filesystem or process staying alive.
 
 ## Current release
 
-Phase 3A has been accepted in preview and is ready for the authorized production
-deployment after final PR #2 CI. The operator completed its guarded production
-003 migration on 2026-10-24 using the original verified encrypted backup inside
-the 24-hour freshness window. Full-row preservation passed; verification confirms
-001/002/003, retained original records and valid constraints. **Do not rerun any
-migration during merge, build or deployment.** See [release evidence and private
-acceptance steps](phase-3a-release.md). The Phase 2 deployment described below is
-the serving version until the existing Vercel Git integration deploys this release.
+Phase 3A is deployed and user-confirmed. PR #2 merged at
+`fd1c42ec554434fa6990cb93c838eda35841ee36` after guarded production migration 003,
+verified preservation and successful exact-head CI. The user confirmed private
+login, existing instruments/records, booking persistence/cancellation, sample
+archival, weekly draft/submission/revision/timestamp persistence and sign-out.
+PR #3 subsequently released the Active/Archived/All sample views at
+`ec8a4fe7909e19f810d1118be7406905d58b08b4`, with no migration. Production health is
+healthy and the deployed client matches the reviewed PR #3 build. See
+[progress](progress.md) for operator versus agent verification evidence. Backups
+and receipts remain private; do not rerun migrations for deployment.
+
+Phase 3B is preview-only: follow [its isolated preview guide](phase-3b.md). It
+requires additive 004 only in the existing synthetic preview database and new
+branch-scoped Preview bindings. Do not merge, migrate or deploy Phase 3B to
+production. Preserve current Production variables and older preview bindings.
+
+### Earlier Phase 2 release
 
 Phase 2 is deployed to https://quemat-app.vercel.app in the existing Vercel project
 `quemat-app`, linked to `govindjocose006/QuEMat-App` branch `main`, Node.js 24, region
@@ -77,10 +86,21 @@ mentor/member/supervisor test accounts without changing existing accounts.
 The user accepted the preview and authorized the Phase 3A release subject to a
 fresh private verified backup, reviewed migration 003, preservation verification
 and final CI before merge/deployment. Follow [the guarded Phase 3A release steps](phase-3a-release.md).
-The operator has now completed those database prerequisites; final CI and
-merge/deployment remain. The pinned Phase 2
+Those database prerequisites, CI, merge, deployment and private user acceptance
+have now succeeded. The pinned Phase 2
 release tool deliberately does not authorize migration 003; use the separate
 Phase 3A tool, never preview fixtures or the general migration CLI.
+
+## Phase 3B future release preparation
+
+The user accepted preview assignment/acknowledgement/progress/resolution and
+requested guarded preparation only. The [Phase 3B runbook](phase-3b-release.md)
+requires an independent 004 hash/purpose, fresh private encrypted backup,
+full Phase 1/2/3A preservation and green exact-head CI before any later release.
+Publication and its automatic preview redeployment are now authorized, followed
+by all CI checks and Windows checkout preparation only. Do not execute production
+backup/migration commands, merge PR #4 or deploy production now. Older 002/003
+release tools and receipts cannot authorize 004. No new infrastructure or cost.
 
 ## 1. Link the existing Neon database
 

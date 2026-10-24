@@ -18,6 +18,15 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npm run build
       - run: npm run typecheck:release
+      - name: Parse Windows release setup scripts without executing them
+        shell: pwsh
+        run: |
+          Get-ChildItem scripts/*release-setup.ps1 | ForEach-Object {
+            $parseTokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$parseTokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -ne 0) { throw "Release setup script syntax check failed: $($_.Name)" }
+          }
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

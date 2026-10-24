@@ -1787,3 +1787,97 @@ fieldset > label:last-child {
     break-after: avoid;
   }
 }
+
+/* Shared issues use cards on both desktop and phone, with wrapping history. */
+.issue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+}
+.issue-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.issue-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.text-button {
+  background: transparent;
+  color: var(--navy, #173747);
+  padding: 3px 0;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.issue-attention {
+  font-weight: 600;
+  color: #764000;
+}
+.issue-urgent {
+  background: #ffe4e4;
+  color: #8a1717;
+}
+.issue-high {
+  background: #fff0cf;
+  color: #734200;
+}
+.issue-attention-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 20px;
+}
+.issue-attention-grid ul {
+  padding-left: 18px;
+}
+.issue-attention-grid li {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.issue-detail {
+  overflow-wrap: anywhere;
+}
+.issue-detail .panel {
+  margin-bottom: 16px;
+}
+.issue-comment {
+  border-top: 1px solid #d7e0e4;
+  padding: 12px 0;
+}
+.issue-history {
+  padding-left: 22px;
+}
+.issue-history > li {
+  border-bottom: 1px solid #d7e0e4;
+  padding: 12px 0;
+}
+.issue-history-snapshot {
+  background: #f3f6f7;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 6px;
+}
+.issue-link-row {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .issue-grid,
+  .issue-attention-grid {
+    grid-template-columns: 1fr;
+  }
+  .issue-filters {
+    grid-template-columns: 1fr;
+  }
+}

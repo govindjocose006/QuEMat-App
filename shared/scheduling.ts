@@ -177,6 +177,7 @@ export type Notification = {
   id: string;
   bookingId: string | null;
   weeklyReportId: string | null;
+  issueId: string | null;
   message: string;
   createdAt: string;
   readAt: string | null;

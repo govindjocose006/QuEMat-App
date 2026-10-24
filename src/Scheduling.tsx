@@ -1457,9 +1457,11 @@ export function LiveUsage({
   );
 }
 export function Notifications({
+  onIssue,
   onWeekly,
 }: {
   onWeekly: (id: string) => void;
+  onIssue: (id: string) => void;
 }) {
   const [items, setItems] = useState<Notification[]>([]),
     [error, setError] = useState(""),
@@ -1480,8 +1482,8 @@ export function Notifications({
     <section>
       <h2>In-app notifications</h2>
       <p>
-        Persistent booking and weekly progress updates. Refreshed every 30
-        seconds while open.
+        Persistent booking, weekly progress and issue/request updates. Refreshed
+        every 30 seconds while open.
       </p>
       <ErrorNotice message={error} />
       {!items.length && <p>No notifications yet.</p>}
@@ -1493,7 +1495,11 @@ export function Notifications({
           </p>
           <p>{n.message}</p>
           <div className="action-row">
-            {n.weeklyReportId ? (
+            {n.issueId ? (
+              <button className="secondary" onClick={() => onIssue(n.issueId!)}>
+                View issue/request
+              </button>
+            ) : n.weeklyReportId ? (
               <button
                 className="secondary"
                 onClick={() => onWeekly(n.weeklyReportId!)}

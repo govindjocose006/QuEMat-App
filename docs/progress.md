@@ -5,11 +5,165 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Phases 1 and 2 are deployed. The user approved the Phase 2 preview and authorized
-release after a private production backup and migration. Phase 3A weekly progress
-is implemented and accepted in the isolated preview. Its guarded production
-migration and preservation verification have passed; production deployment is
-the remaining release step. Phase 3B/3C and later phases remain unimplemented.
+Phases 1, 2 and 3A are deployed and user-confirmed. PR #3's sample-list
+improvement is released. Phase 3B Issues & Requests is implemented on a new
+feature branch for isolated review/preview only. No Phase 3B production migration,
+merge or deployment is authorized. Phase 3C and later phases remain unimplemented.
+
+## Phase 3B release-tool publication authorization (2026-10-24)
+
+- The user authorized pushing the prepared release tooling/runbook to the existing
+  feature branch and its automatic isolated-preview redeployment. The prepared
+  local commit is `d38ed9d`; this documentation update records the changed scope.
+- All exact-head CI checks, including the new populated-003 guarded-004 native
+  PostgreSQL checks and Windows setup-script syntax parsing, must pass before
+  giving the first Windows checkout/dependency/type-check preparation step.
+  Local preparation already passed 137 isolated tests, build/type checks and a
+  zero-vulnerability audit. The first native CI run reached the issue notification
+  assertion after guarded 004 preservation/idempotency succeeded, then found an
+  outdated expected count (3 versus 6): the new retained weekly fixture also has
+  an active application supervisor. The native test now checks exact recipient
+  fanout and unique recipient/event keys rather than ignoring that supervisor.
+  Final hosted results still require checking at the corrected head.
+- Production backup/migration, PR #4 merge and production deployment remain
+  explicitly unauthorized. Preserve all existing backups/receipts, production
+  configuration and older preview bindings. No production commands are requested
+  at this stage. Existing free resources only; strict ₹0.
+
+## Phase 3B user acceptance and guarded release preparation (2026-10-24)
+
+- **User-confirmed preview acceptance:** issue assignment, acknowledgement,
+  progress and resolution worked correctly. This records those specific private
+  checks; the broader automated/live results remain separate evidence below.
+- At the earlier local-preparation stage, authorization was **preparation only**: no production migration, PR #4
+  merge or deployment. The accepted remote head remains `a9a5485`. New preparation
+  is kept local because pushing the feature branch would automatically deploy
+  another preview. No production or preview deployment was triggered this turn.
+- Added independent `phase3b-production-release` tooling and a
+  [future-only Windows runbook](phase-3b-release.md), pinned to reviewed 004 SHA-256
+  `2093f0203026ff677fd89366dba244e6ef7880141d7f45f441b15e2711ed44bc`.
+  Earlier 002/003 pins and receipts remain unchanged. New 3B-purpose private
+  configuration/backup receipt, direct production host/role/database/5432,
+  PostgreSQL 18 clients and a clean 001/002/003 baseline are required.
+- Fresh backup uses existing free pg_dump/pg_restore clients, AES-256-GCM/scrypt,
+  roundtrip hashes and complete archive-read validation. It preserves all older
+  backup folders/receipts. The original 24-hour limit begins before pg_dump, is
+  not refreshed by diagnostics/retry, and is rechecked inside the transaction
+  immediately before DDL. A newly added backup cannot disguise already-applied
+  004 as a clean pre-migration state.
+- Preservation now covers all 19 existing tables, including every weekly draft,
+  revision, comment, review and action event, composite keys, notification source,
+  actual booking usage/unloading/handover, audit/auth and sample numbering. Only
+  new NULL issue_id values are normalized. Full equality is atomic; subsequent
+  verification allows legitimate drafts/actions/reads while retaining immutable
+  histories/comment content/known first-submission times and original identities.
+- Added sanitized read-only structure/identity diagnostics without requiring a
+  backup; partial 004/source/trigger/constraint states and inconsistent receipt
+  versus ledger block blind retries. New function-body checks compare the exact
+  reviewed immutable-history/identity functions. No missing ledger alone proves
+  rollback; errors retain stage/type/code with no records/credentials/raw SQL.
+- All **14 new guarded-release checks** pass locally, including populated 003
+  preservation, no fixtures, rollback, stale receipts, wrong target/purpose/hash,
+  driver-port/TLS, read-only diagnostics, history/notification verification and
+  offline CLI gates. The full local suite passes **137 tests in 13 files**, with
+  build/application/release type checks and audit (zero known vulnerabilities).
+  Native guard checks and Windows syntax
+  parsing are wired into existing CI but are **not run for this local preparation**;
+  native PostgreSQL clients and PowerShell are unavailable in this workspace.
+- Future release gates: authorize publication/execution, review exact-head CI,
+  fresh private encrypted 3B backup, guarded 004 migration, preservation verify,
+  then exact-head merge/deploy and private production acceptance. No command is
+  requested from the user now. Existing preview and production remain separate;
+  no credentials, backup or production records have been requested or copied.
+  Strict ₹0; no services, resources, upgrades, trials or purchases.
+
+## Phase 3B implementation and preview preparation (2026-10-24)
+
+- Started `feature/phase-3b-issues-requests` from updated main after releasing
+  PR #3. [Workflow and preview guide](phase-3b.md) records permissions, transitions,
+  shared visibility, free-text project references, date/link assumptions and
+  manual helium / decision-only purchase limitations.
+- Implemented the shared register, seven categories, manual priorities, optional
+  due date/relations/assignment, links, explicit supervisor-attention request,
+  status changes, retained acknowledgement/resolution actors/times, append-only
+  history/discussion, search/filters, separate resolved view and dashboard groups.
+- Reuses existing authentication/approval, audit, pg driver and persistent inbox.
+  No privilege comes from academic Supervisor selection. Additive 004 extends
+  notification sources without changing old booking/weekly sources. No files,
+  scheduler, email/push, purchases, instrument control or Phase 3C.
+- Exact-head branch and PR CI passed at `6f88eb4`: build/application/release type
+  checks, audit (zero known vulnerabilities), all **123 isolated tests**, all
+  **18 desktop/phone browser checks** and **13 native PostgreSQL checks**. Native
+  checks exercise 004 preservation and concurrent acknowledgements as well as
+  previous booking safeguards. A delayed-comment browser regression verifies
+  that saving discussion cannot erase a status reason typed in the other form.
+- The operator applied/verified 004 in the existing isolated preview from Windows:
+  migrations 001/002/003/004, 15 instruments, 11 synthetic accounts and 6 samples.
+  No initial/weekly fixtures or password resets were required. This is an
+  operator-reported result, not a cloud-native SQL connectivity claim.
+- Configured only two new Vercel Preview variables (DATABASE_URL/APP_ORIGIN) scoped
+  to `feature/phase-3b-issues-requests`; all existing bindings compare unchanged.
+  The working preview is
+  https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app.
+  Its hostname allowance propagated after the initial proxy HTTP 403. The setup
+  skill confirmed the hostname was already in the environment draft; no duplicate
+  rule or reusable setup change was saved. Native PostgreSQL DNS from this cloud
+  still fails EAI_AGAIN, so the migration remains operator-confirmed from Windows.
+- Agent live preview checks passed against Vercel/Neon: 004-ledger health and all
+  15 instruments; pending-membership denial; issue creation and related sample/
+  instrument; attention remains distinct from acknowledgement; inbox source links
+  and read ownership; reporter-only details; reassignment history; unrelated
+  comment/status denial; simultaneous acknowledgement returning one success/one
+  409/one event; discussion links; progress/blocked/resolved/reopen lifecycle;
+  actor/timestamp retention; combined filters and resolved separation; member
+  dashboard scope; and persistence through a fresh sign-in. The existing weekly
+  report/revisions remain readable. Application supervisor/administrator and
+  academic-role cases passed the isolated server and desktop/phone suites; no
+  private production or preview manager password was requested for agent checks.
+- Live Phase 2 regression passed: future PPMS booking persistence and two concurrent
+  overlaps rejected, plus the configured furnace-temperature limit. No actual
+  instrument usage was recorded. Test issue `ISS-1` remains resolved with history,
+  sample `QEM-7` is archived, and booking
+  `af40fc7e-8b64-4e92-8b89-b8631ef81cbc` is cancelled. Only agent-created synthetic
+  preview records were changed for cleanup; previous records remain retained.
+- Vercel protection stayed enabled. A temporary automation credential required a
+  preview-only redeploy to take effect, following Vercel's documented procedure;
+  it was revoked after checks. Deployment `dpl_3NFfHrPjjDKKV3ewMpDGdG8yMWZi` served
+  documentation head `df8336e` with unchanged implementation `6f88eb4`; all checks
+  at both heads passed. The final documentation update requires its own CI run.
+- Production remains `ec8a4fe` with unchanged environment bindings. Existing
+  preview resources only, strictly ₹0; no paid services or extra infrastructure.
+
+## PR #3 sample-list production release (2026-10-24)
+
+- Reviewed exact head `7ad76cacd4166fe14791c21f7f77b71a7d2b6b88`: client-only
+  Active/Archived/All views and search; no schema/permission/history change.
+  Exact-head CI passed all 109 isolated tests, 14 desktop/phone browser checks,
+  10 native PostgreSQL checks, build/type checks and audit.
+- Merged PR #3 as `ec8a4fe7909e19f810d1118be7406905d58b08b4`. Existing Vercel Git
+  integration promoted `dpl_Ae1vkigutXXJJHTfrqHxnEvUDraB` to the canonical
+  https://quemat-app.vercel.app alias. Live health returned `{"status":"ok"}`;
+  the served client exactly matches the reviewed build with the new selector.
+- The isolated desktop/phone workflow verifies default Active, Archived/All,
+  combined search, archive separation, retained completed-run history and restore.
+  Production record-level UI checks require private user sign-in; agent checks
+  did not create or change production records. No migration was needed or run.
+  Saved environment bindings match the earlier release baseline.
+
+## Phase 3A release and user-confirmed production acceptance (2026-10-24)
+
+- PR #2 merged as `fd1c42ec554434fa6990cb93c838eda35841ee36`; production deployment
+  `dpl_DKjHgDAo3esue7XYfu6kzgdpHPb2` served the exact merge. Exact-head and main CI
+  passed 109 isolated tests, 14 browser checks and 10 native PostgreSQL checks.
+- Agent live checks passed 003-ledger health through Neon, matching deployed
+  client/security headers, and HTTP 401/no-store on nine protected APIs. Production
+  and preview bindings were unchanged; no migrations were rerun after the operator
+  verified preservation. Backups/receipts stay private and preserved on Windows.
+- **User-confirmed private production results:** instruments and existing records;
+  PPMS booking persistence and cancellation; sample archival; weekly draft
+  persistence; submission/correction history; preservation of the original
+  submission timestamp; and sign-out protection. No password/session was shared.
+  This closes the signed-in acceptance pending in the earlier release entries.
 
 ## Phase 3A production migration verified (2026-10-24)
 

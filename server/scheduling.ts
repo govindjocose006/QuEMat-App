@@ -550,7 +550,7 @@ export function installScheduling(
   app.get("/api/notifications", approved, async (_req, res) =>
     res.json(
       await db.query(
-        'SELECT id,booking_id AS "bookingId",weekly_report_id AS "weeklyReportId",message,created_at AS "createdAt",read_at AS "readAt" FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200',
+        'SELECT id,booking_id AS "bookingId",weekly_report_id AS "weeklyReportId",issue_id AS "issueId",message,created_at AS "createdAt",read_at AS "readAt" FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200',
         [current(res).id],
       ),
     ),

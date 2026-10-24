@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Client, Pool } from "pg";
+import request from "supertest";
+import { createApp } from "../server/app.js";
+import { hashPassword } from "../server/auth.js";
 import { migrate, seed, type DB, type SQL } from "../server/db.js";
 import {
   applyReviewedPhase3A,
@@ -11,6 +14,13 @@ import {
   verifyRetained,
 } from "../scripts/phase3a-production-release-core.js";
 import { inspectReadOnly } from "../scripts/phase3a-release-inspection.js";
+import {
+  applyReviewedPhase3B,
+  fingerprints as fingerprints3b,
+  verifyRetained as verifyRetained3b,
+} from "../scripts/phase3b-production-release-core.js";
+import { inspectReadOnly as inspectReadOnly3b } from "../scripts/phase3b-release-inspection.js";
+import { addWeeklyFixture } from "./phase3b-release-fixture.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -134,8 +144,196 @@ try {
   assert.equal(inspected.state.counts.bookingsWithActualStart, 1);
   assert.deepEqual(await fingerprints(db), before);
   count++;
+  const weeklyFixture = await addWeeklyFixture(db, user, instrument);
+  const baselineUserCount = (await db.query("SELECT id FROM users")).length;
+  const readOnly3b = await inspectReadOnly3b(db);
+  assert.equal(readOnly3b.structure, "PHASE3A_STRUCTURE_NO_004_OBJECTS");
+  assert.equal(readOnly3b.state.counts.weeklyRevisions, 2);
+  count++;
+  const preservationTables = [
+    "users",
+    "instruments",
+    "samples",
+    "bookings",
+    "booking_samples",
+    "notifications",
+    "weekly_reports",
+    "weekly_revisions",
+    "audit_events",
+  ];
+  const snapshot = async () =>
+    Object.fromEntries(
+      await Promise.all(
+        preservationTables.map(async (table) => [
+          table,
+          (await db.query(`SELECT * FROM ${table}`)).map((row) => {
+            const value = { ...row };
+            if (value.issue_id === null) delete value.issue_id;
+            return value;
+          }),
+        ]),
+      ),
+    );
+  const beforeIssues = await snapshot();
+  const original3b = await fingerprints3b(db);
+  const release3b = await applyReviewedPhase3B(
+    db,
+    readFileSync("server/migrations/004_issues_requests.sql", "utf8"),
+  );
+  assert.deepEqual(release3b.before, original3b);
+  assert.deepEqual(release3b.after, original3b);
+  assert.equal(
+    (
+      await applyReviewedPhase3B(
+        db,
+        readFileSync("server/migrations/004_issues_requests.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await verifyRetained3b(db, original3b);
+  assert.equal(
+    (await inspectReadOnly3b(db)).structure,
+    "PHASE3B_STRUCTURE_PRESENT",
+  );
+  count++;
   await migrate(db);
-  assert.equal((await db.query("SELECT id FROM users")).length, 1);
+  assert.deepEqual(await snapshot(), beforeIssues);
+  assert.equal(
+    (
+      await db.query(
+        "SELECT name FROM schema_migrations WHERE name='004_issues_requests.sql'",
+      )
+    ).length,
+    1,
+  );
+  count++;
+  const testPassword = "Synthetic-native-issues-only!";
+  const passwordHash = await hashPassword(testPassword);
+  await db.query("UPDATE users SET password_hash=$1 WHERE id=$2", [
+    passwordHash,
+    user,
+  ]);
+  const reporter = randomUUID();
+  await db.query(
+    "INSERT INTO users(id,email,password_hash,full_name,status,onboarded,academic_role,created_at) VALUES($1,'native-issues-member@example.test',$2,'Synthetic native reporter','approved',1,'Supervisor',now())",
+    [reporter, passwordHash],
+  );
+  const origin = "http://localhost:5173",
+    app = createApp(db, { origin, authLimit: 1000 });
+  async function client(email: string) {
+    const agent = request.agent(app);
+    let csrf = (await agent.get("/api/session")).body.csrfToken;
+    const write = async (path: string, data: object) => {
+      const r = await agent
+        .post("/api" + path)
+        .set("Origin", origin)
+        .set("X-CSRF-Token", csrf)
+        .send(data);
+      if (r.body.csrfToken) csrf = r.body.csrfToken;
+      return r;
+    };
+    assert.equal(
+      (await write("/auth/login", { email, password: testPassword })).status,
+      200,
+    );
+    return { agent, write };
+  }
+  const nativeReporter = await client("native-issues-member@example.test"),
+    nativeAssignee = await client("native@example.test");
+  const issue = await nativeReporter.write("/issues", {
+    title: "Native synthetic issue",
+    description: "Isolated native lifecycle check",
+    category: "general_decision",
+    assigneeId: user,
+    supervisorAttention: true,
+    instrumentId: instrument,
+    sampleId: preservedSample,
+  });
+  assert.equal(issue.status, 201);
+  assert.equal(issue.body.acknowledgedBy, null);
+  const forbidden = await nativeReporter.write(
+    `/issues/${issue.body.id}/status`,
+    {
+      version: 1,
+      status: "acknowledged",
+      reason: "Academic role must not grant permission",
+    },
+  );
+  assert.equal(forbidden.status, 403);
+  const attempts = await Promise.all(
+    [1, 2].map((n) =>
+      nativeAssignee.write(`/issues/${issue.body.id}/status`, {
+        version: 1,
+        status: "acknowledged",
+        reason: `Native concurrent acknowledgement ${n}`,
+      }),
+    ),
+  );
+  assert.deepEqual(attempts.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(
+    (
+      await db.query("SELECT id FROM issue_events WHERE issue_id=$1", [
+        issue.body.id,
+      ])
+    ).length,
+    2,
+  );
+  count++;
+  const discussion = await nativeReporter.write(
+    `/issues/${issue.body.id}/comments`,
+    { body: "Native retained discussion" },
+  );
+  assert.equal(discussion.status, 201);
+  await assert.rejects(
+    db.query("DELETE FROM issue_comments WHERE issue_id=$1", [issue.body.id]),
+    /append only/,
+  );
+  await assert.rejects(
+    db.query("DELETE FROM issue_events WHERE issue_id=$1", [issue.body.id]),
+    /append only/,
+  );
+  await assert.rejects(
+    db.query(
+      "INSERT INTO notifications(id,user_id,booking_id,issue_id,event_key,message) VALUES($1,$2,$3,$4,'mixed-native','Must fail')",
+      [randomUUID(), user, preservedBooking, issue.body.id],
+    ),
+    /notification_source/,
+  );
+  // The retained weekly fixture includes an application supervisor. Directed
+  // issue events notify that reviewer too, independently of assignment.
+  const issueNotices = await db.query<{ user_id: string; event_key: string }>(
+    "SELECT user_id,event_key FROM notifications WHERE issue_id=$1",
+    [issue.body.id],
+  );
+  const noticesByRecipient = new Map<string, number>();
+  for (const notice of issueNotices)
+    noticesByRecipient.set(
+      notice.user_id,
+      (noticesByRecipient.get(notice.user_id) ?? 0) + 1,
+    );
+  assert.deepEqual(
+    [...noticesByRecipient.entries()].sort(),
+    [
+      [user, 2], // Reported and discussed by the reporter; no own-action notification.
+      [reporter, 1], // Explicit acknowledgement by the assignee.
+      [weeklyFixture.reviewer, 3], // Attention requested: creation, acknowledgement and comment.
+    ].sort(),
+  );
+  assert.equal(
+    new Set(issueNotices.map((n) => `${n.user_id}:${n.event_key}`)).size,
+    issueNotices.length,
+  );
+  const restored = (
+    await nativeReporter.agent.get(`/api/issues/${issue.body.id}`)
+  ).body;
+  assert.equal(restored.comments[0].body, "Native retained discussion");
+  assert.equal(restored.acknowledgedBy, user);
+  count++;
+  assert.equal(
+    (await db.query("SELECT id FROM users")).length,
+    baselineUserCount + 1,
+  );
   count++;
   const a = await pool.connect(),
     b = await pool.connect();
@@ -265,7 +463,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A preservation/idempotency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();

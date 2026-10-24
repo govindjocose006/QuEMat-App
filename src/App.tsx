@@ -13,6 +13,7 @@ import {
 } from "./components.js";
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
+import { Issues, IssuesOverview } from "./Issues.js";
 import { Weekly, WeeklyOverview } from "./Weekly.js";
 
 export function App() {
@@ -123,6 +124,7 @@ type Page =
   | "calendar"
   | "samples"
   | "weekly"
+  | "issues"
   | "notifications"
   | "members"
   | "audit"
@@ -132,6 +134,7 @@ const pageLabels = {
   calendar: "Calendar",
   samples: "Samples",
   weekly: "Weekly Progress",
+  issues: "Issues & Requests",
   notifications: "Notifications",
   instruments: "Instruments",
   members: "Members & access",
@@ -150,6 +153,7 @@ function Workspace({
   onSession: (s: Session) => void;
 }) {
   const [page, setPage] = useState<Page>("overview");
+  const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [items, setItems] = useState<Instrument[] | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -180,6 +184,7 @@ function Workspace({
         "calendar",
         "samples",
         "weekly",
+        "issues",
         "notifications",
         "instruments",
         "members",
@@ -191,6 +196,7 @@ function Workspace({
         "calendar",
         "samples",
         "weekly",
+        "issues",
         "notifications",
         "instruments",
         "settings",
@@ -324,6 +330,13 @@ function Workspace({
                   onCalendar={() => setPage("calendar")}
                 />
               )}
+              <IssuesOverview
+                user={user}
+                onOpen={(id) => {
+                  setIssueId(id);
+                  setPage("issues");
+                }}
+              />
               <WeeklyOverview
                 onOpen={() => {
                   setWeeklyId(null);
@@ -348,9 +361,20 @@ function Workspace({
             <Schedule user={user} items={items} />
           )}
           {page === "samples" && <Samples user={user} />}
+          {page === "issues" && (
+            <Issues
+              user={user}
+              initialId={issueId}
+              onInitialOpened={() => setIssueId(null)}
+            />
+          )}
           {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
           {page === "notifications" && (
             <Notifications
+              onIssue={(id) => {
+                setIssueId(id);
+                setPage("issues");
+              }}
               onWeekly={(id) => {
                 setWeeklyId(id);
                 setPage("weekly");
