@@ -63,6 +63,10 @@ export function productionConfig(file: string) {
     throw new ReleaseError(
       "Refusing target: Phase 3A requires its own explicit purpose, verified direct production endpoint, neondb and neondb_owner.",
     );
+  // pg-connection-string returns an empty port for URLs without :5432; pg then
+  // falls back to ambient PGPORT. Pin the validated default in the URL itself
+  // (a separate ClientConfig.port would be overwritten by the parsed URL).
+  url.port = "5432";
   return { url: url.toString(), pgBin: env.POSTGRES_BIN };
 }
 export async function phase2History(tx: SQL) {

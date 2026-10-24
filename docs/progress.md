@@ -10,6 +10,51 @@ release after a private production backup and migration. Phase 3A weekly progres
 is now implemented for review/isolated preview. Production remains Phase 2;
 Phase 3B/3C and later phases remain unimplemented.
 
+## Native connectivity and dependency remediation (2026-10-24)
+
+- The operator verified the original archive checksum and full readability; its
+  reported age was 692 minutes at that check. The current age and actual
+  `receiptHasMigrationRecord` boolean still need the complete safe output. The
+  original receipt/backup remain intact and the 24-hour migration limit is not
+  reset. No fresh backup or migration retry has been requested.
+- Native read-only diagnosis failed at `database.read_only.begin` with
+  `AggregateError/ETIMEDOUT` and nested timeout/refusal errors. SQL Editor separately
+  reported the expected Phase 2 metadata: 1 user, 15 instruments, 1 sample,
+  1 booking, 2 notifications, 24 audit events and no actual usage. All checked
+  Phase 2 safeguards are present; checked 003 objects and ledger are absent.
+  These metadata/counts do not prove original row contents or full rollback.
+- Reproduced a real operator-target defect in isolation: URLs without a port let
+  pg inherit `PGPORT`. With a synthetic ambient port 15432, the old client selected
+  15432 although the guard expected 5432. The Phase 3A config reader now pins 5432
+  in its in-memory URL. Tests construct the real pg client under conflicting
+  ambient variables and check host/port/role/database, verified TLS and unchanged
+  private file bytes. The user's actual failure cause/native route remains to
+  be confirmed by a successful read-only SQL result after this correction.
+- Added `network-check`: fixed-host TCP 5432 comparisons using Node default,
+  IPv4-only and IPv6-only selection, without sending credentials/SQL or printing
+  addresses/environment values. TCP success never claims PostgreSQL/TLS success.
+  Per-command Node IPv4 selection may be compared read-only if ordinary diagnosis
+  still times out and the IPv4 probe succeeds; no persistent settings or timeouts
+  are changed. No firewall/TLS controls are disabled.
+- Reviewed the npm findings. The current old-lockfile audit reported seven high
+  dependency entries rooted in two advisories: compressed-body process DoS in
+  body-parser 2.3.0, and collection-validation memory exhaustion in nested Zod
+  4.1.11. Applied only body-parser 2.4.0 and a scoped override using the existing
+  direct patched Zod 4.6.7. Express/Vercel SDK major versions and app stack stay
+  unchanged. No automatic audit fix/force was used. Clean `npm ci`, full audit
+  and production-only audit report **zero known vulnerabilities**. See
+  [dependency review](phase-3a-dependency-review.md) for impact, versions and tests.
+- Added loopback TCP/redaction tests, actual driver-port and Vercel schema
+  compatibility checks, and a malformed-compressed-request regression confirming
+  the HTTP process remains responsive. All automated work is isolated/synthetic;
+  no production malformed traffic or migration is attempted. CI now rejects
+  high/critical npm audit findings. A clean install, full/production audit, build,
+  release/application type checks and all **109 isolated tests** passed locally;
+  final hosted CI is pending.
+- PR #2 stays unmerged and production stays Phase 2. Dependency corrections are
+  not live in production until release gates succeed. Budget ₹0; no paid services,
+  upgrades, trials, purchases or additional infrastructure.
+
 ## Phase 3A migration diagnosis hold (2026-10-24)
 
 - The user reported an encrypted/verified 52,259-byte production backup, followed

@@ -50,6 +50,7 @@ import {
   backupInspection,
   inspectReadOnly,
 } from "./phase3a-release-inspection.js";
+import { inspectNetwork } from "./phase3a-release-network.js";
 
 const diagnostics = new ReleaseDiagnostics();
 process.umask(0o077);
@@ -138,10 +139,11 @@ try {
       "inspect-backup",
       "check-backup",
       "diagnose",
+      "network-check",
     ].includes(action)
   )
     throw new ReleaseError(
-      "Choose preflight, backup, migrate, verify, decrypt-backup, inspect-backup, check-backup or diagnose.",
+      "Choose preflight, backup, migrate, verify, decrypt-backup, inspect-backup, check-backup, diagnose or network-check.",
     );
   process.chdir(root);
   diagnostics.stage("migration.hash");
@@ -155,7 +157,7 @@ try {
       : name;
   diagnostics.stage("clients.version");
   for (const name of ["pg_dump", "pg_restore"]) {
-    if (["inspect-backup", "diagnose"].includes(action)) break;
+    if (["inspect-backup", "diagnose", "network-check"].includes(action)) break;
     const version = spawnSync(binary(name), ["--version"], {
       encoding: "utf8",
     });
@@ -389,9 +391,22 @@ try {
     );
   } else {
     const { receipt, archive } = await load();
-    if (action === "inspect-backup" || action === "diagnose") {
+    if (
+      action === "inspect-backup" ||
+      action === "diagnose" ||
+      action === "network-check"
+    ) {
       const backup = backupInspection(receipt);
       if (action === "inspect-backup") console.log(JSON.stringify({ backup }));
+      else if (action === "network-check")
+        console.log(
+          JSON.stringify({
+            diagnosticOnly: true,
+            backup,
+            network: await inspectNetwork(production.host, diagnostics),
+            credentialsPrinted: false,
+          }),
+        );
       else {
         diagnostics.stage("database.connection_and_identity");
         db = await openDatabase({ url: config.url });

@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { Client } from "pg";
 import { openDatabase, seed, type DB } from "../server/db.js";
 import { bootstrapAdmin } from "../server/auth.js";
 import {
@@ -142,7 +143,9 @@ it("pins only the reviewed 003 SQL, including Windows CRLF, and leaves 002 autho
 it("ignores ambient credentials and rejects Phase 2 purpose, preview, pooler and connection overrides", () => {
   vi.stubEnv("DATABASE_URL_UNPOOLED", "untrusted");
   vi.stubEnv("DATABASE_URL", "untrusted");
-  expect(config().value.url).toBe(url);
+  expect(config().value.url).toBe(
+    url.replace(production.host, production.host + ":5432"),
+  );
   for (const bad of [
     url.replace(
       production.host,
@@ -156,6 +159,26 @@ it("ignores ambient credentials and rejects Phase 2 purpose, preview, pooler and
   ])
     expect(() => config(bad)).toThrow("Refusing target");
   expect(() => config(url, "quemat-phase2-production")).toThrow(
+    "Refusing target",
+  );
+});
+it("pins the actual pg client to production port 5432 despite hostile ambient PGPORT, preserving the private file and TLS", async () => {
+  vi.stubEnv("PGPORT", "15432");
+  vi.stubEnv("PGHOST", "untrusted.example.test");
+  vi.stubEnv("PGUSER", "untrusted");
+  vi.stubEnv("PGDATABASE", "untrusted");
+  const { value, file } = config();
+  const original = readFileSync(file);
+  const { poolOptions } = await import("../server/db.js");
+  const candidate = new Client(poolOptions(value.url));
+  // Construct only; never connect to production from an automated test.
+  expect(candidate.port).toBe(5432);
+  expect(candidate.host).toBe(production.host);
+  expect(candidate.user).toBe(production.role);
+  expect(candidate.database).toBe(production.database);
+  expect(candidate.ssl).toMatchObject({ rejectUnauthorized: true });
+  expect(readFileSync(file)).toEqual(original);
+  expect(() => config(url.replace("/neondb?", ":15432/neondb?"))).toThrow(
     "Refusing target",
   );
 });

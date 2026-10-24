@@ -12,6 +12,22 @@ SQL Editor uses a separate provider connection path. An absent ledger entry
 does not prove all DDL/data was rolled back. Do not delete objects, reset a
 password, disable TLS, extend timeouts or retry migration based on those facts.
 
+**New evidence:** the user verified the retained archive's checksum and full
+readability, with an age of 692 minutes when checked. Native Node diagnosis then
+failed at `database.read_only.begin` with `AggregateError/ETIMEDOUT`, including
+`ETIMEDOUT` and `ECONNREFUSED` attempts. This is connection-establishment failure;
+no catalog result was obtained over that native connection. SQL Editor separately
+shows the expected Phase 2 structure, with all checked 003 objects absent.
+
+An isolated reproduction found an actual release-tool defect: a URL omitting its
+port allowed `pg` to inherit ambient `PGPORT`, despite the target guard expecting
+5432. With synthetic `PGPORT=15432`, the old actual pg client selected port 15432.
+The Phase 3A config reader now pins **5432 in the in-memory URL itself**, leaving
+the saved file/receipt unchanged, and an actual pg-client regression checks this
+alongside verified TLS/host/role/database. This defect may explain the mismatch
+with a PowerShell port-5432 test; the user's actual route is not considered fixed
+until an authenticated, TLS-verified read-only Node query succeeds.
+
 ## Preserve the existing evidence
 
 Retain the **same** private Phase 3A configuration, encrypted backup and receipt.
@@ -126,6 +142,53 @@ if SQL Editor uses another role; do not grant/change privileges to make it true.
 This result checks the SQL Editor path, not native Node/PostgreSQL connectivity.
 
 ## 5. Return safe outputs and wait
+
+### Native connectivity follow-up (no migration)
+
+After updating to the tested correction, first rerun `inspect-backup` using the
+**same** private file to get the current original age and the actual boolean
+`receiptHasMigrationRecord`. Keep the complete safe JSON values when reporting.
+The age of 692 minutes was measured earlier; it is not a new expiry timestamp.
+
+Then compare Node's default, IPv4-only and IPv6-only TCP paths:
+
+```powershell
+node --import tsx scripts/phase3a-production-release.ts "$phase3aConfig" network-check
+```
+
+This pins the production hostname and TCP 5432, sends no credentials or SQL, and
+does not perform a TLS/PostgreSQL handshake. It reports Node/platform/address
+selection settings, address-family counts, sanitized attempt outcomes and timing.
+It indicates only whether `PGPORT` is present/matches 5432, never its raw value
+or resolved addresses. Unavailable families are skipped. A TCP success is still
+**not** a working PostgreSQL connection.
+
+Test the fixed target with the ordinary **read-only** command:
+
+```powershell
+node --import tsx scripts/phase3a-production-release.ts "$phase3aConfig" diagnose
+```
+
+If that still returns connection timeout/refusal **and** `network-check` shows
+IPv4 reachable, compare this single-process address-selection variant:
+
+```powershell
+node --no-network-family-autoselection --dns-result-order=ipv4first --import tsx scripts/phase3a-production-release.ts "$phase3aConfig" diagnose
+```
+
+These Node flags do not persist environment/system changes, change the hostname,
+hard-code an IP, change the 10-second pg timeout, disable TLS verification or
+execute migration SQL. Success must include expected database/role/version,
+read-only catalog state and metadata. If both Node TCP profiles fail while a
+contemporaneous PowerShell check to the same hostname/5432 succeeds, review
+process-specific firewall/VPN/network rules with the machine's trusted operator;
+do not disable controls. If native SQL remains unsuccessful, stop and return
+the safe results. Do not switch to an unreviewed SQL Editor migration route.
+
+The network/driver regression tests use fake DNS and real isolated loopback
+sockets; no production connection is made by automated tests. Node flag behavior
+was checked locally. The dependency audit/corrections are documented in
+[the security review](phase-3a-dependency-review.md).
 
 Send only JSON output from `inspect-backup`, `check-backup` and `diagnose`, plus
 the SQL Editor metadata result if necessary. Never send the backup, receipt,
