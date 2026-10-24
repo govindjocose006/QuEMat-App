@@ -545,10 +545,8 @@ function Detail({
                 </select>
               </label>
               <label>
-                Status reason
+                Status reason (optional)
                 <textarea
-                  required
-                  minLength={5}
                   maxLength={2000}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -631,7 +629,9 @@ function Detail({
                         ? "Details / assignment updated"
                         : `${issueStatusLabels[e.fromStatus!]} → ${issueStatusLabels[e.toStatus]}`}
                   </p>
-                  <p className="preserve-lines">{e.reason}</p>
+                  <p className="preserve-lines">
+                    {e.reason || "No reason provided."}
+                  </p>
                   <details>
                     <summary>Saved details at this change</summary>
                     <HistorySnapshot item={e.after} />
