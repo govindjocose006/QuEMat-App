@@ -21,6 +21,12 @@ additive 005 **only in the existing synthetic preview database**. Production 005
 Phase 3C merge and production deployment are not authorized. Preserve production
 and older preview bindings; do not point automated tests or preview at production.
 Use the explicit-config guarded preview steps if native cloud DNS remains blocked.
+The user has now applied/verified 005 in the isolated preview (15 instruments,
+11 synthetic accounts, 7 samples). The configured branch preview is READY at
+https://quemat-app-git-feature-phase-3c-meetin-2d790f-govindjocose-2552.vercel.app .
+All implementation CI passed; cloud live verification is still blocked by this
+new hostname's HTTP 403 proxy tunnel. See the guide for private acceptance and
+clear separation of hosted/local/operator results.
 
 Phase 3A's private production acceptance was user-confirmed: existing instruments/
 records, bookings, sample archival, weekly drafts/submission/revision/timestamps

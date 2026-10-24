@@ -186,18 +186,29 @@ are scoped only to this branch; all eight earlier bindings remain unchanged.
 
 Preview URL:
 https://quemat-app-git-feature-phase-3c-meetin-2d790f-govindjocose-2552.vercel.app .
-Its first build is READY, but final configured redeployment/live verification is
-pending. Cloud proxy reachability currently fails with **tunnel HTTP 403** at that
+Configured preview deployment `dpl_G6EKThccYsEC3LLDQZHdXNN7bf6W` is READY at
+implementation/test head `c480747`. Live verification is blocked, not claimed. Cloud proxy reachability currently fails with **tunnel HTTP 403** at that
 hostname, also outside the sandbox; its network-domain allowance was requested.
 This is separate from the native PostgreSQL DNS failure above and from Vercel's
 normal authenticated preview protection.
 
-Build/application/release type checks and audit pass locally (zero known
-vulnerabilities). Hosted CI passed all **153 isolated tests** and **19 native
-PostgreSQL checks**, including pre-005 row preservation, immutable history and
-independent concurrent cancellation/read acknowledgements. The initial browser
-run passed 22/24; both remaining failures were the filled-notice-text selector,
-now corrected to use its accessible textbox role. Both corrected notice workflows
-pass locally on desktop and phone, including revision-specific confirmations and
-withdrawal. Final exact-head hosted results and live preview checks are still
-pending. Tests use only temporary synthetic databases; never production.
+At implementation/test head `c480747a4dbfbc9a47860700bf1c6fe82748ea49`, both
+branch and PR CI passed: **153 isolated tests in 14 files**, **19 native PostgreSQL
+checks**, **24 desktop/phone browser checks**, build/application/release type
+checks, Windows setup-script syntax parsing and security audit (zero known
+vulnerabilities). [PR CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/40120269727).
+Native tests include populated pre-005 preservation and independent concurrent
+meeting cancellation/read acknowledgements. Browser coverage includes scoped
+meetings/notes/actions, rescheduling/cancellation, private IST exports, notice
+publishing/read-revision history/withdrawal, academic-role denial, automated WCAG
+and overflow checks, plus prior booking/furnace/weekly/issue/account workflows.
+The first browser run's filled-text selector was corrected; all 24 pass without
+relaxing permissions or changing production code to accommodate a test.
+
+Local final build/release checks and audit also pass. Screenshots were inspected
+for desktop/phone readability. Earlier overlapping local workloads caused two
+integration-test timeouts; sequential affected suites passed all 27 and hosted
+full suites passed. All automated tests use temporary synthetic databases, never
+production. Authenticated live manager/member acceptance remains pending the
+operator's private checks and the preview-host allowance. No preview protection
+was disabled and no automation bypass key has been created.

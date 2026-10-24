@@ -38,14 +38,15 @@ No production 005 migration, Phase 3C merge or production deployment is authoriz
 - [Workflow, assumptions and guarded Windows preview steps](phase-3c.md) document
   selected group scope, immutable corrections, expiry/read-revision semantics,
   static calendar limitations and no uploads/reminders/email/push/order/payment.
-- Build/application/release type checks and audit pass (zero known vulnerabilities).
-  Hosted CI passed all **153 isolated tests** and **19 native PostgreSQL checks**.
-  The initial hosted browser run passed 22/24; the two remaining failures selected
-  filled notice text by nested label rather than its accessible textbox role.
-  The corrected notice workflow now passes locally on desktop and phone. Local
-  old issue/weekly suites pass all 27 after null-column snapshot updates; an earlier
-  concurrent local run had two integration-test timeouts. Final exact-head hosted
-  validation remains required; no application permission/transition was relaxed.
+- Exact implementation/test head `c480747` passed all branch/PR checks: **153
+  isolated tests in 14 files**, **19 native PostgreSQL checks**, **24 desktop/phone
+  browser checks**, build/application/release types, Windows script syntax parsing
+  and audit (zero known vulnerabilities). CI run `40120269727`. Native coverage
+  includes populated pre-005 preservation and concurrent cancellation/read receipts;
+  browser checks include WCAG/overflow plus previous bookings/furnaces/weekly/issues/
+  accounts. Screenshots were inspected for desktop/phone readability. Earlier
+  selector-only browser failures were fixed; two load-related local integration
+  timeouts passed in a sequential 27-check rerun, then full hosted suites passed.
 - Cloud read-only preview verification fails `EAI_AGAIN` at
   `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, also outside the sandbox.
   The user subsequently completed preview prepare/meetings-fixtures/verify on
@@ -55,7 +56,9 @@ No production 005 migration, Phase 3C merge or production deployment is authoriz
   Preview origin is
   https://quemat-app-git-feature-phase-3c-meetin-2d790f-govindjocose-2552.vercel.app .
   That new hostname's proxy tunnel returns 403 outside the sandbox; network-domain
-  allowance was requested. Final configured redeploy/live checks remain pending.
+  allowance was requested. Configured preview `dpl_G6EKThccYsEC3LLDQZHdXNN7bf6W`
+  is READY at c480747. Live health/authenticated acceptance remains blocked/pending,
+  not claimed. No preview protection was disabled or bypass key created.
   No new infrastructure, paid service, purchase, upgrade or trial.
 
 ## Phase 3B production release (operator and agent evidence)
