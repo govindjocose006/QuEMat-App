@@ -309,6 +309,67 @@ it("preserves explicit acknowledgement, resolution and reopening status history"
   expect(fresh.events).toHaveLength(7);
   expect(fresh.events[4].actorId).toBe(ids.supervisor);
 });
+it("allows omitted, empty, whitespace and short status reasons while retaining history", async () => {
+  const c = await client(),
+    a = await client("assignee");
+  let r = await create(c);
+  const steps = [
+    { status: "acknowledged" },
+    { status: "in_progress", reason: "" },
+    { status: "blocked", reason: "   " },
+    { status: "resolved", reason: " OK " },
+  ];
+  for (const step of steps) {
+    const result = await a.write(`/issues/${r.id}/status`, {
+      version: r.version,
+      ...step,
+    });
+    expect(result.status, result.body.error).toBe(200);
+    r = result.body;
+    const event = r.events.at(-1)!;
+    expect(event.reason).toBe(step.reason?.trim() ?? "");
+    expect(event.actorId).toBe(ids.assignee);
+    expect(event.createdAt).toBeTruthy();
+    expect(event.toStatus).toBe(step.status);
+  }
+  const fresh = (await c.get(`/issues/${r.id}`)).body as IssueDetail;
+  expect(fresh.events).toEqual(r.events);
+  expect(fresh.status).toBe("resolved");
+  expect(fresh.acknowledgedAt).toBeTruthy();
+  expect(fresh.resolvedAt).toBeTruthy();
+});
+it("keeps status validation, permissions and stale-version checks without a reason", async () => {
+  const c = await client(),
+    a = await client("assignee"),
+    other = await client("other");
+  const r = await create(c);
+  const path = `/issues/${r.id}/status`;
+  for (const reason of [null, 12, "x".repeat(2001)]) {
+    expect(
+      (
+        await a.write(path, {
+          version: r.version,
+          status: "acknowledged",
+          reason,
+        })
+      ).status,
+    ).toBe(400);
+  }
+  expect(
+    (await other.write(path, { version: r.version, status: "acknowledged" }))
+      .status,
+  ).toBe(403);
+  expect(
+    (await a.write(path, { version: r.version, status: "resolved" })).status,
+  ).toBe(403);
+  expect(
+    (await a.write(path, { version: r.version, status: "acknowledged" }))
+      .status,
+  ).toBe(200);
+  expect(
+    (await a.write(path, { version: r.version, status: "in_progress" })).status,
+  ).toBe(409);
+});
 it("rejects skipped transitions, stale versions and simultaneous status requests without duplicate notifications", async () => {
   const c = await client(),
     a = await client("assignee"),

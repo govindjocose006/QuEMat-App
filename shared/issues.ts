@@ -71,7 +71,7 @@ export const issueUpdate = issueSchema
   .extend({ version: z.number().int().positive() })
   .strict();
 export const issueAction = issueVersion
-  .extend({ status: z.enum(issueStatuses), reason: text(2000).min(5) })
+  .extend({ status: z.enum(issueStatuses), reason: text(2000).default("") })
   .strict();
 export const issueComment = z
   .object({

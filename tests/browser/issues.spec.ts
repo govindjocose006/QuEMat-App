@@ -51,13 +51,13 @@ async function openIssues(page: Page) {
     page.getByRole("button", { name: "New issue/request", exact: true }),
   ).toBeEnabled();
 }
-async function transition(page: Page, status: string) {
+async function transition(page: Page, status: string, reason = "") {
   await page
     .getByRole("combobox", { name: "New status", exact: true })
     .selectOption(status);
   await page
-    .getByRole("textbox", { name: "Status reason", exact: true })
-    .fill(`Synthetic ${status} decision; no physical operation`);
+    .getByRole("textbox", { name: "Status reason (optional)", exact: true })
+    .fill(reason);
   await page
     .getByRole("button", { name: "Record status change", exact: true })
     .click();
@@ -165,11 +165,23 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
     .first()
     .click();
   await transition(page, "acknowledged");
+  await expect(page.getByRole("dialog")).toContainText("No reason provided.");
   await expect(page.getByRole("dialog")).toContainText(`Weekly ${d} mentor`);
   await transition(page, "in_progress");
-  await transition(page, "blocked");
+  await transition(page, "blocked", "Awaiting a synthetic decision");
   await transition(page, "resolved");
   await expect(page.getByRole("dialog")).toContainText("Blocked → Resolved");
+  await expect(page.getByRole("dialog")).toContainText(
+    "Awaiting a synthetic decision",
+  );
+  await page.reload();
+  await openIssues(page);
+  await page
+    .getByRole("combobox", { name: "Work view", exact: true })
+    .selectOption("resolved");
+  await page.getByRole("button", { name: title, exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Blocked → Resolved");
+  await expect(page.getByRole("dialog")).toContainText("No reason provided.");
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-resolved-history.png"),
@@ -177,6 +189,9 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await openIssues(page);
+  await page
+    .getByRole("combobox", { name: "Work view", exact: true })
+    .selectOption("work");
   await page.getByLabel("Search issues", { exact: true }).fill(title);
   await expect(
     page.getByText("No issues match this view.", { exact: true }),
@@ -309,7 +324,7 @@ test("academic supervisor cannot manage unrelated work; application supervisor c
     exact: true,
   });
   const reason = page.getByRole("textbox", {
-    name: "Status reason",
+    name: "Status reason (optional)",
     exact: true,
   });
   await newStatus.selectOption("resolved");
