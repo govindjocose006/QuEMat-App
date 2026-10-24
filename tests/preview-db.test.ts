@@ -79,7 +79,7 @@ it("initializes an empty isolated database and repeatable synthetic fixtures wit
   expect((await db.query("SELECT id FROM users")).length).toBe(4);
   expect((await db.query("SELECT id FROM samples")).length).toBe(2);
   expect((await db.query("SELECT id FROM instruments")).length).toBe(15);
-  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(4);
+  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(5);
   expect(
     (
       await db.query(
@@ -166,4 +166,32 @@ it("refuses prepare before migrations/seeding when a marked preview contains a n
   expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain(
     "non-synthetic",
   );
+}, 20000);
+
+it("adds repeatable meeting/notice fixtures without changing synthetic accounts or running production paths", async () => {
+  await run("prepare");
+  await run("fixtures");
+  await run("weekly-fixtures");
+  const accounts = await db.query("SELECT * FROM users ORDER BY id");
+  expect(await run("meetings-fixtures")).toBeUndefined();
+  expect(await run("meetings-fixtures")).toBeUndefined();
+  expect(await db.query("SELECT * FROM users ORDER BY id")).toEqual(accounts);
+  expect(await db.query("SELECT id FROM meetings")).toHaveLength(1);
+  expect(await db.query("SELECT id FROM notices")).toHaveLength(1);
+  expect(
+    await db.query("SELECT notice_id FROM notice_acknowledgements"),
+  ).toHaveLength(0);
+  expect(await db.query("SELECT id FROM meeting_events")).toHaveLength(1);
+  expect(await db.query("SELECT id FROM notice_events")).toHaveLength(1);
+  const member = (
+    await db.query<{ id: string }>(
+      "SELECT id FROM users WHERE email='weekly-preview-member@example.test'",
+    )
+  )[0];
+  expect(
+    await db.query(
+      "SELECT meeting_id FROM meeting_attendees WHERE user_id=$1",
+      [member.id],
+    ),
+  ).toHaveLength(1);
 }, 20000);

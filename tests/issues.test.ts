@@ -630,7 +630,10 @@ it("applies 004 additively over populated 003 and preserves earlier notification
             table,
             (await isolated.query(`SELECT * FROM ${table}`)).map((x) => {
               const r = { ...x };
-              if (r.issue_id === null) delete r.issue_id;
+              for (const column of ["issue_id", "meeting_id", "notice_id"]) {
+                if (column in r) expect(r[column]).toBeNull();
+                delete r[column];
+              }
               return r;
             }),
           ]),
@@ -644,7 +647,7 @@ it("applies 004 additively over populated 003 and preserves earlier notification
     expect(await snapshot()).toEqual(before);
     expect(
       (await isolated.query("SELECT name FROM schema_migrations")).length,
-    ).toBe(4);
+    ).toBe(5);
   } finally {
     await isolated.close();
   }

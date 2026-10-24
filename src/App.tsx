@@ -14,6 +14,7 @@ import {
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
 import { Issues, IssuesOverview } from "./Issues.js";
+import { Meetings, MeetingsOverview } from "./Meetings.js";
 import { Weekly, WeeklyOverview } from "./Weekly.js";
 
 export function App() {
@@ -124,6 +125,7 @@ type Page =
   | "calendar"
   | "samples"
   | "weekly"
+  | "meetings"
   | "issues"
   | "notifications"
   | "members"
@@ -135,6 +137,7 @@ const pageLabels = {
   samples: "Samples",
   weekly: "Weekly Progress",
   issues: "Issues & Requests",
+  meetings: "Meetings & Notices",
   notifications: "Notifications",
   instruments: "Instruments",
   members: "Members & access",
@@ -153,6 +156,10 @@ function Workspace({
   onSession: (s: Session) => void;
 }) {
   const [page, setPage] = useState<Page>("overview");
+  const [collaboration, setCollaboration] = useState<{
+    kind: "meeting" | "notice";
+    id: string;
+  } | null>(null);
   const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [items, setItems] = useState<Instrument[] | null>(null);
@@ -185,6 +192,7 @@ function Workspace({
         "samples",
         "weekly",
         "issues",
+        "meetings",
         "notifications",
         "instruments",
         "members",
@@ -197,6 +205,7 @@ function Workspace({
         "samples",
         "weekly",
         "issues",
+        "meetings",
         "notifications",
         "instruments",
         "settings",
@@ -337,6 +346,12 @@ function Workspace({
                   setPage("issues");
                 }}
               />
+              <MeetingsOverview
+                open={(selection) => {
+                  setCollaboration(selection);
+                  setPage("meetings");
+                }}
+              />
               <WeeklyOverview
                 onOpen={() => {
                   setWeeklyId(null);
@@ -368,9 +383,24 @@ function Workspace({
               onInitialOpened={() => setIssueId(null)}
             />
           )}
+          {page === "meetings" && (
+            <Meetings
+              user={user}
+              initial={collaboration}
+              opened={() => setCollaboration(null)}
+            />
+          )}
           {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
           {page === "notifications" && (
             <Notifications
+              onMeeting={(id) => {
+                setCollaboration({ kind: "meeting", id });
+                setPage("meetings");
+              }}
+              onNotice={(id) => {
+                setCollaboration({ kind: "notice", id });
+                setPage("meetings");
+              }}
               onIssue={(id) => {
                 setIssueId(id);
                 setPage("issues");

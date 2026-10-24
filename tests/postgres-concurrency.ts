@@ -168,7 +168,8 @@ try {
           table,
           (await db.query(`SELECT * FROM ${table}`)).map((row) => {
             const value = { ...row };
-            if (value.issue_id === null) delete value.issue_id;
+            for (const column of ["issue_id", "meeting_id", "notice_id"])
+              if (value[column] === null) delete value[column];
             return value;
           }),
         ]),
@@ -197,7 +198,6 @@ try {
     "PHASE3B_STRUCTURE_PRESENT",
   );
   count++;
-  await migrate(db);
   assert.deepEqual(await snapshot(), beforeIssues);
   assert.equal(
     (
@@ -335,6 +335,124 @@ try {
     baselineUserCount + 1,
   );
   count++;
+  // Apply 005 only after populated Phase 3B issue/history/notification activity.
+  const beforeCollaboration = await snapshot();
+  const retainedIssueTables = ["issues", "issue_events", "issue_comments"];
+  const issueRows = await Promise.all(
+    retainedIssueTables.map((t) => db.query(`SELECT * FROM ${t} ORDER BY id`)),
+  );
+  await migrate(db);
+  assert.deepEqual(await snapshot(), beforeCollaboration);
+  assert.deepEqual(
+    await Promise.all(
+      retainedIssueTables.map((t) =>
+        db.query(`SELECT * FROM ${t} ORDER BY id`),
+      ),
+    ),
+    issueRows,
+  );
+  assert.equal((await nativeAssignee.agent.get("/api/health")).status, 200);
+  count++;
+  const nativeMeeting = await nativeAssignee.write("/meetings", {
+    title: "Native synthetic private meeting",
+    kind: "individual",
+    attendeeIds: [reporter],
+    startsAt: "2035-01-01T00:15:00+05:30",
+    endsAt: "2035-01-01T01:15:00+05:30",
+    agenda: "Synthetic private agenda",
+  });
+  assert.equal(nativeMeeting.status, 201);
+  const meetingChanges = await Promise.all(
+    [1, 2].map((n) =>
+      nativeAssignee.write(`/meetings/${nativeMeeting.body.id}/cancel`, {
+        version: 1,
+        reason: `Native cancellation ${n}`,
+      }),
+    ),
+  );
+  assert.deepEqual(meetingChanges.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(
+    (
+      await db.query("SELECT id FROM meeting_events WHERE meeting_id=$1", [
+        nativeMeeting.body.id,
+      ])
+    ).length,
+    2,
+  );
+  const ics = await nativeReporter.agent.get(
+    `/api/meetings/${nativeMeeting.body.id}/calendar`,
+  );
+  assert.equal(ics.status, 200);
+  assert.ok(ics.text.includes("DTSTART;TZID=Asia/Kolkata:20350101T001500"));
+  assert.ok(ics.text.includes("STATUS:CANCELLED"));
+  count++;
+  let nativeNotice = await nativeAssignee.write("/notices", {
+    title: "Native synthetic notice",
+    body: "A synthetic read request",
+    acknowledgementRequired: true,
+    pinned: true,
+  });
+  assert.equal(nativeNotice.status, 201);
+  assert.equal(
+    (await nativeReporter.agent.get(`/api/notices/${nativeNotice.body.id}`))
+      .status,
+    404,
+  );
+  nativeNotice = await nativeAssignee.write(
+    `/notices/${nativeNotice.body.id}/publish`,
+    { version: 1 },
+  );
+  assert.equal(nativeNotice.status, 200);
+  const readAttempts = await Promise.all(
+    [1, 2].map(() =>
+      nativeReporter.write(`/notices/${nativeNotice.body.id}/acknowledge`, {
+        version: nativeNotice.body.version,
+        confirmedRead: true,
+      }),
+    ),
+  );
+  assert.deepEqual(
+    readAttempts.map((r) => r.status),
+    [200, 200],
+  );
+  assert.equal(
+    (
+      await db.query(
+        "SELECT * FROM notice_acknowledgements WHERE notice_id=$1",
+        [nativeNotice.body.id],
+      )
+    ).length,
+    1,
+  );
+  await assert.rejects(
+    db.query("DELETE FROM notice_acknowledgements WHERE notice_id=$1", [
+      nativeNotice.body.id,
+    ]),
+    /append only/,
+  );
+  await assert.rejects(
+    db.query("DELETE FROM meeting_events WHERE meeting_id=$1", [
+      nativeMeeting.body.id,
+    ]),
+    /append only/,
+  );
+  count++;
+  await assert.rejects(
+    db.query(
+      "INSERT INTO notifications(id,user_id,issue_id,meeting_id,event_key,message) VALUES($1,$2,$3,$4,'mixed-collaboration','Must fail')",
+      [randomUUID(), reporter, issue.body.id, nativeMeeting.body.id],
+    ),
+    /notification_source/,
+  );
+  const academicMeeting = await nativeReporter.write("/meetings", {
+    title: "Must deny academic supervisor",
+    kind: "group",
+    attendeeIds: [reporter],
+    startsAt: "2035-01-02T10:00:00Z",
+    endsAt: "2035-01-02T11:00:00Z",
+  });
+  assert.equal(academicMeeting.status, 403);
+  count++;
   const a = await pool.connect(),
     b = await pool.connect();
   try {
@@ -463,7 +581,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, Phase 3C preservation/calendar/read-receipt concurrency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();

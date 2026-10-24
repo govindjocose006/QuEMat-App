@@ -22,6 +22,7 @@ export function Icon({ name }: { name: string }) {
         <path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5" />
       </>
     ),
+    meetings: <path d="M4 5h16v16H4zM4 10h16M8 2v6M16 2v6M8 14h3M8 17h7" />,
     issues: <path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1" />,
     overview: (
       <>

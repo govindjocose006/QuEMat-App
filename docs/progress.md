@@ -5,10 +5,66 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Phases 1, 2 and 3A are deployed and user-confirmed. PR #3's sample-list
-improvement is released. Phase 3B Issues & Requests is implemented on a new
-feature branch for isolated review/preview only. No Phase 3B production migration,
-merge or deployment is authorized. Phase 3C and later phases remain unimplemented.
+Phases 1, 2, 3A and 3B are released. PR #3's sample views and PR #5's
+optional issue-status reasons are released. Phase 3C Meetings & Notices is on
+`feature/phase-3c-meetings-notices` for isolated synthetic review/preview only.
+No production 005 migration, Phase 3C merge or production deployment is authorized.
+
+## PR #5 production release and Phase 3C development (2026-10-24)
+
+- Reviewed PR #5 head `700e881dcd2ff2e3bf3c840b470a66e777a7e2fc`: four
+  shared/UI/test files only; blank/omitted/short status reasons are allowed while
+  actor/time/history/transition/permission/version checks remain. No migration.
+- All PR and branch checks passed. One branch validation took longer; it completed
+  before an attempted cancellation took effect, so no cancellation/restart occurred.
+  Post-merge main CI also passed at `0057a839586990fd03382eb6762b9a98e0b0bc2d`.
+- Existing Vercel Git integration deployed PR #5 as
+  `dpl_4uTAyZVLwvVJx9c1TH2wJFHC97HS`; canonical production health is 200 with
+  `{"status":"ok"}`. Served JS/CSS match the reviewed rebuild. Nine protected APIs
+  rejected anonymous access; project settings and all eight saved environment
+  bindings (including older previews) compare unchanged. Hobby, no trial; ₹0.
+  No database migration, backup/receipt edit or production test record was created.
+- Phase 3C starts from that updated main on a separate feature branch. Adds scoped
+  meetings, selected attendees, agenda/venue/video/data links, rescheduling and
+  cancellation, retained notes/history, owned dated action items and completion
+  history; lab notices with drafts/publishing/pinning/expiry/withdrawal and explicit
+  per-revision read confirmations; dashboard, persistent inbox and private IST ICS.
+- Server permissions distinguish application supervisor/administrator from academic
+  Supervisor/mentor. Only selected attendees/managers can access meetings/notes/
+  history/export; audience changes revoke removed members' access and inbox links.
+  Notes/read receipts/events are append-only, writes recheck membership/versions,
+  private details stay out of the general audit, and notification sources remain
+  exclusive. Old issue-status reasons stay optional. Additive preview-only 005.
+- [Workflow, assumptions and guarded Windows preview steps](phase-3c.md) document
+  selected group scope, immutable corrections, expiry/read-revision semantics,
+  static calendar limitations and no uploads/reminders/email/push/order/payment.
+- Current local build/application/release type checks and audit pass (zero known
+  vulnerabilities). Synthetic server tests and desktop/phone browser checks are
+  in progress; final results will be recorded after they complete. Native tests
+  are extended to preserve populated 3B records and exercise concurrent 3C writes.
+- Cloud read-only preview verification fails `EAI_AGAIN` at
+  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, also outside the sandbox.
+  Windows preview migration confirmation and live preview checks remain pending.
+  No new infrastructure, paid service, purchase, upgrade or trial.
+
+## Phase 3B production release (operator and agent evidence)
+
+- User-confirmed Windows prerequisites: new private encrypted backup/full archive
+  read (71,233 encrypted bytes), original-age inspection at 293 minutes (<24h),
+  guarded 004 APPLIED with full record preservation PASSED, then verification of
+  migrations 001–004/original records RETAINED/constraints VERIFIED/fixturesRun:false.
+  These are operator results, not a cloud-native SQL connectivity claim.
+- Subsequently authorized exact-head merge of PR #4 (`397d699`) produced
+  `c001f5447b01a9d33968e5ff9701a6fc7413504a`. All exact-head and post-merge CI passed;
+  existing Vercel deployment `dpl_BqTvKMbyYys6EJJgFXQie2tWnHTu` was READY at the
+  canonical URL. Live health queried 004; client hashes and protected access passed.
+- Project settings and eight production/preview bindings remained unchanged, on
+  Hobby with no trial. Agent did not rerun migrations, access private backup files
+  or create production test records. Private production issue acceptance was
+  requested, not yet user-confirmed in this session.
+- Historical preparation-only statements below record their earlier authorization
+  stage; they are superseded by the successful authorized release above. Do not
+  rerun older release commands against the now-migrated database.
 
 ## Phase 3B release-tool publication authorization (2026-10-24)
 

@@ -7,21 +7,24 @@ Nothing depends on a Vercel instance's filesystem or process staying alive.
 
 ## Current release
 
-Phase 3A is deployed and user-confirmed. PR #2 merged at
-`fd1c42ec554434fa6990cb93c838eda35841ee36` after guarded production migration 003,
-verified preservation and successful exact-head CI. The user confirmed private
-login, existing instruments/records, booking persistence/cancellation, sample
-archival, weekly draft/submission/revision/timestamp persistence and sign-out.
-PR #3 subsequently released the Active/Archived/All sample views at
-`ec8a4fe7909e19f810d1118be7406905d58b08b4`, with no migration. Production health is
-healthy and the deployed client matches the reviewed PR #3 build. See
-[progress](progress.md) for operator versus agent verification evidence. Backups
-and receipts remain private; do not rerun migrations for deployment.
+Phase 3B released through PR #4 at `c001f5447b01a9d33968e5ff9701a6fc7413504a`
+after user-confirmed private Windows backup, guarded migration 004 and retention
+verification, then green exact-head/main CI. PR #5 subsequently released optional
+issue-status reasons at `0057a839586990fd03382eb6762b9a98e0b0bc2d` with **no migration**.
+Production is https://quemat-app.vercel.app . Its health, deployed client hashes
+and protected API access passed live verification; all saved settings/eight
+production+preview bindings were preserved. No backup/receipt was edited or SQL
+re-run for deployment. See [progress](progress.md) for operator versus agent evidence.
 
-Phase 3B is preview-only: follow [its isolated preview guide](phase-3b.md). It
-requires additive 004 only in the existing synthetic preview database and new
-branch-scoped Preview bindings. Do not merge, migrate or deploy Phase 3B to
-production. Preserve current Production variables and older preview bindings.
+Phase 3C is isolated preview work only. [Meetings & Notices](phase-3c.md) requires
+additive 005 **only in the existing synthetic preview database**. Production 005,
+Phase 3C merge and production deployment are not authorized. Preserve production
+and older preview bindings; do not point automated tests or preview at production.
+Use the explicit-config guarded preview steps if native cloud DNS remains blocked.
+
+Phase 3A's private production acceptance was user-confirmed: existing instruments/
+records, bookings, sample archival, weekly drafts/submission/revision/timestamps
+and sign-out. PR #3's Active/Archived/All sample views also remain released.
 
 ### Earlier Phase 2 release
 
@@ -91,10 +94,10 @@ have now succeeded. The pinned Phase 2
 release tool deliberately does not authorize migration 003; use the separate
 Phase 3A tool, never preview fixtures or the general migration CLI.
 
-## Phase 3B future release preparation
+## Historical Phase 3B release preparation
 
-The user accepted preview assignment/acknowledgement/progress/resolution and
-requested guarded preparation only. The [Phase 3B runbook](phase-3b-release.md)
+At the earlier preparation stage the user accepted preview assignment/acknowledgement/progress/resolution and
+requested guarded preparation only. The subsequent authorized release is recorded above; do not rerun these historical commands. The [Phase 3B runbook](phase-3b-release.md)
 requires an independent 004 hash/purpose, fresh private encrypted backup,
 full Phase 1/2/3A preservation and green exact-head CI before any later release.
 Publication and its automatic preview redeployment are now authorized, followed

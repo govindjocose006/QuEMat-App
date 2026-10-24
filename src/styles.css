@@ -1881,3 +1881,56 @@ fieldset > label:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+/* Meetings and notices share the existing accessible modal and form controls. */
+.collaboration {
+  margin: 24px 0;
+}
+.collaboration > section {
+  margin: 28px 0;
+}
+.collaboration-grid,
+.collaboration-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+}
+.collaboration-card,
+.collaboration-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.collaboration-form {
+  display: grid;
+  gap: 16px;
+}
+.collaboration-form fieldset {
+  min-width: 0;
+  border: 1px solid #ccd8dc;
+  padding: 16px;
+  border-radius: 8px;
+}
+.collaboration-attendees {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.collaboration-detail > section,
+.collaboration-detail > form,
+.collaboration-detail > details {
+  margin: 24px 0;
+}
+.collaboration-detail .panel {
+  margin: 12px 0;
+}
+.collaboration-detail button {
+  max-width: 100%;
+  white-space: normal;
+}
+@media (max-width: 640px) {
+  .collaboration-columns,
+  .collaboration-grid {
+    grid-template-columns: 1fr;
+  }
+}
