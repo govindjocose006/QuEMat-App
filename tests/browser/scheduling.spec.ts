@@ -141,6 +141,73 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     .first()
     .click();
   await expect(page.getByRole("dialog")).toContainText("Holder cleared");
+  await page.getByRole("button", { name: "Close dialog" }).click();
+
+  // Archiving separates daily work from history without losing linked runs.
+  await write(page, "/samples", {
+    compound: `FeSe-${info.project.name}-control`,
+  });
+  await page.getByRole("button", { name: "Samples", exact: true }).click();
+  const status = page.getByRole("combobox", { name: "Sample status" });
+  const search = page.getByRole("textbox", { name: "Search samples" });
+  const sampleCard = (compound: string) =>
+    page.locator(".sample-grid article").filter({
+      has: page.getByRole("heading", { name: compound, exact: true }),
+    });
+  const target = sampleCard(`FeSe-${info.project.name}`);
+  const control = sampleCard(`FeSe-${info.project.name}-control`);
+  await expect(status).toHaveValue("active");
+  await search.fill(`FeSe-${info.project.name}`);
+  await expect(target).toBeVisible();
+  await expect(control).toBeVisible();
+
+  await target.getByRole("button", { name: /^Edit QEM-/ }).click();
+  await page.getByLabel("Archive sample", { exact: true }).check();
+  await page.getByRole("button", { name: "Save sample", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(target).toHaveCount(0);
+  await expect(control).toBeVisible();
+
+  await status.selectOption("archived");
+  await expect(target).toBeVisible();
+  await expect(target).toContainText("Archived");
+  await expect(control).toHaveCount(0);
+  await search.fill("No such synthetic sample");
+  await expect(page.getByRole("status")).toHaveText(
+    "No samples match your search in this view.",
+  );
+  await search.fill(`FeSe-${info.project.name}`);
+  await status.selectOption("all");
+  await expect(target).toBeVisible();
+  await expect(control).toBeVisible();
+  await accessible(page);
+  await page.screenshot({
+    path: info.outputPath("sample-status-views.png"),
+    fullPage: true,
+  });
+
+  await status.selectOption("archived");
+  await target.getByRole("button", { name: /^History QEM-/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("Holder cleared");
+  await expect(page.getByRole("dialog")).toContainText(
+    "Synthetic scan complete",
+  );
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await target.getByRole("button", { name: /^Edit QEM-/ }).click();
+  await page.getByLabel("Archive sample", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "Save sample", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(target).toHaveCount(0);
+  await expect(page.getByRole("status")).toHaveText(
+    "No samples match your search in this view.",
+  );
+  await status.selectOption("active");
+  await expect(target).toBeVisible();
+  await expect(control).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Samples", exact: true }).click();
+  await expect(status).toHaveValue("active");
+  await expect(target).toBeVisible();
 });
 
 test("furnace maximum and unloading, quick sample creation, sputtering and maintenance forms", async ({

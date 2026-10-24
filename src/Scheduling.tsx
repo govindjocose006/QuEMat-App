@@ -173,6 +173,9 @@ function SampleForm({
 export function Samples({ user }: { user: Member }) {
   const [items, setItems] = useState<Sample[]>([]),
     [search, setSearch] = useState(""),
+    [sampleStatus, setSampleStatus] = useState<"active" | "archived" | "all">(
+      "active",
+    ),
     [editing, setEditing] = useState<Sample | null | undefined>(),
     [history, setHistory] = useState<Booking[] | null>(null),
     [error, setError] = useState("");
@@ -186,6 +189,13 @@ export function Samples({ user }: { user: Member }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+  const query = search.trim().toLowerCase();
+  const visibleSamples = items.filter(
+    (s) =>
+      (sampleStatus === "all" ||
+        s.archived === (sampleStatus === "archived")) &&
+      JSON.stringify(s).toLowerCase().includes(query),
+  );
   return (
     <section>
       <div className="section-title">
@@ -198,64 +208,85 @@ export function Samples({ user }: { user: Member }) {
         </button>
       </div>
       <ErrorNotice message={error} />
-      <label>
-        Search samples
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="ID, compound, batch, owner, project"
-        />
-      </label>
-      <div className="sample-grid">
-        {items
-          .filter((s) =>
-            JSON.stringify(s).toLowerCase().includes(search.toLowerCase()),
-          )
-          .map((s) => (
-            <article className="panel" key={s.id}>
-              <span className="eyebrow">
-                {s.code}
-                {s.archived ? " · Archived" : ""}
-              </span>
-              <h3>{s.compound}</h3>
-              <p>
-                {s.ownerName} · {s.project || "No project"}
-              </p>
-              <dl>
-                <dt>Batch / preparation</dt>
-                <dd>
-                  {s.batch || "—"} / {s.preparedOn || "—"}
-                </dd>
-                <dt>Origin / form / quantity</dt>
-                <dd>
-                  {s.origin} / {s.physicalForm || "—"} / {s.quantity || "—"}
-                </dd>
-                <dt>Storage</dt>
-                <dd>{s.storage || "Not recorded"}</dd>
-                <dt>Handling notes</dt>
-                <dd>{s.notes || "Not recorded"}</dd>
-              </dl>
-              <div className="action-row">
-                {(s.ownerId === user.id || managesOperations(user.appRole)) && (
-                  <button className="secondary" onClick={() => setEditing(s)}>
-                    Edit {s.code}
-                  </button>
-                )}
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    void api<Booking[]>(`/samples/${s.id}/bookings`)
-                      .then(setHistory)
-                      .catch((e) => setError(messageOf(e)))
-                  }
-                >
-                  History {s.code}
-                </button>
-              </div>
-            </article>
-          ))}
+      <div className="schedule-controls">
+        <label>
+          Search samples
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ID, compound, batch, owner, project"
+          />
+        </label>
+        <label>
+          Sample status
+          <select
+            value={sampleStatus}
+            onChange={(e) =>
+              setSampleStatus(e.target.value as typeof sampleStatus)
+            }
+          >
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+            <option value="all">All</option>
+          </select>
+        </label>
       </div>
-      {!items.length && <p>No samples registered yet.</p>}
+      <div className="sample-grid">
+        {visibleSamples.map((s) => (
+          <article className="panel" key={s.id}>
+            <span className="eyebrow">
+              {s.code}
+              {s.archived ? " · Archived" : ""}
+            </span>
+            <h3>{s.compound}</h3>
+            <p>
+              {s.ownerName} · {s.project || "No project"}
+            </p>
+            <dl>
+              <dt>Batch / preparation</dt>
+              <dd>
+                {s.batch || "—"} / {s.preparedOn || "—"}
+              </dd>
+              <dt>Origin / form / quantity</dt>
+              <dd>
+                {s.origin} / {s.physicalForm || "—"} / {s.quantity || "—"}
+              </dd>
+              <dt>Storage</dt>
+              <dd>{s.storage || "Not recorded"}</dd>
+              <dt>Handling notes</dt>
+              <dd>{s.notes || "Not recorded"}</dd>
+            </dl>
+            <div className="action-row">
+              {(s.ownerId === user.id || managesOperations(user.appRole)) && (
+                <button className="secondary" onClick={() => setEditing(s)}>
+                  Edit {s.code}
+                </button>
+              )}
+              <button
+                className="secondary"
+                onClick={() =>
+                  void api<Booking[]>(`/samples/${s.id}/bookings`)
+                    .then(setHistory)
+                    .catch((e) => setError(messageOf(e)))
+                }
+              >
+                History {s.code}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+      {!visibleSamples.length && (
+        <p role="status">
+          {query
+            ? "No samples match your search in this view."
+            : sampleStatus === "active"
+              ? "No active samples."
+              : sampleStatus === "archived"
+                ? "No archived samples."
+                : "No samples registered yet."}
+        </p>
+      )}
       {editing !== undefined && (
         <Modal
           title={editing ? `Edit ${editing.code}` : "New sample"}
