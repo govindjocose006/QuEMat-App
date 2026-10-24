@@ -11,8 +11,10 @@ The user confirmed preview issue assignment, acknowledgement, progress and
 resolution on 2026-10-24. [Guarded production steps](phase-3b-release.md) are
 prepared for a future separately authorized release. They are not an instruction
 to run them now. PR #4 stays unmerged; production migration/deployment are not
-currently authorized. Preparation is kept local to avoid triggering an automatic
-preview deployment. Existing private backups and receipts remain untouched.
+currently authorized. The user subsequently authorized publishing the preparation and its automatic
+preview redeployment, with all CI required before Windows checkout preparation.
+Production backup/migration/merge/deployment remain on hold. Existing private
+backups and receipts remain untouched.
 
 ## Working workflows
 

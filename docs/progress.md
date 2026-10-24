@@ -10,12 +10,27 @@ improvement is released. Phase 3B Issues & Requests is implemented on a new
 feature branch for isolated review/preview only. No Phase 3B production migration,
 merge or deployment is authorized. Phase 3C and later phases remain unimplemented.
 
+## Phase 3B release-tool publication authorization (2026-10-24)
+
+- The user authorized pushing the prepared release tooling/runbook to the existing
+  feature branch and its automatic isolated-preview redeployment. The prepared
+  local commit is `d38ed9d`; this documentation update records the changed scope.
+- All exact-head CI checks, including the new populated-003 guarded-004 native
+  PostgreSQL checks and Windows setup-script syntax parsing, must pass before
+  giving the first Windows checkout/dependency/type-check preparation step.
+  Local preparation already passed 137 isolated tests, build/type checks and a
+  zero-vulnerability audit. Hosted results still need checking after publication.
+- Production backup/migration, PR #4 merge and production deployment remain
+  explicitly unauthorized. Preserve all existing backups/receipts, production
+  configuration and older preview bindings. No production commands are requested
+  at this stage. Existing free resources only; strict ₹0.
+
 ## Phase 3B user acceptance and guarded release preparation (2026-10-24)
 
 - **User-confirmed preview acceptance:** issue assignment, acknowledgement,
   progress and resolution worked correctly. This records those specific private
   checks; the broader automated/live results remain separate evidence below.
-- Current authorization is **preparation only**: no production migration, PR #4
+- At the earlier local-preparation stage, authorization was **preparation only**: no production migration, PR #4
   merge or deployment. The accepted remote head remains `a9a5485`. New preparation
   is kept local because pushing the feature branch would automatically deploy
   another preview. No production or preview deployment was triggered this turn.

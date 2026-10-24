@@ -1,17 +1,21 @@
 # Phase 3B production release — preparation only
 
-**Do not execute this runbook yet.** The user accepted the preview's assignment,
-acknowledgement, progress and resolution workflows, and authorized recording that
-acceptance and preparing release steps. They explicitly did **not** authorize a
-production migration, PR #4 merge or deployment. No fresh production backup has
-been created for Phase 3B. Existing Phase 2/3A backups and receipts stay untouched.
+**Authorization is limited to publication, automatic preview redeployment and
+Windows checkout preparation (step 1).** The user accepted preview assignment,
+acknowledgement, progress and resolution. They authorized publishing the prepared
+tooling and waiting for all CI, including native PostgreSQL and Windows syntax
+checks, before providing the first Windows preparation step.
 
-The new tooling and this guide are currently prepared **locally**. They have not
-been pushed because this branch automatically deploys Vercel previews on push.
-The accepted remote preview/PR head stays `a9a5485`. Before executing any command
-below, a separately authorized release must publish/review the preparation and
-pass CI on its exact release head. An accepted preview alone is not that release
-authorization. No action or credential entry is requested from the user now.
+**Do not run production backup/migration, merge PR #4 or deploy production.**
+Steps 2 onward remain a future runbook requiring separate authorization. No fresh
+production backup has been created for Phase 3B. Existing Phase 2/3A backups and
+receipts stay untouched. No credentials are required for step 1.
+
+The prepared tooling is published to the existing
+`feature/phase-3b-issues-requests` branch, which automatically redeploys only its
+configured isolated preview. The exact latest head must pass all checks before
+step 1. An accepted preview or a published tool does not authorize later release
+operations. Do not execute the remaining blocks merely because they appear here.
 
 Budget remains **₹0**: use the existing Neon production database and Vercel Hobby
 project, existing free PostgreSQL 18 clients, and private local disk. No cloud
@@ -43,7 +47,7 @@ another target; the validated URL pins 5432 in memory. The pg driver, certificat
 verification and channel binding remain enabled. Native dump clients receive a
 sanitized PG environment, fixed target and `verify-full` TLS.
 
-## Release gates, in order — future execution only
+## Release gates — checkout preparation now, remaining execution later
 
 After separate release authorization, the agent must check PR #4's exact head,
 application diff, CI/security audit, and existing Vercel plan/configuration.
@@ -59,7 +63,8 @@ outputs. Keep preview and production checkouts/configurations separate.
 
 ### 1. Update the trusted Windows release checkout
 
-These commands require the new preparation to have been published first.
+These commands may be provided after this published preparation passes exact-head CI.
+They select code and dependencies only; they do not connect to any database.
 Start with `git status --short`; stop for local changes/conflicts, without reset.
 Run each separately:
 
@@ -280,7 +285,7 @@ Local guarded-release tests use populated synthetic PGlite PostgreSQL databases;
 the standard native CI test is extended to exercise the same guard on its fresh
 random loopback PostgreSQL 18 database. CI also parses Windows setup scripts
 without executing them. The Linux preparation workspace has no native PostgreSQL
-18 clients or PowerShell installed, so those added native/Windows checks require
-future hosted CI after authorized publication. Do not describe them as already
-passed. No real production backup, migration or native production SQL check has
+18 clients or PowerShell installed; the added native/Windows checks run in the
+existing hosted CI after the now-authorized publication. Confirm their actual
+results at the exact head before providing step 1; do not assume them passed. No real production backup, migration or native production SQL check has
 been run during preparation. See [progress](progress.md) for actual local results.

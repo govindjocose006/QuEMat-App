@@ -97,8 +97,9 @@ The user accepted preview assignment/acknowledgement/progress/resolution and
 requested guarded preparation only. The [Phase 3B runbook](phase-3b-release.md)
 requires an independent 004 hash/purpose, fresh private encrypted backup,
 full Phase 1/2/3A preservation and green exact-head CI before any later release.
-The tooling is local/unpublished to avoid an automatic Vercel preview deployment.
-Do not execute production commands, merge PR #4 or deploy now. Older 002/003
+Publication and its automatic preview redeployment are now authorized, followed
+by all CI checks and Windows checkout preparation only. Do not execute production
+backup/migration commands, merge PR #4 or deploy production now. Older 002/003
 release tools and receipts cannot authorize 004. No new infrastructure or cost.
 
 ## 1. Link the existing Neon database
