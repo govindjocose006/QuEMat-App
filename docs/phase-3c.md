@@ -177,8 +177,27 @@ Do not share that file or any password/session cookie.
 
 ## Validation status
 
-Build/application/release type checks and audit have passed locally (zero known
-vulnerabilities). Permission/lifecycle/preservation and desktop/phone browser tests
-are in progress; final counts and hosted/native/live results will be recorded in
-`progress.md` and the PR. Local tests never use production URLs/records. A deploy
-build alone is not proof that preview migration or authenticated live checks passed.
+The operator applied 005 and `meetings-fixtures` successfully from the separate
+Windows preview checkout. Sanitized verification lists 001–005 at the expected
+preview host/database with **15 instruments, 11 synthetic accounts and 7 samples**.
+No passwords/accounts were reset. This is operator-confirmed native Windows SQL,
+not cloud-native connectivity. Vercel Preview variables DATABASE_URL/APP_ORIGIN
+are scoped only to this branch; all eight earlier bindings remain unchanged.
+
+Preview URL:
+https://quemat-app-git-feature-phase-3c-meetin-2d790f-govindjocose-2552.vercel.app .
+Its first build is READY, but final configured redeployment/live verification is
+pending. Cloud proxy reachability currently fails with **tunnel HTTP 403** at that
+hostname, also outside the sandbox; its network-domain allowance was requested.
+This is separate from the native PostgreSQL DNS failure above and from Vercel's
+normal authenticated preview protection.
+
+Build/application/release type checks and audit pass locally (zero known
+vulnerabilities). Hosted CI passed all **153 isolated tests** and **19 native
+PostgreSQL checks**, including pre-005 row preservation, immutable history and
+independent concurrent cancellation/read acknowledgements. The initial browser
+run passed 22/24; both remaining failures were the filled-notice-text selector,
+now corrected to use its accessible textbox role. Both corrected notice workflows
+pass locally on desktop and phone, including revision-specific confirmations and
+withdrawal. Final exact-head hosted results and live preview checks are still
+pending. Tests use only temporary synthetic databases; never production.

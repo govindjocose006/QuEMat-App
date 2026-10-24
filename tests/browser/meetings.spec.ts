@@ -217,7 +217,7 @@ test("notice drafts, publishing, explicit per-revision reading, pin changes, his
   await page.getByRole("button", { name: "New notice", exact: true }).click();
   await page.getByLabel("Notice title", { exact: true }).fill(title);
   await page
-    .getByLabel("Notice text", { exact: true })
+    .getByRole("textbox", { name: "Notice text", exact: true })
     .fill("Synthetic notice: please read, without implying approval");
   await page
     .getByRole("checkbox", { name: "Pin on dashboard", exact: true })
@@ -288,7 +288,7 @@ test("notice drafts, publishing, explicit per-revision reading, pin changes, his
   await page.getByRole("button", { name: title, exact: true }).click();
   await page.getByRole("button", { name: "Edit notice", exact: true }).click();
   await page
-    .getByLabel("Notice text", { exact: true })
+    .getByRole("textbox", { name: "Notice text", exact: true })
     .fill("Corrected synthetic notice; read this new revision");
   await page
     .getByRole("checkbox", { name: "Pin on dashboard", exact: true })
