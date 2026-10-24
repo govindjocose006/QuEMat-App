@@ -7,8 +7,40 @@ The user selected **Phase 1: foundation, accounts, onboarding, and instruments**
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
 Phases 1 and 2 are deployed. The user approved the Phase 2 preview and authorized
 release after a private production backup and migration. Phase 3A weekly progress
-is now implemented for review/isolated preview. Production remains Phase 2;
-Phase 3B/3C and later phases remain unimplemented.
+is implemented and accepted in the isolated preview. Its guarded production
+migration and preservation verification have passed; production deployment is
+the remaining release step. Phase 3B/3C and later phases remain unimplemented.
+
+## Phase 3A production migration verified (2026-10-24)
+
+- After changing networks, the operator's standard native read-only diagnosis
+  succeeded against the pinned production target; no IPv4-only flags or relaxed
+  TLS were needed. The result was `PHASE2_STRUCTURE_NO_003_OBJECTS`. This established
+  native SQL connectivity and the checked schema state, not proof of prior rollback.
+- The operator completed the guarded migration retry with the original encrypted
+  backup and receipt, without rerunning backup or resetting its timestamp. The
+  original creation time was `2026-10-23T18:14:55.629Z`; inspection reported age
+  763 minutes, within the enforced 24-hour limit. Archive decryption/full-read and
+  freshness checks run again inside the migration command. Older backup material
+  remains preserved privately on Windows.
+- Operator-reported migration output: `APPLIED`, `recordPreservation:PASSED`;
+  full-row before/after checks retained 1 user, 15 instruments, 12 training entries,
+  24 audit events, 1 sample, 1 booking, its sample link, 2 notifications, 1 session,
+  1 rate-limit record and the write-lock row. Existing ledger fingerprints exclude
+  the newly added 003 entry, explaining the preserved ledger count of 2.
+- Operator verification lists migrations 001/002/003, `originalRecords:RETAINED`
+  and `constraints:VERIFIED`. No preview fixtures were run against production.
+  No production SQL or automated tests ran from this cloud workspace.
+- All checks passed at implementation/tooling head `2fbb786`: dependency audit,
+  build/application/release type checks, 109 isolated tests, 14 desktop/phone
+  browser tests and 10 native PostgreSQL checks. The operator's clean install
+  also reports zero known vulnerabilities. Final CI must pass again for this
+  documentation update before merging PR #2.
+- Pre-merge Vercel checks confirm the existing `quemat-app` Hobby project with
+  no trial and exact preservation of saved Production and branch-specific Preview
+  environment bindings. Merge/deployment and live/private acceptance remain next;
+  do not rerun migrations. Historical hold entries below describe resolved stages.
+  Budget remains ₹0; no infrastructure, paid service, upgrade, trial or purchase.
 
 ## Native connectivity and dependency remediation (2026-10-24)
 

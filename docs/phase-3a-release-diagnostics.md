@@ -1,5 +1,12 @@
 # Diagnose the held Phase 3A release
 
+**Resolved release gate (2026-10-24):** the operator's standard native diagnosis
+succeeded after changing networks, with the expected Phase 2 structure and no
+checked 003 objects. The subsequent guarded migration and preservation verification
+succeeded using the original fresh backup (763 minutes at inspection). The
+instructions below preserve the investigation history; they are not a request
+to retry or rerun production migration. See [release status](phase-3a-release.md).
+
 The user reported a successful private encrypted backup (52,259 bytes) followed
 by a migration error without a type/code. Their SQL Editor check finds only 001
 and 002; TCP 5432 was reachable in a subsequent Windows check. **The cause and
@@ -20,8 +27,7 @@ no catalog result was obtained over that native connection. SQL Editor separatel
 shows the expected Phase 2 structure, with all checked 003 objects absent.
 
 An isolated reproduction found an actual release-tool defect: a URL omitting its
-port allowed `pg` to inherit ambient `PGPORT`, despite the target guard expecting
-5432. With synthetic `PGPORT=15432`, the old actual pg client selected port 15432.
+port allowed `pg` to inherit ambient `PGPORT`, despite the target guard expecting 5432. With synthetic `PGPORT=15432`, the old actual pg client selected port 15432.
 The Phase 3A config reader now pins **5432 in the in-memory URL itself**, leaving
 the saved file/receipt unchanged, and an actual pg-client regression checks this
 alongside verified TLS/host/role/database. This defect may explain the mismatch
@@ -119,12 +125,12 @@ automatic instruction to retry the migration.
 
 Possible structure labels:
 
-| Label | Meaning |
-| --- | --- |
+| Label                             | Meaning                                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `PHASE2_STRUCTURE_NO_003_OBJECTS` | Known 003 objects/notification changes absent, 001/002 safeguards present; rollback/content preservation still not proved |
-| `PARTIAL_OR_UNEXPECTED_003_STATE` | Ledger and objects disagree, or expected constraints/triggers are incomplete; stop for investigation |
-| `PHASE3A_STRUCTURE_PRESENT` | Ledger and expected 003 structure present; reconcile the private migration receipt and verify records before release |
-| `UNEXPECTED_BASELINE` | Missing/unknown baseline migration or Phase 2 safeguard; stop |
+| `PARTIAL_OR_UNEXPECTED_003_STATE` | Ledger and objects disagree, or expected constraints/triggers are incomplete; stop for investigation                      |
+| `PHASE3A_STRUCTURE_PRESENT`       | Ledger and expected 003 structure present; reconcile the private migration receipt and verify records before release      |
+| `UNEXPECTED_BASELINE`             | Missing/unknown baseline migration or Phase 2 safeguard; stop                                                             |
 
 ### If the Node connection still fails
 

@@ -1,10 +1,16 @@
 # Phase 3A production release: private Windows steps
 
-**Release hold after the first migration attempt:** the user reported successful
-backup, but migration failed with insufficient diagnostics and 003 is absent
-from the ledger. Preserve the existing backup/receipt. Follow
-[read-only diagnosis](phase-3a-release-diagnostics.md) before any migration retry;
-the missing ledger alone does not establish full rollback.
+**Production migration verified on 2026-10-24:** after successful native read-only
+diagnosis on a different network, the operator completed the guarded 003 retry
+using the original encrypted backup/receipt. Inspection reported age 763 minutes
+from its original creation time, within the enforced 24-hour limit. Migration
+reported `APPLIED` and full-row preservation `PASSED`; verification lists 001/002/003,
+`originalRecords:RETAINED` and `constraints:VERIFIED`. Preserve all private backup
+material. **Do not rerun setup, backup or migration as part of deployment.**
+
+The earlier failure/diagnostic history is retained in
+[read-only diagnosis](phase-3a-release-diagnostics.md). Its metadata result alone
+did not prove rollback; the guarded retry independently checked preservation.
 
 The user accepted the tested preview and authorized release of PR #2. **Do not
 merge or deploy until this fresh backup, migration, verification and final CI
@@ -18,15 +24,15 @@ Keep the existing Phase 2 encrypted backup and its private directory untouched.
 
 ## Target and authorization
 
-| Setting | Required value |
-| --- | --- |
-| Neon project | `wandering-truth-11355959` |
-| Branch | `production` / `br-flat-band-a1umhh3i` |
-| Direct host | `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech` |
-| Database / role | `neondb` / `neondb_owner` |
-| Vercel project | existing `quemat-app` |
-| Production URL | https://quemat-app.vercel.app |
-| Allowed migration | `003_weekly_progress.sql` only |
+| Setting             | Required value                                                     |
+| ------------------- | ------------------------------------------------------------------ |
+| Neon project        | `wandering-truth-11355959`                                         |
+| Branch              | `production` / `br-flat-band-a1umhh3i`                             |
+| Direct host         | `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech`              |
+| Database / role     | `neondb` / `neondb_owner`                                          |
+| Vercel project      | existing `quemat-app`                                              |
+| Production URL      | https://quemat-app.vercel.app                                      |
+| Allowed migration   | `003_weekly_progress.sql` only                                     |
 | Reviewed LF SHA-256 | `d2a89110a6e746c6e34023a382dc953124886728c50e6c2c41a58f9a24cec696` |
 
 The old `production-release.ts` remains pinned to Phase 2. **Do not use it for

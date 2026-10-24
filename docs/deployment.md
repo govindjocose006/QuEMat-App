@@ -7,6 +7,15 @@ Nothing depends on a Vercel instance's filesystem or process staying alive.
 
 ## Current release
 
+Phase 3A has been accepted in preview and is ready for the authorized production
+deployment after final PR #2 CI. The operator completed its guarded production
+003 migration on 2026-10-24 using the original verified encrypted backup inside
+the 24-hour freshness window. Full-row preservation passed; verification confirms
+001/002/003, retained original records and valid constraints. **Do not rerun any
+migration during merge, build or deployment.** See [release evidence and private
+acceptance steps](phase-3a-release.md). The Phase 2 deployment described below is
+the serving version until the existing Vercel Git integration deploys this release.
+
 Phase 2 is deployed to https://quemat-app.vercel.app in the existing Vercel project
 `quemat-app`, linked to `govindjocose006/QuEMat-App` branch `main`, Node.js 24, region
 `sin1` (Singapore). Production variables are managed in Vercel. The user confirmed
@@ -50,9 +59,9 @@ A Phase 2 release requires the additive `002_scheduling.sql` migration and
 after backup and isolated validation. No migration runs during a Vercel build or
 function cold start. The Phase 2 health check requires the new schema.
 
-## Phase 3A preview only
+## Separate Phase 3A preview
 
-Phase 3A is a separate feature-branch change; production remains Phase 2. Follow
+The Phase 3A preview remains separate from production. Follow
 [Phase 3A preview steps](phase-3a.md#existing-isolated-preview) using the existing
 `quemat_pr1_preview` database in project `sparkling-meadow-75486459`. Apply
 `003_weekly_progress.sql` there before deploying the new preview. The Phase 3A
@@ -68,7 +77,8 @@ mentor/member/supervisor test accounts without changing existing accounts.
 The user accepted the preview and authorized the Phase 3A release subject to a
 fresh private verified backup, reviewed migration 003, preservation verification
 and final CI before merge/deployment. Follow [the guarded Phase 3A release steps](phase-3a-release.md).
-Production remains Phase 2 until these prerequisites succeed. The pinned Phase 2
+The operator has now completed those database prerequisites; final CI and
+merge/deployment remain. The pinned Phase 2
 release tool deliberately does not authorize migration 003; use the separate
 Phase 3A tool, never preview fixtures or the general migration CLI.
 
