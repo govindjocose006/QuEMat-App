@@ -19,7 +19,12 @@ merge or deployment is authorized. Phase 3C and later phases remain unimplemente
   PostgreSQL checks and Windows setup-script syntax parsing, must pass before
   giving the first Windows checkout/dependency/type-check preparation step.
   Local preparation already passed 137 isolated tests, build/type checks and a
-  zero-vulnerability audit. Hosted results still need checking after publication.
+  zero-vulnerability audit. The first native CI run reached the issue notification
+  assertion after guarded 004 preservation/idempotency succeeded, then found an
+  outdated expected count (3 versus 6): the new retained weekly fixture also has
+  an active application supervisor. The native test now checks exact recipient
+  fanout and unique recipient/event keys rather than ignoring that supervisor.
+  Final hosted results still require checking at the corrected head.
 - Production backup/migration, PR #4 merge and production deployment remain
   explicitly unauthorized. Preserve all existing backups/receipts, production
   configuration and older preview bindings. No production commands are requested

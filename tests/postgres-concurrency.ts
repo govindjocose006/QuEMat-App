@@ -144,7 +144,7 @@ try {
   assert.equal(inspected.state.counts.bookingsWithActualStart, 1);
   assert.deepEqual(await fingerprints(db), before);
   count++;
-  await addWeeklyFixture(db, user, instrument);
+  const weeklyFixture = await addWeeklyFixture(db, user, instrument);
   const baselineUserCount = (await db.query("SELECT id FROM users")).length;
   const readOnly3b = await inspectReadOnly3b(db);
   assert.equal(readOnly3b.structure, "PHASE3A_STRUCTURE_NO_004_OBJECTS");
@@ -300,13 +300,29 @@ try {
     ),
     /notification_source/,
   );
+  // The retained weekly fixture includes an application supervisor. Directed
+  // issue events notify that reviewer too, independently of assignment.
+  const issueNotices = await db.query<{ user_id: string; event_key: string }>(
+    "SELECT user_id,event_key FROM notifications WHERE issue_id=$1",
+    [issue.body.id],
+  );
+  const noticesByRecipient = new Map<string, number>();
+  for (const notice of issueNotices)
+    noticesByRecipient.set(
+      notice.user_id,
+      (noticesByRecipient.get(notice.user_id) ?? 0) + 1,
+    );
+  assert.deepEqual(
+    [...noticesByRecipient.entries()].sort(),
+    [
+      [user, 2], // Reported and discussed by the reporter; no own-action notification.
+      [reporter, 1], // Explicit acknowledgement by the assignee.
+      [weeklyFixture.reviewer, 3], // Attention requested: creation, acknowledgement and comment.
+    ].sort(),
+  );
   assert.equal(
-    (
-      await db.query("SELECT id FROM notifications WHERE issue_id=$1", [
-        issue.body.id,
-      ])
-    ).length,
-    3,
+    new Set(issueNotices.map((n) => `${n.user_id}:${n.event_key}`)).size,
+    issueNotices.length,
   );
   const restored = (
     await nativeReporter.agent.get(`/api/issues/${issue.body.id}`)
