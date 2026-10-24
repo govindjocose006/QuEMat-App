@@ -27,6 +27,7 @@ import {
 } from "./db.js";
 import { digest, hashPassword, verifyPassword } from "./auth.js";
 import { installScheduling } from "./scheduling.js";
+import { installIssues } from "./issues.js";
 import { installWeekly } from "./weekly.js";
 
 type Options = {
@@ -94,7 +95,7 @@ export function createApp(db: DB, options: Options) {
     if (
       !(
         await db.query(
-          "SELECT 1 FROM schema_migrations WHERE name='003_weekly_progress.sql'",
+          "SELECT 1 FROM schema_migrations WHERE name='004_issues_requests.sql'",
         )
       ).length
     )
@@ -526,6 +527,7 @@ export function createApp(db: DB, options: Options) {
   });
   installScheduling(app, db, approved, (res) => context(res).user!, fail);
   installWeekly(app, db, approved, (res) => context(res).user!, fail);
+  installIssues(app, db, approved, (res) => context(res).user!, fail);
   app.use("/api", (_req, _res, next) =>
     next(new HttpError(404, "This endpoint does not exist.")),
   );
@@ -551,21 +553,17 @@ export function createApp(db: DB, options: Options) {
       }
       if (error && typeof error === "object" && "code" in error) {
         if (error.code === "23P01" || error.code === "23505") {
-          res
-            .status(409)
-            .json({
-              error:
-                "This slot conflicts with another booking, maintenance, buffers, or active usage. Refresh the schedule and choose another time.",
-            });
+          res.status(409).json({
+            error:
+              "This slot conflicts with another booking, maintenance, buffers, or active usage. Refresh the schedule and choose another time.",
+          });
           return;
         }
         if (error.code === "23514" || error.code === "23503") {
-          res
-            .status(400)
-            .json({
-              error:
-                "The record violates a database rule. Check samples, members, furnace limits, and unloading confirmation.",
-            });
+          res.status(400).json({
+            error:
+              "The record violates a database rule. Check samples, members, furnace limits, and unloading confirmation.",
+          });
           return;
         }
       }

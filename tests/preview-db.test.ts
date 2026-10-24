@@ -79,7 +79,7 @@ it("initializes an empty isolated database and repeatable synthetic fixtures wit
   expect((await db.query("SELECT id FROM users")).length).toBe(4);
   expect((await db.query("SELECT id FROM samples")).length).toBe(2);
   expect((await db.query("SELECT id FROM instruments")).length).toBe(15);
-  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(3);
+  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(4);
   expect(
     (
       await db.query(
@@ -147,3 +147,23 @@ it("refuses fixtures when the stored preview identity does not match", async () 
   expect(await run("fixtures")).toBe(1);
   expect((await db.query("SELECT id FROM users")).length).toBe(0);
 });
+it("refuses prepare before migrations/seeding when a marked preview contains a non-synthetic account", async () => {
+  await run("prepare");
+  await run("fixtures");
+  await db.query(
+    "UPDATE users SET email='real-person@outside.invalid' WHERE email='preview-member@example.test'",
+  );
+  const tables = ["users", "instruments", "samples", "schema_migrations"];
+  const before = await Promise.all(
+    tables.map((t) => db.query(`SELECT * FROM ${t} ORDER BY 1`)),
+  );
+  expect(await run("prepare")).toBe(1);
+  expect(
+    await Promise.all(
+      tables.map((t) => db.query(`SELECT * FROM ${t} ORDER BY 1`)),
+    ),
+  ).toEqual(before);
+  expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain(
+    "non-synthetic",
+  );
+}, 20000);
