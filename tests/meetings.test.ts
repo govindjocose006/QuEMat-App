@@ -377,6 +377,56 @@ it("keeps notes immutable and actions owner-controlled with due dates, completio
     ]),
   ).rejects.toThrow(/append only/);
 });
+it("does not reopen work for an owner who lost meeting access or active membership", async () => {
+  const a = await client("admin");
+  let m = await meeting(a, { attendeeIds: [ids.member, ids.other] });
+  let r = await a.write(`/meetings/${m.id}/actions`, {
+    title: "Synthetic retained completed action",
+    ownerId: ids.member,
+  });
+  const id = r.body.actions[0].id;
+  r = await a.write(`/meetings/${m.id}/actions/${id}`, {
+    version: 1,
+    status: "done",
+  });
+  expect(r.status).toBe(200);
+  r = await a.write(
+    `/meetings/${m.id}`,
+    update(m, { attendeeIds: [ids.other] }),
+    "put",
+  );
+  expect(r.status, r.body.error).toBe(200);
+  m = r.body;
+  expect(
+    (
+      await a.write(`/meetings/${m.id}/actions/${id}`, {
+        version: 2,
+        status: "open",
+      })
+    ).status,
+  ).toBe(400);
+  r = await a.write(
+    `/meetings/${m.id}`,
+    update(m, { attendeeIds: [ids.member, ids.other] }),
+    "put",
+  );
+  expect(r.status).toBe(200);
+  await db.query("UPDATE users SET status='inactive' WHERE id=$1", [
+    ids.member,
+  ]);
+  expect(
+    (
+      await a.write(`/meetings/${m.id}/actions/${id}`, {
+        version: 2,
+        status: "open",
+      })
+    ).status,
+  ).toBe(400);
+  const retained = (await a.get(`/meetings/${m.id}`)).body.actions[0];
+  expect(retained.status).toBe("done");
+  expect(retained.version).toBe(2);
+  expect(retained.events).toHaveLength(2);
+});
 it("validates attendees, time ordering and links without changing existing identity or granting privileges", async () => {
   const a = await client("admin");
   for (const extra of [
@@ -535,6 +585,16 @@ it("separates expired and withdrawn notices, suppresses them from pinned/current
   });
   expect(result.status).toBe(200);
   n = result.body;
+  const withdrawalMessages = await db.query<{ message: string }>(
+    "SELECT message FROM notifications WHERE notice_id=$1 AND event_key=$2",
+    [n.id, `notice:${n.id}:version:${n.version}`],
+  );
+  expect(withdrawalMessages.length).toBeGreaterThan(0);
+  expect(
+    withdrawalMessages.every(
+      (entry) => !entry.message.includes("acknowledgement is requested"),
+    ),
+  ).toBe(true);
   expect((await c.get(`/notices/${n.id}`)).status).toBe(404);
   expect(
     (await c.get("/notifications")).body.some(

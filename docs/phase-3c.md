@@ -26,7 +26,8 @@ Managers edit schedules and attendee lists. Participants/managers append notes
 with data links; corrections are new notes, not destructive edits. Managers assign
 action items to active selected attendees, with optional due dates. Only the
 owner or a manager can complete/reopen an action; actor/time/status history is
-retained. Complete an owner's open actions before removing them as an attendee.
+retained. Complete an owner's open actions before removing them as an attendee. Reopening
+also requires that owner to remain an active selected attendee.
 Cancelled meetings retain notes/history and existing action completion; new actions
 and rescheduling are disabled. Schedule a new meeting if cancellation is reversed.
 Meetings do not reserve instruments, infer attendance or record actual lab usage.
@@ -212,3 +213,9 @@ full suites passed. All automated tests use temporary synthetic databases, never
 production. Authenticated live manager/member acceptance remains pending the
 operator's private checks and the preview-host allowance. No preview protection
 was disabled and no automation bypass key has been created.
+
+Final review also guards reopening a completed action after its owner was removed
+or deactivated, and avoids requesting read acknowledgement in withdrawal messages.
+This changes no SQL/migration. The isolated suite now contains **154 tests**; the
+new 14-check meeting suite passes locally. Latest-head hosted checks remain the
+release/review source of truth in [PR #6](https://github.com/govindjocose006/QuEMat-App/pull/6).

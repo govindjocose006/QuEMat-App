@@ -248,7 +248,7 @@ export function installMeetings(
       n.id,
       `version:${n.version}`,
       people.map((p) => p.id),
-      `A notice was ${verb}.${n.acknowledgementRequired ? " Explicit read acknowledgement is requested on the notice." : ""}`,
+      `A notice was ${verb}.${n.status === "published" && !n.expired && n.acknowledgementRequired ? " Explicit read acknowledgement is requested on the notice." : ""}`,
     );
   }
   function expiry(value: string | null) {
@@ -515,6 +515,20 @@ export function installMeetings(
           version(a.version, input.version);
           if (a.status === input.status)
             fail(409, "This action already has that status.");
+          if (
+            input.status === "open" &&
+            (!m.attendeeIds.includes(a.owner_id) ||
+              !(
+                await tx.query(
+                  "SELECT id FROM users WHERE id=$1 AND status='approved' AND onboarded=1",
+                  [a.owner_id],
+                )
+              ).length)
+          )
+            fail(
+              400,
+              "Restore the active action owner as a selected attendee before reopening.",
+            );
           await tx.query(
             "UPDATE meeting_actions SET status=$2,version=version+1,completed_by=$3,completed_at=CASE WHEN $2='done' THEN now() ELSE NULL END WHERE id=$1",
             [actionId, input.status, input.status === "done" ? u.id : null],

@@ -47,6 +47,11 @@ No production 005 migration, Phase 3C merge or production deployment is authoriz
   accounts. Screenshots were inspected for desktop/phone readability. Earlier
   selector-only browser failures were fixed; two load-related local integration
   timeouts passed in a sequential 27-check rerun, then full hosted suites passed.
+- Final review adds a regression guard against reopening completed actions whose
+  owner has lost active meeting access, and suppresses read requests on withdrawn
+  notice notifications. The local meeting suite passes 14 checks; total isolated
+  cases are now 154. Migration 005 is unchanged; do not rerun preview preparation
+  just for this fix. Latest-head hosted results are tracked in PR #6.
 - Cloud read-only preview verification fails `EAI_AGAIN` at
   `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, also outside the sandbox.
   The user subsequently completed preview prepare/meetings-fixtures/verify on
