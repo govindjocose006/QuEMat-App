@@ -10,6 +10,56 @@ optional issue-status reasons are released. Phase 3C Meetings & Notices is on
 `feature/phase-3c-meetings-notices` for isolated synthetic review/preview only.
 No production 005 migration, Phase 3C merge or production deployment is authorized.
 
+## Phase 3C preview acceptance and release preparation (2026-10-25)
+
+- **User-confirmed live preview acceptance:** meetings, attendee privacy, notes,
+  actions, calendar export, notice acknowledgements and acknowledgement after
+  corrections all passed. This records the user's private checks; agent-native
+  cloud DNS/proxy checks and isolated automated tests remain separate evidence.
+- Pulled the existing newer green PR #6 head `311ad1a` (distinct navigation icons)
+  before preparing release tooling. The application and reviewed 005 SQL stay
+  unchanged. User authorization covers tooling/runbook publication, automatic
+  preview redeployment, all CI and the first Windows checkout/dependency/type-check
+  step only. No production configuration, backup, diagnostics, migration, merge
+  or production deployment is authorized. No Phase 4.
+- Added independent `phase3c-production-release` CLI/core, sanitized diagnostics,
+  one-statement read-only SQL inspection and unique ACL-restricted Windows setup.
+  Pinned 005 LF SHA-256 is
+  `edec82141df539734e79d90d694b8ec09977f9171e058283de80ffbefe543d59`;
+  purpose `quemat-phase3c-production` / receipt
+  `quemat-phase3c-production-backup-v1`. Earlier 002/003/004 tools/pins/receipts
+  remain untouched. The [guarded Windows runbook](phase-3c-release.md) separates
+  the currently authorized first step from all future separately authorized steps.
+- Guards require the exact direct production identity/5432/PG18, clean 001–004
+  baseline, intact booking/weekly/issue safeguards, fresh private encrypted backup
+  and an original age strictly under 24 hours. Checks repeat after validation/
+  connection and immediately before DDL inside the locked transaction; no age
+  refresh or old-purpose receipt reuse. New archive/receipt paths are exclusive.
+- Full pre/post canonical hashes cover all **22 existing tables**, including issue
+  identity/status/history/discussion and optional blank reasons, weekly private
+  drafts/revisions/comments/reviews/actions, bookings/actual usage/unloading,
+  notifications/auth/audit and both sample/issue sequences. Only two new NULL
+  notification columns are normalized. All nine new meeting/notice tables must
+  be empty; no seeds/fixtures/accounts are run by the production CLI.
+- Schema verification checks new column types/nullability/defaults, named validated
+  constraint definitions, indexes, exact function bodies, enabled immutable/identity
+  triggers, five-source notification exclusivity and all old safeguards. Partial
+  state, missing receipt evidence or uncertain commit outcome blocks blind retry.
+  Later read-only verification preserves immutable histories/identities and known
+  first weekly submission/issue acknowledgement while allowing legitimate activity.
+- All **21 local guarded-release/offline cases pass** (17 preservation/guard
+  cases and four cross-platform offline cases), including issue history/optional
+  reasons, exact schema definitions/defaults and old-safeguard corruption. Build/
+  application/release type checks and audit pass (zero vulnerabilities). Existing
+  native CI now exercises guarded 005 over populated 004 history. A real standard
+  Windows hosted CI job runs release type checks, PowerShell syntax parsing and
+  TCP-blocked CLI/encryption checks with synthetic files; it never queries a DB.
+  Final local and hosted outcomes must be recorded after publication, not assumed.
+- No production backup/migration/verification or credential setup was executed.
+  All prior private backups/receipts stay preserved. Existing free resources only;
+  public-repository standard CI is free, with no purchase, upgrade, trial, paid
+  service or new cloud infrastructure.
+
 ## PR #5 production release and Phase 3C development (2026-10-24)
 
 - Reviewed PR #5 head `700e881dcd2ff2e3bf3c840b470a66e777a7e2fc`: four

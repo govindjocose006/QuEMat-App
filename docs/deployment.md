@@ -32,6 +32,15 @@ Phase 3A's private production acceptance was user-confirmed: existing instrument
 records, bookings, sample archival, weekly drafts/submission/revision/timestamps
 and sign-out. PR #3's Active/Archived/All sample views also remain released.
 
+### Phase 3C accepted preview and release tooling
+
+The user confirmed private preview meetings/privacy/notes/actions/calendar and
+notice read/re-correction checks on 2026-10-25. [Independent guarded 005 tooling
+and Windows guide](phase-3c-release.md) are prepared for review/publication/CI and
+Windows checkout preparation only. Do not execute a production backup/migration,
+merge PR #6 or deploy production. Old 004 tooling/receipts cannot authorize 005.
+Existing production variables, preview bindings, backups and free resources remain.
+
 ### Earlier Phase 2 release
 
 Phase 2 is deployed to https://quemat-app.vercel.app in the existing Vercel project

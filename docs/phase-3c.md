@@ -5,6 +5,18 @@ isolated synthetic preview only. **Do not merge, apply 005 to production or depl
 this phase to production.** PR #5's separate production release needs no migration.
 Budget stays ₹0: existing Vercel/Neon resources and free local tools only.
 
+## Accepted preview; guarded release preparation only
+
+On 2026-10-25 (Asia/Kolkata), the user confirmed meetings, attendee privacy,
+notes, actions, calendar export, notice acknowledgements and re-acknowledgement
+following corrections. These are user-confirmed private live checks, distinct
+from agent cloud connectivity and automated isolated/native/browser tests below.
+The [guarded 005 production runbook](phase-3c-release.md) and independent tools are
+being published with authorized automatic preview redeployment and CI. Only the
+first Windows checkout/dependency/type-check preparation step may be provided
+when green. Production backup/migration, PR #6 merge and deployment remain on hold.
+Preserve every older backup/receipt; do not start Phase 4.
+
 ## Workflows and permissions
 
 Application supervisors and administrators schedule group/individual meetings,

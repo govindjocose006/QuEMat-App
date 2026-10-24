@@ -21,6 +21,12 @@ import {
 } from "../scripts/phase3b-production-release-core.js";
 import { inspectReadOnly as inspectReadOnly3b } from "../scripts/phase3b-release-inspection.js";
 import { addWeeklyFixture } from "./phase3b-release-fixture.js";
+import {
+  applyReviewedPhase3C,
+  fingerprints as fingerprints3c,
+  verifyRetained as verifyRetained3c,
+} from "../scripts/phase3c-production-release-core.js";
+import { inspectReadOnly as inspectReadOnly3c } from "../scripts/phase3c-release-inspection.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -341,6 +347,41 @@ try {
   const issueRows = await Promise.all(
     retainedIssueTables.map((t) => db.query(`SELECT * FROM ${t} ORDER BY id`)),
   );
+  const before005 = await fingerprints3c(db);
+  assert.equal(
+    (await inspectReadOnly3c(db)).structure,
+    "PHASE3B_STRUCTURE_NO_005_OBJECTS",
+  );
+  let backupChecks = 0;
+  const guarded005 = await applyReviewedPhase3C(
+    db,
+    readFileSync("server/migrations/005_meetings_notices.sql", "utf8"),
+    undefined,
+    async () => {
+      backupChecks++;
+    },
+  );
+  assert.equal(backupChecks, 1);
+  assert.deepEqual(guarded005.before, before005);
+  assert.deepEqual(guarded005.after, before005);
+  assert.equal(guarded005.before.schema_migrations.count, 4);
+  assert.equal(guarded005.before.issues.count, 1);
+  assert.equal(
+    (await inspectReadOnly3c(db)).structure,
+    "PHASE3C_STRUCTURE_PRESENT",
+  );
+  count++;
+  assert.equal(
+    (
+      await applyReviewedPhase3C(
+        db,
+        readFileSync("server/migrations/005_meetings_notices.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await verifyRetained3c(db, before005);
+  count++;
   await migrate(db);
   assert.deepEqual(await snapshot(), beforeCollaboration);
   assert.deepEqual(
@@ -581,7 +622,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, Phase 3C preservation/calendar/read-receipt concurrency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, guarded Phase 3C full-row/issue-history preservation/idempotency and calendar/read-receipt concurrency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();
