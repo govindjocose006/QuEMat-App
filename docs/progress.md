@@ -36,15 +36,34 @@ merge or deployment is authorized. Phase 3C and later phases remain unimplemente
   operator-reported result, not a cloud-native SQL connectivity claim.
 - Configured only two new Vercel Preview variables (DATABASE_URL/APP_ORIGIN) scoped
   to `feature/phase-3b-issues-requests`; all existing bindings compare unchanged.
-  Preview deployment `dpl_6uuxmZ2zGbzFkEJ93haVWJRzErpJ` is READY at
+  The working preview is
   https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app.
-  Hosted build readiness is not yet live health/workflow verification. Requests
-  to that hostname fail proxy tunnel **HTTP 403**, including outside-sandbox;
-  its network allowance is requested. Live checks remain pending that access.
-- Native cloud preview verification failed `EAI_AGAIN/getaddrinfo` at
-  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, including an outside-sandbox
-  retry. The successful Windows preview-only migration above resolves database
-  preparation; direct SQL from this cloud environment remains unverified.
+  Its hostname allowance propagated after the initial proxy HTTP 403. The setup
+  skill confirmed the hostname was already in the environment draft; no duplicate
+  rule or reusable setup change was saved. Native PostgreSQL DNS from this cloud
+  still fails EAI_AGAIN, so the migration remains operator-confirmed from Windows.
+- Agent live preview checks passed against Vercel/Neon: 004-ledger health and all
+  15 instruments; pending-membership denial; issue creation and related sample/
+  instrument; attention remains distinct from acknowledgement; inbox source links
+  and read ownership; reporter-only details; reassignment history; unrelated
+  comment/status denial; simultaneous acknowledgement returning one success/one
+  409/one event; discussion links; progress/blocked/resolved/reopen lifecycle;
+  actor/timestamp retention; combined filters and resolved separation; member
+  dashboard scope; and persistence through a fresh sign-in. The existing weekly
+  report/revisions remain readable. Application supervisor/administrator and
+  academic-role cases passed the isolated server and desktop/phone suites; no
+  private production or preview manager password was requested for agent checks.
+- Live Phase 2 regression passed: future PPMS booking persistence and two concurrent
+  overlaps rejected, plus the configured furnace-temperature limit. No actual
+  instrument usage was recorded. Test issue `ISS-1` remains resolved with history,
+  sample `QEM-7` is archived, and booking
+  `af40fc7e-8b64-4e92-8b89-b8631ef81cbc` is cancelled. Only agent-created synthetic
+  preview records were changed for cleanup; previous records remain retained.
+- Vercel protection stayed enabled. A temporary automation credential required a
+  preview-only redeploy to take effect, following Vercel's documented procedure;
+  it was revoked after checks. Deployment `dpl_3NFfHrPjjDKKV3ewMpDGdG8yMWZi` served
+  documentation head `df8336e` with unchanged implementation `6f88eb4`; all checks
+  at both heads passed. The final documentation update requires its own CI run.
 - Production remains `ec8a4fe` with unchanged environment bindings. Existing
   preview resources only, strictly ₹0; no paid services or extra infrastructure.
 

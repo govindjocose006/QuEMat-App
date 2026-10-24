@@ -172,13 +172,49 @@ PostgreSQL checks. The local delayed-response browser scenarios also pass and
 phone/desktop captures were inspected. No automated suite targets production.
 
 The operator verified the Windows preview migration: 001/002/003/004, 15
-instruments, 11 synthetic accounts and 6 samples. The existing Vercel preview is
-built at https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app
+instruments, 11 synthetic accounts and 6 samples before agent live checks. The
+existing Vercel preview is working at
+https://quemat-app-git-feature-phase-3b-issues-fa5ba0-govindjocose-2552.vercel.app
 with branch-specific preview database/origin bindings. Older bindings remain
-unchanged. Cloud HTTP verification is currently blocked by proxy tunnel HTTP 403
-for that hostname, including an outside-sandbox retry. Do not claim live issue
-workflow/health success until the access check succeeds. Direct native preview
-SQL also fails EAI_AGAIN/getaddrinfo; Windows preparation is operator-confirmed.
+unchanged. The initial proxy HTTP 403 cleared after the saved hostname allowance
+propagated. Native cloud SQL still fails EAI_AGAIN/getaddrinfo; only the guarded
+Windows operator applied 004. No further migration was run by the agent.
+
+Live agent checks through Vercel passed 004-ledger health/all 15 instruments;
+member/assignee lifecycle, assignment and unrelated/pending denial; a concurrent
+acknowledgement race; comments/links and original acknowledgement/history;
+combined search/filter/resolved views; inbox ownership; dashboard scope and
+fresh-sign-in persistence. Existing weekly report history remained readable.
+PPMS persistence/overlap rejection and furnace-temperature rejection passed.
+Manager/academic-role cases passed isolated server/browser checks; private manager
+acceptance in the live preview is optional, using the existing synthetic accounts.
+
+Agent-created cleanup: issue **ISS-1 resolved** (history retained), sample **QEM-7
+archived**, and booking `af40fc7e-8b64-4e92-8b89-b8631ef81cbc` cancelled. No actual
+instrument usage was recorded. No other synthetic records were cleaned up.
+Vercel protection remains enabled; temporary automation access was revoked.
+
+### Private preview sign-in and review
+
+Complete Vercel sign-in first, then use the existing app accounts:
+
+- `weekly-preview-member@example.test`: create/edit an issue and discuss their
+  own item. For a new issue, assign `Weekly Preview Mentor` if you want to test
+  explicit assignee acknowledgement. Requesting attention alone leaves it open.
+- `weekly-preview-mentor@example.test`: acknowledge/progress/resolve an assigned
+  item; no global issue-management privilege comes from the mentor role.
+- `weekly-preview-supervisor@example.test`: inspect the dashboard's directed
+  requests, filter the register and comment/change status as an application
+  supervisor. Use All/Resolved to find retained issue ISS-1.
+- `weekly-preview-other@example.test`: read the shared register; unrelated edit/
+  discussion/status actions should be denied unless assigned or reporting.
+
+Passwords remain only in your Windows `.preview/.env.weekly-accounts.json`.
+Never send that file, passwords or session cookies. The separately configured
+preview administrator can use its existing privately set password; do not reset
+it or copy any production credentials. Label new observations/decisions synthetic,
+resolve completed checks and preserve their history. There is no sensor, upload,
+ordering, payment or background-reminder integration to enable.
 
 All preview branches share the existing synthetic database. Use the Phase 3B
 preview to open issue notifications; older preview code does not understand that
