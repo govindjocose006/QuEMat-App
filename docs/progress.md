@@ -10,6 +10,43 @@ release after a private production backup and migration. Phase 3A weekly progres
 is now implemented for review/isolated preview. Production remains Phase 2;
 Phase 3B/3C and later phases remain unimplemented.
 
+## Phase 3A migration diagnosis hold (2026-10-24)
+
+- The user reported an encrypted/verified 52,259-byte production backup, followed
+  by a generic migration failure without an error code. A later Windows TCP 5432
+  check succeeded; their Neon SQL Editor query shows only migrations 001 and 002.
+  These results do not establish the failing stage or complete DDL/data rollback.
+  No migration retry, merge or production deployment is permitted yet.
+- Added fixed stage names and whitelisted error type/code/cause diagnostics.
+  Messages, SQL, paths, stacks, connection strings and database records are not
+  serialized. Code-less errors remain identifiable by stage/type; known connection
+  timeouts have a safe classification. Captured SQL failures remain visible if a
+  secondary transaction error masks them. Commit/receipt failure is distinguished
+  from an unconfirmed database outcome; error output never asserts full rollback.
+- Added `inspect-backup` (local checksum/age only), `check-backup` (existing archive
+  decrypt/hash/full-read validation with no database connection) and `diagnose`
+  (explicitly read-only, repeatable-read metadata/count query). None overwrites or
+  refreshes the retained backup/receipt. Diagnostic inspection of expired evidence
+  never authorizes migration; the 24-hour gate remains active and is rechecked
+  before a migration invocation. No timeout, TLS, target, hash or preservation
+  safeguard is relaxed.
+- Added a [single read-only SQL Editor query](../scripts/phase3a-release-state.sql)
+  checking weekly tables/functions/indexes/triggers/constraints, notification
+  changes, expected ledger and Phase 2 safeguards. It prints only known metadata
+  and aggregate counts. Clean structure/counts do not prove prior row-content
+  preservation. Partial objects without a ledger entry are explicitly flagged.
+- Seven new isolated checks passed (19 release tests in total), covering sanitized
+  errors, actual read-only transactions, partial 003 states, disabled history
+  triggers, failed DDL, masked errors, lost commit acknowledgement, expired backup
+  inspection and byte-for-byte retention of the original archive/receipt. Native
+  PostgreSQL CI additionally exercises the read-only inspector around guarded 003.
+- Local build, application/release type checks and all **103 isolated tests** passed.
+  Native SQL inspection and browser regressions still require final CI on this
+  change. Next collect only sanitized outputs using
+  the [diagnostic Windows steps](phase-3a-release-diagnostics.md). The original
+  failure cause remains unconfirmed. Production and preview are kept separate;
+  PR #2 remains unmerged. No paid services or new infrastructure.
+
 ## Phase 3A production release preparation (2026-10-23)
 
 - The user accepted the tested preview and authorized release of PR #2, subject to

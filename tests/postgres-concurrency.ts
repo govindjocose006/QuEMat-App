@@ -10,6 +10,7 @@ import {
   fingerprints,
   verifyRetained,
 } from "../scripts/phase3a-production-release-core.js";
+import { inspectReadOnly } from "../scripts/phase3a-release-inspection.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -105,6 +106,10 @@ try {
     [randomUUID(), user, preservedBooking],
   );
   const before = await fingerprints(db);
+  assert.equal(
+    (await inspectReadOnly(db)).structure,
+    "PHASE2_STRUCTURE_NO_003_OBJECTS",
+  );
   const guarded = await applyReviewedPhase3A(
     db,
     readFileSync("server/migrations/003_weekly_progress.sql", "utf8"),
@@ -121,6 +126,13 @@ try {
     true,
   );
   await verifyRetained(db, before);
+  count++;
+  const inspected = await inspectReadOnly(db);
+  assert.equal(inspected.structure, "PHASE3A_STRUCTURE_PRESENT");
+  assert.equal(inspected.rollbackProven, false);
+  assert.equal(inspected.migrationAllowed, false);
+  assert.equal(inspected.state.counts.bookingsWithActualStart, 1);
+  assert.deepEqual(await fingerprints(db), before);
   count++;
   await migrate(db);
   assert.equal((await db.query("SELECT id FROM users")).length, 1);
@@ -253,7 +265,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: guarded Phase 3A preservation/idempotency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A preservation/idempotency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();

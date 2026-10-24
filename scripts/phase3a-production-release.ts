@@ -45,6 +45,13 @@ import {
   type Receipt,
 } from "./phase3a-production-release-core.js";
 
+import { ReleaseDiagnostics } from "./phase3a-release-diagnostics.js";
+import {
+  backupInspection,
+  inspectReadOnly,
+} from "./phase3a-release-inspection.js";
+
+const diagnostics = new ReleaseDiagnostics();
 process.umask(0o077);
 let db: DB | undefined;
 let host = production.host;
@@ -122,14 +129,22 @@ try {
   const config = productionConfig(configFile),
     action = process.argv[3];
   if (
-    !["preflight", "backup", "migrate", "verify", "decrypt-backup"].includes(
-      action,
-    )
+    ![
+      "preflight",
+      "backup",
+      "migrate",
+      "verify",
+      "decrypt-backup",
+      "inspect-backup",
+      "check-backup",
+      "diagnose",
+    ].includes(action)
   )
     throw new ReleaseError(
-      "Choose preflight, backup, migrate, verify or decrypt-backup.",
+      "Choose preflight, backup, migrate, verify, decrypt-backup, inspect-backup, check-backup or diagnose.",
     );
   process.chdir(root);
+  diagnostics.stage("migration.hash");
   const sql = reviewedMigration(
     readFileSync("server/migrations/" + migrationName, "utf8"),
   );
@@ -138,7 +153,9 @@ try {
     config.pgBin
       ? join(config.pgBin, name + (process.platform === "win32" ? ".exe" : ""))
       : name;
+  diagnostics.stage("clients.version");
   for (const name of ["pg_dump", "pg_restore"]) {
+    if (["inspect-backup", "diagnose"].includes(action)) break;
     const version = spawnSync(binary(name), ["--version"], {
       encoding: "utf8",
     });
@@ -149,6 +166,7 @@ try {
     )
       throw new ReleaseError(
         "Install the free PostgreSQL 18 command-line tools and set POSTGRES_BIN in the private config. No cloud resource is needed.",
+        { cause: version.error },
       );
   }
   const log = join(directory, "private-tool.log");
@@ -170,10 +188,11 @@ try {
         env,
         stdio: ["ignore", fd, fd],
       });
-      child.once("error", () =>
+      child.once("error", (error) =>
         finish(
           new ReleaseError(
             program + " could not start. See the private log locally.",
+            { cause: error },
           ),
         ),
       );
@@ -181,11 +200,14 @@ try {
         finish(
           code === 0
             ? undefined
-            : new ReleaseError(
-                program +
-                  " failed (exit " +
-                  code +
-                  "). See the private log locally; do not post it publicly.",
+            : Object.assign(
+                new ReleaseError(
+                  program +
+                    " failed (exit " +
+                    code +
+                    "). See the private log locally; do not post it publicly.",
+                ),
+                { nativeExitCode: code },
               ),
         ),
       );
@@ -193,7 +215,9 @@ try {
   const validate = async (archive: string) => {
     const full = join(directory, ".validation-" + randomUUID() + ".sql");
     temporary.push(full);
+    diagnostics.stage("backup.archive.list");
     await run("pg_restore", ["--list", archive]);
+    diagnostics.stage("backup.archive.full_read");
     await run("pg_restore", [
       "--no-owner",
       "--no-privileges",
@@ -206,11 +230,13 @@ try {
     unlinkSync(full);
   };
   const save = (receipt: Receipt) => {
+    diagnostics.stage("backup.receipt.write");
     const temp = receiptPath + ".tmp";
     writeFileSync(temp, JSON.stringify(receipt, null, 2), { mode: 0o600 });
     renameSync(temp, receiptPath);
   };
   const load = async () => {
+    diagnostics.stage("backup.receipt.read");
     if (!existsSync(receiptPath))
       throw new ReleaseError(
         "Create and verify the encrypted production backup first. No migration was run.",
@@ -219,10 +245,12 @@ try {
     if (basename(receipt.archive) !== receipt.archive)
       throw new ReleaseError("Invalid archive name in backup receipt.");
     const archive = join(directory, receipt.archive);
+    diagnostics.stage("backup.archive.hash");
     await requireReceipt(receipt, archive, action === "migrate");
     return { receipt, archive };
   };
   const connect = async () => {
+    diagnostics.stage("database.connection_and_identity");
     db = await openDatabase({ url: config.url });
     const [identity] = await db.query<{
       database: string;
@@ -240,6 +268,7 @@ try {
       throw new ReleaseError(
         "Production identity/PostgreSQL version mismatch. No migration was run.",
       );
+    diagnostics.stage("database.history");
     await phase2History(db);
     return db;
   };
@@ -260,6 +289,7 @@ try {
         "A verified backup receipt already exists. Use migrate/verify; keep the existing archive.",
       );
     }
+    diagnostics.stage("backup.passphrase");
     const passphrase = await hidden(
       "New backup passphrase (hidden, at least 20 characters): ",
     );
@@ -270,6 +300,7 @@ try {
       throw new ReleaseError(
         "Backup passphrases must match and contain at least 20 characters.",
       );
+    diagnostics.stage("backup.credentials.prepare");
     const ca = join(directory, "public-roots.pem");
     writeFileSync(ca, rootCertificates.join("\n") + "\n", { mode: 0o600 });
     const url = new URL(config.url),
@@ -312,6 +343,7 @@ try {
       throw new ReleaseError(
         "Phase 3A is already applied; this would not be a pre-migration backup. Stop for review.",
       );
+    diagnostics.stage("backup.dump");
     // pg_dump takes its own consistent MVCC snapshot; no branch/snapshot service is created.
     await run(
       "pg_dump",
@@ -325,10 +357,13 @@ try {
       ],
       env,
     );
+    diagnostics.stage("backup.encrypt");
     await encryptArchive(raw, encrypted, passphrase);
     const verified = join(directory, ".verified-" + stamp + ".dump");
     temporary.push(verified);
+    diagnostics.stage("backup.decrypt");
     await decryptArchive(encrypted, verified, passphrase);
+    diagnostics.stage("backup.plaintext.hash");
     const plainSha256 = await fileHash(raw);
     if ((await fileHash(verified)) !== plainSha256)
       throw new ReleaseError("Encrypted backup roundtrip checksum mismatch.");
@@ -354,17 +389,51 @@ try {
     );
   } else {
     const { receipt, archive } = await load();
-    if (action === "migrate" || action === "decrypt-backup") {
+    if (action === "inspect-backup" || action === "diagnose") {
+      const backup = backupInspection(receipt);
+      if (action === "inspect-backup") console.log(JSON.stringify({ backup }));
+      else {
+        diagnostics.stage("database.connection_and_identity");
+        db = await openDatabase({ url: config.url });
+        const database = await inspectReadOnly(db, diagnostics);
+        console.log(
+          JSON.stringify({
+            diagnosticOnly: true,
+            backup,
+            database,
+            credentialsPrinted: false,
+          }),
+        );
+      }
+    } else if (
+      action === "migrate" ||
+      action === "decrypt-backup" ||
+      action === "check-backup"
+    ) {
+      diagnostics.stage("backup.passphrase");
       const passphrase = await hidden("Existing backup passphrase (hidden): ");
       const verified = join(directory, ".verified-" + randomUUID() + ".dump");
       temporary.push(verified);
+      diagnostics.stage("backup.decrypt");
       await decryptArchive(archive, verified, passphrase);
+      diagnostics.stage("backup.plaintext.hash");
       if ((await fileHash(verified)) !== receipt.plainSha256)
         throw new ReleaseError(
           "Decrypted archive checksum mismatch. Migration is blocked.",
         );
       await validate(verified);
-      if (action === "decrypt-backup") {
+      if (action === "check-backup") {
+        console.log(
+          JSON.stringify({
+            backup: {
+              ...backupInspection(receipt),
+              encryptionReadability: "FULL_ARCHIVE_READ_VERIFIED",
+            },
+            credentialsPrinted: false,
+          }),
+        );
+      } else if (action === "decrypt-backup") {
+        diagnostics.stage("backup.recovery.write");
         const recovered = join(
           directory,
           "recovered-production-" + randomUUID() + ".dump",
@@ -374,8 +443,14 @@ try {
           "Decrypted pg_dump archive saved privately beside the receipt. No database was restored.",
         );
       } else {
+        // Validation/connection may take time; recheck the original receipt's
+        // freshness immediately before invoking the migration, never refresh it.
+        diagnostics.stage("backup.archive.hash");
+        await requireReceipt(receipt, archive, true);
         const database = await connect();
-        const result = await applyReviewedPhase3A(database, sql);
+        diagnostics.stage("backup.archive.hash");
+        await requireReceipt(receipt, archive, true);
+        const result = await applyReviewedPhase3A(database, sql, diagnostics);
         receipt.migration = receipt.migration ?? result;
         save(receipt);
         console.log(
@@ -394,6 +469,7 @@ try {
           "No successful migration receipt. Run migrate after the backup.",
         );
       const database = await connect();
+      diagnostics.stage("verification");
       await checkWeekly(database);
       if (!(await phase2History(database)).includes(migrationName))
         throw new ReleaseError(
@@ -413,21 +489,19 @@ try {
     }
   }
 } catch (error) {
-  if (error instanceof ReleaseError) console.error(error.message);
-  else {
-    const e = error as { code?: string; syscall?: string };
-    console.error(
-      JSON.stringify({
-        error:
-          "Phase 3A production release step failed; merge/deployment remain blocked",
-        code: e.code,
-        syscall: e.syscall,
-        hostname: host,
-      }),
-    );
-  }
+  console.error(
+    JSON.stringify({ ...diagnostics.failure(error), hostname: host }),
+  );
   process.exitCode = 1;
 } finally {
   removeTemporary();
-  await db?.close();
+  try {
+    await db?.close();
+  } catch (error) {
+    diagnostics.stage("database.close");
+    console.error(
+      JSON.stringify({ ...diagnostics.failure(error), hostname: host }),
+    );
+    process.exitCode = 1;
+  }
 }

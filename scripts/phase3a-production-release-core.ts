@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { parseEnv } from "node:util";
 import type { DB, SQL } from "../server/db.js";
+import type { ReleaseDiagnostics } from "./phase3a-release-diagnostics.js";
 import {
   production,
   ReleaseError,
@@ -248,61 +249,84 @@ export async function checkWeekly(tx: SQL) {
       "Weekly notification compatibility verification failed.",
     );
 }
-export async function applyReviewedPhase3A(db: DB, sql: string) {
+export async function applyReviewedPhase3A(
+  db: DB,
+  sql: string,
+  diagnostics?: ReleaseDiagnostics,
+) {
+  diagnostics?.stage("migration.hash");
   const reviewed = reviewedMigration(sql);
-  return db.write(async (tx) => {
-    await tx.exec("SET LOCAL lock_timeout='10s'");
-    // Freeze even auth/session writes, which do not acquire the app write lock.
-    await tx.exec(
-      "LOCK TABLE " +
-        Object.keys(preservedTables).join(",") +
-        " IN SHARE ROW EXCLUSIVE MODE",
-    );
-    const names = await phase2History(tx);
-    await checkScheduling(tx);
-    const seeds = await tx.query(
-      "SELECT seed_key FROM instruments WHERE seed_key=ANY($1::text[])",
-      [Array.from({ length: 15 }, (_, i) => `initial-${i}`)],
-    );
-    if (
-      seeds.length !== 15 ||
-      !(
+  diagnostics?.stage("migration.begin_or_write_lock");
+  const result = await db.write(async (tx) => {
+    try {
+      diagnostics?.stage("migration.lock_timeout");
+      await tx.exec("SET LOCAL lock_timeout='10s'");
+      diagnostics?.stage("migration.lock_tables");
+      // Freeze even auth/session writes, which do not acquire the app write lock.
+      await tx.exec(
+        "LOCK TABLE " +
+          Object.keys(preservedTables).join(",") +
+          " IN SHARE ROW EXCLUSIVE MODE",
+      );
+      diagnostics?.stage("migration.baseline");
+      const names = await phase2History(tx);
+      await checkScheduling(tx);
+      const seeds = await tx.query(
+        "SELECT seed_key FROM instruments WHERE seed_key=ANY($1::text[])",
+        [Array.from({ length: 15 }, (_, i) => `initial-${i}`)],
+      );
+      if (
+        seeds.length !== 15 ||
+        !(
+          await tx.query(
+            "SELECT id FROM users WHERE app_role='administrator' AND status='approved' AND onboarded=1",
+          )
+        ).length
+      )
+        throw new ReleaseError(
+          "Expected production instruments or active administrator are missing. No migration was applied.",
+        );
+      diagnostics?.stage("migration.fingerprint.before");
+      const before = await fingerprints(tx);
+      const sequenceBefore = await tx.query(
+        "SELECT last_value,is_called FROM sample_number",
+      );
+      if (!names.includes(migrationName)) {
+        diagnostics?.stage("migration.ddl");
+        await tx.exec(reviewed);
+        diagnostics?.stage("migration.ledger");
         await tx.query(
-          "SELECT id FROM users WHERE app_role='administrator' AND status='approved' AND onboarded=1",
-        )
-      ).length
-    )
-      throw new ReleaseError(
-        "Expected production instruments or active administrator are missing. No migration was applied.",
-      );
-    const before = await fingerprints(tx);
-    const sequenceBefore = await tx.query(
-      "SELECT last_value,is_called FROM sample_number",
-    );
-    if (!names.includes(migrationName)) {
-      await tx.exec(reviewed);
-      await tx.query(
-        "INSERT INTO schema_migrations(name,applied_at) VALUES($1,$2)",
-        [migrationName, new Date().toISOString()],
-      );
+          "INSERT INTO schema_migrations(name,applied_at) VALUES($1,$2)",
+          [migrationName, new Date().toISOString()],
+        );
+      }
+      diagnostics?.stage("migration.schema_check");
+      await checkWeekly(tx);
+      diagnostics?.stage("migration.fingerprint.after");
+      const after = await fingerprints(tx);
+      diagnostics?.stage("migration.preservation");
+      assertPreserved(before, after);
+      if (
+        hash(sequenceBefore) !==
+        hash(await tx.query("SELECT last_value,is_called FROM sample_number"))
+      )
+        throw new ReleaseError(
+          "The sample numbering sequence changed. The transaction was rolled back.",
+        );
+      diagnostics?.stage("migration.commit");
+      return {
+        alreadyApplied: names.includes(migrationName),
+        before,
+        after,
+        appliedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      diagnostics?.capture(error);
+      throw error;
     }
-    await checkWeekly(tx);
-    const after = await fingerprints(tx);
-    assertPreserved(before, after);
-    if (
-      hash(sequenceBefore) !==
-      hash(await tx.query("SELECT last_value,is_called FROM sample_number"))
-    )
-      throw new ReleaseError(
-        "The sample numbering sequence changed. The transaction was rolled back.",
-      );
-    return {
-      alreadyApplied: names.includes(migrationName),
-      before,
-      after,
-      appliedAt: new Date().toISOString(),
-    };
   });
+  diagnostics?.stage("migration.completed");
+  return result;
 }
 export type Receipt = {
   purpose: typeof backupPurpose;

@@ -416,3 +416,260 @@ it.skipIf(process.platform === "win32")(
   },
   30000,
 );
+
+it("sanitizes nested errors and preserves stage/code without serializing secrets or records", async () => {
+  const { ReleaseDiagnostics, safeError } =
+    await import("../scripts/phase3a-release-diagnostics.js");
+  const secret =
+    "postgresql://private-user:PRIVATE_PASSWORD@private-host/private-record";
+  const err = Object.assign(new Error(secret), {
+    code: "23505",
+    detail: secret,
+    query: secret,
+    path: secret,
+    cause: Object.assign(new Error(secret), { code: "ETIMEDOUT" }),
+  });
+  const d = new ReleaseDiagnostics();
+  d.stage("migration.ddl");
+  d.capture(err);
+  const secondary = Object.assign(new Error(secret), { code: "ECONNRESET" });
+  const output = d.failure(secondary),
+    text = JSON.stringify(output);
+  expect(output).toMatchObject({
+    stage: "migration.ddl",
+    errorType: "DatabaseError",
+    code: "23505",
+    rollbackProven: false,
+    secondaryError: { code: "ECONNRESET" },
+  });
+  expect(text).not.toContain(secret);
+  expect(text).not.toContain("PRIVATE_PASSWORD");
+  expect(
+    safeError({
+      name: secret,
+      code: secret,
+      message: secret,
+      errors: [secret],
+      cause: secret,
+    }),
+  ).toMatchObject({ type: "UnknownError", code: null });
+  const cycle: Record<string, unknown> = { name: "Error" };
+  cycle.cause = cycle;
+  expect(() => JSON.stringify(safeError(cycle))).not.toThrow();
+  expect(
+    safeError(new Error("Connection terminated due to connection timeout")),
+  ).toMatchObject({ type: "Error", code: null, kind: "connection_timeout" });
+});
+it("inspects Phase 2 through an explicitly read-only transaction and returns no application records", async () => {
+  const { inspectReadOnly } =
+    await import("../scripts/phase3a-release-inspection.js");
+  const { db } = await phase2();
+  const before = await fingerprints(db);
+  let checked = false;
+  const wrapped: DB = {
+    ...db,
+    transaction: (fn) =>
+      db.transaction((tx) =>
+        fn({
+          ...tx,
+          query: async <T>(q: string, v?: unknown[]) => {
+            if (q.includes("expected_tables")) {
+              expect(
+                (
+                  await tx.query(
+                    "SELECT current_setting('transaction_read_only') AS value",
+                  )
+                )[0].value,
+              ).toBe("on");
+              checked = true;
+            }
+            return tx.query<T>(q, v);
+          },
+        }),
+      ),
+  };
+  const result = await inspectReadOnly(wrapped);
+  expect(checked).toBe(true);
+  expect(result).toMatchObject({
+    structure: "PHASE2_STRUCTURE_NO_003_OBJECTS",
+    rollbackProven: false,
+    migrationAllowed: false,
+  });
+  expect(result.state.counts).toMatchObject({
+    users: 1,
+    instruments: 15,
+    bookings: 2,
+    bookingsWithActualStart: 1,
+  });
+  const text = JSON.stringify(result);
+  expect(text).not.toContain("release3a@example.test");
+  expect(text).not.toContain("Preserve actual measurements");
+  expect(text).not.toContain("synthetic-session-hash");
+  expect(await fingerprints(db)).toEqual(before);
+}, 20000);
+it("detects objects or notification changes without a ledger entry and never calls that proof of rollback", async () => {
+  const { inspectReadOnly } =
+    await import("../scripts/phase3a-release-inspection.js");
+  const { db } = await phase2();
+  await db.exec("CREATE TABLE weekly_reports(marker TEXT)");
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PARTIAL_OR_UNEXPECTED_003_STATE",
+    rollbackProven: false,
+    migrationAllowed: false,
+  });
+  await db.exec(
+    "DROP TABLE weekly_reports;ALTER TABLE notifications ADD COLUMN weekly_report_id TEXT",
+  );
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PARTIAL_OR_UNEXPECTED_003_STATE",
+    rollbackProven: false,
+  });
+}, 20000);
+it("reports complete and damaged 003 structures independently from the migration ledger", async () => {
+  const { inspectReadOnly } =
+    await import("../scripts/phase3a-release-inspection.js");
+  const { db } = await phase2();
+  await applyReviewedPhase3A(db, migration);
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PHASE3A_STRUCTURE_PRESENT",
+    rollbackProven: false,
+    migrationAllowed: false,
+  });
+  await db.exec(
+    "ALTER TABLE weekly_revisions DISABLE TRIGGER weekly_revisions_immutable",
+  );
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PARTIAL_OR_UNEXPECTED_003_STATE",
+    rollbackProven: false,
+  });
+}, 20000);
+it("identifies failed DDL and retains its primary sanitized error if rollback reporting masks it", async () => {
+  const { ReleaseDiagnostics } =
+    await import("../scripts/phase3a-release-diagnostics.js");
+  const { inspectReadOnly } =
+    await import("../scripts/phase3a-release-inspection.js");
+  const { db } = await phase2();
+  const before = await fingerprints(db),
+    d = new ReleaseDiagnostics();
+  const primary = Object.assign(new Error("PRIVATE record contents"), {
+      code: "XX000",
+    }),
+    secondary = new Error("PRIVATE rollback connection message");
+  const wrapped: DB = {
+    ...db,
+    write: async (fn) => {
+      try {
+        return await db.write((tx) =>
+          fn({
+            ...tx,
+            exec: async (q) => {
+              await tx.exec(q);
+              if (q.includes("CREATE TABLE weekly_reports")) throw primary;
+            },
+          }),
+        );
+      } catch {
+        throw secondary;
+      }
+    },
+  };
+  let failure: unknown;
+  try {
+    await applyReviewedPhase3A(wrapped, migration, d);
+  } catch (e) {
+    failure = e;
+  }
+  expect(d.failure(failure)).toMatchObject({
+    stage: "migration.ddl",
+    code: "XX000",
+    secondaryError: { type: "Error" },
+    rollbackProven: false,
+  });
+  expect(JSON.stringify(d.failure(failure))).not.toContain("PRIVATE");
+  expect(await fingerprints(db)).toEqual(before);
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PHASE2_STRUCTURE_NO_003_OBJECTS",
+  });
+}, 20000);
+it("treats a lost commit acknowledgement as uncertain and does not infer rollback from an error", async () => {
+  const { ReleaseDiagnostics } =
+    await import("../scripts/phase3a-release-diagnostics.js");
+  const { inspectReadOnly } =
+    await import("../scripts/phase3a-release-inspection.js");
+  const { db } = await phase2(),
+    d = new ReleaseDiagnostics();
+  const wrapped: DB = {
+    ...db,
+    write: async (fn) => {
+      await db.write(fn);
+      throw new Error("Connection terminated unexpectedly");
+    },
+  };
+  let failure: unknown;
+  try {
+    await applyReviewedPhase3A(wrapped, migration, d);
+  } catch (e) {
+    failure = e;
+  }
+  expect(d.failure(failure)).toMatchObject({
+    stage: "migration.commit",
+    databaseOutcome: "NOT_ESTABLISHED_BY_ERROR_OUTPUT",
+    rollbackProven: false,
+    diagnostic: { kind: "connection_closed" },
+  });
+  expect(await inspectReadOnly(db)).toMatchObject({
+    structure: "PHASE3A_STRUCTURE_PRESENT",
+  });
+  const ack = new ReleaseDiagnostics();
+  ack.stage("migration.completed");
+  ack.stage("backup.receipt.write");
+  expect(ack.failure({ code: "EPERM" })).toMatchObject({
+    stage: "backup.receipt.write",
+    databaseOutcome: "MIGRATION_COMMIT_ACKNOWLEDGED",
+    code: "EPERM",
+  });
+}, 20000);
+it.skipIf(process.platform === "win32")(
+  "read-only backup inspection preserves an expired archive/receipt and does not authorize a migration",
+  async () => {
+    const file = clientConfig(),
+      dir = temporary(),
+      archive = join(dir, "retained.dump.enc"),
+      receiptPath = join(dir, "release-receipt.json");
+    writeFileSync(archive, "RETAIN ORIGINAL ENCRYPTED BYTES");
+    const receipt: Receipt = {
+      purpose: backupPurpose,
+      target: production,
+      migrationHash,
+      archive: "retained.dump.enc",
+      cipherSha256: await fileHash(archive),
+      plainSha256: "synthetic",
+      bytes: readFileSync(archive).length,
+      createdAt: new Date(Date.now() - maxBackupAge - 60000).toISOString(),
+    };
+    writeFileSync(receiptPath, JSON.stringify(receipt));
+    const oldArchive = readFileSync(archive),
+      oldReceipt = readFileSync(receiptPath);
+    const inspected = cli("inspect-backup", file);
+    expect(inspected.status, inspected.stderr).toBe(0);
+    expect(JSON.parse(inspected.stdout)).toMatchObject({
+      backup: {
+        backupFresh: false,
+        freshnessLimitHours: 24,
+        migrationAllowed: false,
+        receiptHasMigrationRecord: false,
+      },
+    });
+    const blocked = cli("migrate", file);
+    expect(blocked.status).toBe(1);
+    expect(JSON.parse(blocked.stderr)).toMatchObject({
+      stage: "backup.archive.hash",
+      diagnostic: { guard: "BACKUP_RECEIPT_MISMATCH_OR_EXPIRED" },
+      rollbackProven: false,
+    });
+    expect(readFileSync(archive)).toEqual(oldArchive);
+    expect(readFileSync(receiptPath)).toEqual(oldReceipt);
+    expect(inspected.stdout + blocked.stderr).not.toContain("synthetic-only");
+  },
+  30000,
+);

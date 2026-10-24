@@ -1,5 +1,11 @@
 # Phase 3A production release: private Windows steps
 
+**Release hold after the first migration attempt:** the user reported successful
+backup, but migration failed with insufficient diagnostics and 003 is absent
+from the ledger. Preserve the existing backup/receipt. Follow
+[read-only diagnosis](phase-3a-release-diagnostics.md) before any migration retry;
+the missing ledger alone does not establish full rollback.
+
 The user accepted the tested preview and authorized release of PR #2. **Do not
 merge or deploy until this fresh backup, migration, verification and final CI
 have succeeded.** The existing Phase 2 production app continues to run while
