@@ -1425,7 +1425,11 @@ export function LiveUsage({
     </section>
   );
 }
-export function Notifications() {
+export function Notifications({
+  onWeekly,
+}: {
+  onWeekly: (id: string) => void;
+}) {
   const [items, setItems] = useState<Notification[]>([]),
     [error, setError] = useState(""),
     [booking, setBooking] = useState<Booking | null>(null);
@@ -1443,13 +1447,13 @@ export function Notifications() {
   }, [reload]);
   return (
     <section>
-      <h2>Booking notifications</h2>
+      <h2>In-app notifications</h2>
       <p>
-        Persistent in-app changes and overrun alerts. Refreshed every 30 seconds
-        while open.
+        Persistent booking and weekly progress updates. Refreshed every 30
+        seconds while open.
       </p>
       <ErrorNotice message={error} />
-      {!items.length && <p>No booking notifications yet.</p>}
+      {!items.length && <p>No notifications yet.</p>}
       {items.map((n) => (
         <article className="panel" key={n.id}>
           <p>
@@ -1458,16 +1462,25 @@ export function Notifications() {
           </p>
           <p>{n.message}</p>
           <div className="action-row">
-            <button
-              className="secondary"
-              onClick={() =>
-                void api<Booking>(`/bookings/${n.bookingId}`)
-                  .then(setBooking)
-                  .catch((e) => setError(messageOf(e)))
-              }
-            >
-              View booking
-            </button>
+            {n.weeklyReportId ? (
+              <button
+                className="secondary"
+                onClick={() => onWeekly(n.weeklyReportId!)}
+              >
+                View weekly report
+              </button>
+            ) : (
+              <button
+                className="secondary"
+                onClick={() =>
+                  void api<Booking>(`/bookings/${n.bookingId}`)
+                    .then(setBooking)
+                    .catch((e) => setError(messageOf(e)))
+                }
+              >
+                View booking
+              </button>
+            )}
             {!n.readAt && (
               <button
                 className="secondary"

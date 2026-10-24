@@ -641,10 +641,6 @@ select {
   color: #526872;
   text-transform: capitalize;
 }
-.profile .icon-button {
-  width: 30px;
-  padding: 5px;
-}
 .workspace {
   margin-left: 238px;
   width: calc(100% - 238px);
@@ -665,8 +661,14 @@ select {
   color: #526872;
   padding: 0 12px;
 }
-.mobile-logout {
-  display: none;
+.topbar > span:first-child {
+  flex: 1;
+}
+.workspace-logout {
+  display: inline-flex;
+  font-size: 12px;
+  padding: 8px 10px;
+  flex-shrink: 0;
 }
 .workspace main {
   max-width: 1440px;
@@ -1304,7 +1306,7 @@ fieldset > label:last-child {
   .topbar .private-label {
     display: none;
   }
-  .mobile-logout {
+  .workspace-logout {
     display: inline-flex;
     font-size: 11px;
     padding: 8px 10px;
@@ -1662,4 +1664,126 @@ fieldset > label:last-child {
 .check-row {
   flex-direction: row;
   justify-content: flex-start;
+}
+/* Weekly reports use the existing private workspace and form styles. */
+.weekly-page,
+.weekly-content,
+.weekly-review {
+  min-width: 0;
+}
+.weekly-page > .no-print {
+  margin-bottom: 1.25rem;
+}
+.weekly-page fieldset {
+  border: 1px solid #cbd5df;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1.25rem 0;
+  min-width: 0;
+}
+.weekly-page legend {
+  font-weight: 650;
+  padding: 0 0.3rem;
+}
+.weekly-page textarea {
+  min-height: 130px;
+}
+.weekly-page .form-grid {
+  margin-top: 1rem;
+}
+.weekly-linked {
+  border-left: 3px solid #497b82;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  overflow-wrap: anywhere;
+}
+.weekly-content section {
+  margin: 1.3rem 0;
+}
+.weekly-content p,
+.weekly-summary p {
+  overflow-wrap: anywhere;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+}
+.weekly-link-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.8rem;
+}
+.weekly-comment {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+.weekly-summary {
+  margin: 1rem 0;
+}
+.weekly-print-details {
+  margin-top: 1rem;
+}
+.print-url {
+  display: none;
+}
+@media (max-width: 650px) {
+  .weekly-link-row {
+    grid-template-columns: 1fr;
+  }
+  .weekly-page .action-row {
+    flex-wrap: wrap;
+  }
+  .weekly-page .action-row button {
+    flex: 1 1 auto;
+  }
+}
+@media print {
+  .sidebar,
+  .topbar,
+  .page-heading,
+  .skip-link,
+  .no-print,
+  .global-error,
+  .weekly-editor {
+    display: none !important;
+  }
+  .app-shell,
+  .workspace,
+  main {
+    display: block !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: white;
+    color: black;
+    font-size: 11pt;
+  }
+  .weekly-summary {
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+    margin: 1.2rem 0;
+  }
+  .weekly-print-details > summary {
+    display: none;
+  }
+  .weekly-print-details > *:not(summary) {
+    display: block !important;
+  }
+  .weekly-content section,
+  .weekly-linked {
+    break-inside: avoid;
+  }
+  .print-url {
+    display: inline;
+    overflow-wrap: anywhere;
+  }
+  .weekly-print h2,
+  .weekly-print h3 {
+    break-after: avoid;
+  }
 }

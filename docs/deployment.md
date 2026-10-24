@@ -7,6 +7,15 @@ Nothing depends on a Vercel instance's filesystem or process staying alive.
 
 ## Current release
 
+Phase 3A has been accepted in preview and is ready for the authorized production
+deployment after final PR #2 CI. The operator completed its guarded production
+003 migration on 2026-10-24 using the original verified encrypted backup inside
+the 24-hour freshness window. Full-row preservation passed; verification confirms
+001/002/003, retained original records and valid constraints. **Do not rerun any
+migration during merge, build or deployment.** See [release evidence and private
+acceptance steps](phase-3a-release.md). The Phase 2 deployment described below is
+the serving version until the existing Vercel Git integration deploys this release.
+
 Phase 2 is deployed to https://quemat-app.vercel.app in the existing Vercel project
 `quemat-app`, linked to `govindjocose006/QuEMat-App` branch `main`, Node.js 24, region
 `sin1` (Singapore). Production variables are managed in Vercel. The user confirmed
@@ -49,6 +58,29 @@ A Phase 2 release requires the additive `002_scheduling.sql` migration and
 `btree_gist` extension. Run this only as an explicitly authorized operator step,
 after backup and isolated validation. No migration runs during a Vercel build or
 function cold start. The Phase 2 health check requires the new schema.
+
+## Separate Phase 3A preview
+
+The Phase 3A preview remains separate from production. Follow
+[Phase 3A preview steps](phase-3a.md#existing-isolated-preview) using the existing
+`quemat_pr1_preview` database in project `sparkling-meadow-75486459`. Apply
+`003_weekly_progress.sql` there before deploying the new preview. The Phase 3A
+health check requires this migration and never runs it automatically.
+
+Use Preview-only variables scoped to `feature/phase-3a-weekly-progress`. Preserve
+Production and the existing Phase 2 Preview bindings. Both preview branches share
+the existing synthetic database; the migration is additive and compatible with
+Phase 2. Do not copy production data, run the old initial-account fixtures again,
+or create infrastructure. The `weekly-fixtures` action adds scoped synthetic
+mentor/member/supervisor test accounts without changing existing accounts.
+
+The user accepted the preview and authorized the Phase 3A release subject to a
+fresh private verified backup, reviewed migration 003, preservation verification
+and final CI before merge/deployment. Follow [the guarded Phase 3A release steps](phase-3a-release.md).
+The operator has now completed those database prerequisites; final CI and
+merge/deployment remain. The pinned Phase 2
+release tool deliberately does not authorize migration 003; use the separate
+Phase 3A tool, never preview fixtures or the general migration CLI.
 
 ## 1. Link the existing Neon database
 

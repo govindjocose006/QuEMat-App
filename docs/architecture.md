@@ -36,8 +36,7 @@ Display uses Asia/Kolkata; default currency is INR.
   documentation/types: pool lifecycle integration and platform client IP lookup.
 
 Some documentation websites were denied by the cloud egress policy; official
-repository/package sources were used where available. No deployed Vercel project
-or live Neon connection has been inspected or verified.
+repository/package sources were used where available. Subsequent hosted checks are recorded separately in [progress](progress.md).
 
 ## Authentication and privacy
 
@@ -81,11 +80,12 @@ is unspecified, so administrative privilege does not invent an academic title.
 | Active instrument register               | No                | Read                              | Read/create/edit/archive |
 | Membership and privileges                | No                | No                                | Manage with reason/audit |
 | Full membership email list and audit     | No                | No                                | Read                     |
-| Progress review or supervisor operations | Not implemented   | Not implemented                   | Not implemented          |
+| Own weekly reports                      | No                | Draft/submit/revise                | Draft/submit/revise       |
+| Weekly review                            | No                | App supervisor: all; app mentor: assigned mentees | All submitted reports |
 
 Academic “Supervisor” cannot self-grant supervisor permission. Mentor/supervisor
-application roles are stored for later phase-specific workflows, not treated as
-administrators. Optional instrument-coordinator permissions await Phase 2.
+application roles enable the scoped weekly-review workflows, and are not treated
+as administrators. Academic role selection never grants application permission.
 
 Interns and Master's students choose approved PhD/Postdoc mentors or record a
 pending assignment. Applicants see only eligible names/IDs/academic roles, not
@@ -132,3 +132,26 @@ behind the existing session, Origin/CSRF and approved-member guards. Write
 transactions re-read the actor after acquiring the existing write lock.
 `002_scheduling.sql` is additive and preserves all foundation records.
 Reservation conflicts are also enforced by PostgreSQL independently of the app.
+
+## Phase 3A weekly progress
+
+`003_weekly_progress.sql` adds reports, immutable submitted revisions, comments,
+review acknowledgements and follow-up state events. It extends notifications to
+reference exactly one booking or weekly report; existing booking notifications
+remain valid. It does not rewrite foundation/scheduling records.
+
+`server/weekly.ts` uses existing approval, session, CSRF and audit controls. Writes
+re-read membership and mentor assignment after acquiring the shared write lock;
+optimistic versions reject stale edits. A database unique constraint enforces one
+report per person/Monday. Submitted snapshots retain selected factual source
+content and UTC timestamps. Before submission, the client reviews a server
+snapshot and submits its digest; changed source records require a fresh review.
+
+Only the owner reads draft content. App supervisors/administrators review
+submitted reports; an approved app mentor reviews currently assigned mentees.
+Academic Supervisor with ordinary member permission cannot review others. No
+self-review is allowed. Append-only triggers retain submissions, reviews, comments
+and follow-up history; a database owner retains physical database control.
+
+See [Phase 3A](phase-3a.md) for week boundaries, eligible-member rules, data-link
+limitations, preview-only preparation and release boundaries.

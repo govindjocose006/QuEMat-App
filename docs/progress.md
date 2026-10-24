@@ -6,8 +6,259 @@ The complete original specification is saved in [requirements.md](requirements.m
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
 Phases 1 and 2 are deployed. The user approved the Phase 2 preview and authorized
-release after a private production backup and migration. Later phases remain
-unimplemented.
+release after a private production backup and migration. Phase 3A weekly progress
+is implemented and accepted in the isolated preview. Its guarded production
+migration and preservation verification have passed; production deployment is
+the remaining release step. Phase 3B/3C and later phases remain unimplemented.
+
+## Phase 3A production migration verified (2026-10-24)
+
+- After changing networks, the operator's standard native read-only diagnosis
+  succeeded against the pinned production target; no IPv4-only flags or relaxed
+  TLS were needed. The result was `PHASE2_STRUCTURE_NO_003_OBJECTS`. This established
+  native SQL connectivity and the checked schema state, not proof of prior rollback.
+- The operator completed the guarded migration retry with the original encrypted
+  backup and receipt, without rerunning backup or resetting its timestamp. The
+  original creation time was `2026-10-23T18:14:55.629Z`; inspection reported age
+  763 minutes, within the enforced 24-hour limit. Archive decryption/full-read and
+  freshness checks run again inside the migration command. Older backup material
+  remains preserved privately on Windows.
+- Operator-reported migration output: `APPLIED`, `recordPreservation:PASSED`;
+  full-row before/after checks retained 1 user, 15 instruments, 12 training entries,
+  24 audit events, 1 sample, 1 booking, its sample link, 2 notifications, 1 session,
+  1 rate-limit record and the write-lock row. Existing ledger fingerprints exclude
+  the newly added 003 entry, explaining the preserved ledger count of 2.
+- Operator verification lists migrations 001/002/003, `originalRecords:RETAINED`
+  and `constraints:VERIFIED`. No preview fixtures were run against production.
+  No production SQL or automated tests ran from this cloud workspace.
+- All checks passed at implementation/tooling head `2fbb786`: dependency audit,
+  build/application/release type checks, 109 isolated tests, 14 desktop/phone
+  browser tests and 10 native PostgreSQL checks. The operator's clean install
+  also reports zero known vulnerabilities. Final CI must pass again for this
+  documentation update before merging PR #2.
+- Pre-merge Vercel checks confirm the existing `quemat-app` Hobby project with
+  no trial and exact preservation of saved Production and branch-specific Preview
+  environment bindings. Merge/deployment and live/private acceptance remain next;
+  do not rerun migrations. Historical hold entries below describe resolved stages.
+  Budget remains ₹0; no infrastructure, paid service, upgrade, trial or purchase.
+
+## Native connectivity and dependency remediation (2026-10-24)
+
+- The operator verified the original archive checksum and full readability; its
+  reported age was 692 minutes at that check. The current age and actual
+  `receiptHasMigrationRecord` boolean still need the complete safe output. The
+  original receipt/backup remain intact and the 24-hour migration limit is not
+  reset. No fresh backup or migration retry has been requested.
+- Native read-only diagnosis failed at `database.read_only.begin` with
+  `AggregateError/ETIMEDOUT` and nested timeout/refusal errors. SQL Editor separately
+  reported the expected Phase 2 metadata: 1 user, 15 instruments, 1 sample,
+  1 booking, 2 notifications, 24 audit events and no actual usage. All checked
+  Phase 2 safeguards are present; checked 003 objects and ledger are absent.
+  These metadata/counts do not prove original row contents or full rollback.
+- Reproduced a real operator-target defect in isolation: URLs without a port let
+  pg inherit `PGPORT`. With a synthetic ambient port 15432, the old client selected
+  15432 although the guard expected 5432. The Phase 3A config reader now pins 5432
+  in its in-memory URL. Tests construct the real pg client under conflicting
+  ambient variables and check host/port/role/database, verified TLS and unchanged
+  private file bytes. The user's actual failure cause/native route remains to
+  be confirmed by a successful read-only SQL result after this correction.
+- Added `network-check`: fixed-host TCP 5432 comparisons using Node default,
+  IPv4-only and IPv6-only selection, without sending credentials/SQL or printing
+  addresses/environment values. TCP success never claims PostgreSQL/TLS success.
+  Per-command Node IPv4 selection may be compared read-only if ordinary diagnosis
+  still times out and the IPv4 probe succeeds; no persistent settings or timeouts
+  are changed. No firewall/TLS controls are disabled.
+- Reviewed the npm findings. The current old-lockfile audit reported seven high
+  dependency entries rooted in two advisories: compressed-body process DoS in
+  body-parser 2.3.0, and collection-validation memory exhaustion in nested Zod
+  4.1.11. Applied only body-parser 2.4.0 and a scoped override using the existing
+  direct patched Zod 4.6.7. Express/Vercel SDK major versions and app stack stay
+  unchanged. No automatic audit fix/force was used. Clean `npm ci`, full audit
+  and production-only audit report **zero known vulnerabilities**. See
+  [dependency review](phase-3a-dependency-review.md) for impact, versions and tests.
+- Added loopback TCP/redaction tests, actual driver-port and Vercel schema
+  compatibility checks, and a malformed-compressed-request regression confirming
+  the HTTP process remains responsive. All automated work is isolated/synthetic;
+  no production malformed traffic or migration is attempted. CI now rejects
+  high/critical npm audit findings. A clean install, full/production audit, build,
+  release/application type checks and all **109 isolated tests** passed locally;
+  final hosted CI is pending.
+- PR #2 stays unmerged and production stays Phase 2. Dependency corrections are
+  not live in production until release gates succeed. Budget ₹0; no paid services,
+  upgrades, trials, purchases or additional infrastructure.
+
+## Phase 3A migration diagnosis hold (2026-10-24)
+
+- The user reported an encrypted/verified 52,259-byte production backup, followed
+  by a generic migration failure without an error code. A later Windows TCP 5432
+  check succeeded; their Neon SQL Editor query shows only migrations 001 and 002.
+  These results do not establish the failing stage or complete DDL/data rollback.
+  No migration retry, merge or production deployment is permitted yet.
+- Added fixed stage names and whitelisted error type/code/cause diagnostics.
+  Messages, SQL, paths, stacks, connection strings and database records are not
+  serialized. Code-less errors remain identifiable by stage/type; known connection
+  timeouts have a safe classification. Captured SQL failures remain visible if a
+  secondary transaction error masks them. Commit/receipt failure is distinguished
+  from an unconfirmed database outcome; error output never asserts full rollback.
+- Added `inspect-backup` (local checksum/age only), `check-backup` (existing archive
+  decrypt/hash/full-read validation with no database connection) and `diagnose`
+  (explicitly read-only, repeatable-read metadata/count query). None overwrites or
+  refreshes the retained backup/receipt. Diagnostic inspection of expired evidence
+  never authorizes migration; the 24-hour gate remains active and is rechecked
+  before a migration invocation. No timeout, TLS, target, hash or preservation
+  safeguard is relaxed.
+- Added a [single read-only SQL Editor query](../scripts/phase3a-release-state.sql)
+  checking weekly tables/functions/indexes/triggers/constraints, notification
+  changes, expected ledger and Phase 2 safeguards. It prints only known metadata
+  and aggregate counts. Clean structure/counts do not prove prior row-content
+  preservation. Partial objects without a ledger entry are explicitly flagged.
+- Seven new isolated checks passed (19 release tests in total), covering sanitized
+  errors, actual read-only transactions, partial 003 states, disabled history
+  triggers, failed DDL, masked errors, lost commit acknowledgement, expired backup
+  inspection and byte-for-byte retention of the original archive/receipt. Native
+  PostgreSQL CI additionally exercises the read-only inspector around guarded 003.
+- Local build, application/release type checks and all **103 isolated tests** passed.
+  Native SQL inspection and browser regressions still require final CI on this
+  change. Next collect only sanitized outputs using
+  the [diagnostic Windows steps](phase-3a-release-diagnostics.md). The original
+  failure cause remains unconfirmed. Production and preview are kept separate;
+  PR #2 remains unmerged. No paid services or new infrastructure.
+
+## Phase 3A production release preparation (2026-10-23)
+
+- The user accepted the tested preview and authorized release of PR #2, subject to
+  a fresh private encrypted backup, reviewed 003 migration, preservation checks
+  and successful final CI before merge/deployment. Phase 3B/3C remain out of scope.
+- PR #2 was open, mergeable and green at `3f67fc0`; the application code remains
+  the tested `4b57d02` implementation. New release tooling needs its own final CI.
+- Added an independent guarded `phase3a-production-release` tool and
+  [private Windows release instructions](phase-3a-release.md). The old Phase 2
+  tool remains pinned to 002. The new tool pins the reviewed 003 SHA-256,
+  production identity, baseline 001/002 history, fresh Phase 3A-specific encrypted
+  receipt and a separate unique backup folder. It does not overwrite old backups.
+- Preservation checks cover full rows of accounts, instruments, samples, bookings
+  (including actual usage/outcomes/handover), sample links, availability windows,
+  notifications, training/SOPs, audit history, sessions, rate limits and the
+  original ledger. The expected new NULL notification column is normalized;
+  sample numbering is checked. DDL and preservation checks are atomic, and
+  failure rolls back. Seeds/fixtures/data creation are never run.
+- Local build/application type checks, strict release-tool type checks and all
+  **96 isolated tests** passed, including 12 new release checks for target/hash/
+  receipt rejection, preservation, rollback, idempotency, schema verification,
+  backup protection and offline CLI gating. Native PostgreSQL CI now additionally
+  exercises guarded 003 on populated synthetic Phase 2 records (expected 9 checks).
+- Production DNS still fails `EAI_AGAIN/getaddrinfo` for
+  `ep-round-rain-a1orsgna.ap-southeast-1.aws.neon.tech`, including an outside-sandbox
+  read-only retry. Production backup/migration must therefore run in the trusted
+  Windows terminal. No backup or production SQL operation has run from the cloud.
+- **Waiting for successful fresh Windows backup, migration and verification.**
+  PR #2 is not merged, and production remains Phase 2. Preview remains separate.
+  No paid resource, upgrade, trial, purchase or additional infrastructure.
+
+## Phase 3A live preview validation
+
+- The user successfully ran guarded Windows preview preparation, weekly fixtures
+  and verification against `quemat_pr1_preview` at
+  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`. Their sanitized result lists
+  all three migrations, 15 instruments, 11 synthetic accounts and 5 samples.
+  Those are operator-reported SQL results; no credentials were shared.
+- After the user allowed the preview hostname, the agent verified live HTTP 200
+  `{"status":"ok"}` from `/api/health`. The hosted health query requires migration
+  003, proving Vercel-to-Neon connectivity. All 15 instruments are present.
+- Automated live checks using existing synthetic member accounts passed: private
+  draft persistence and edits; unrelated/pending access denial; selected sample
+  and booking snapshots; review-before-submit; stale/repeat submission rejection;
+  first submission timestamp and two immutable revisions; source-change review
+  guard; author reply persistence; member review/follow-up assignment denial;
+  notification persistence; and logout.
+- Phase 2 live regressions passed: PPMS booking with the actual operator, two
+  simultaneous overlapping requests rejected, configured furnace maximum rejected,
+  cancellation and reuse of the freed slot. No actual instrument usage was recorded.
+  Both agent-created bookings were cancelled; sample `QEM-6` was archived. Synthetic
+  report `e687f345-561a-4ab3-b625-117bd733ffd1` remains for review with its history.
+- The user confirmed all private reviewer checks succeeded after the logout fix:
+  mentee submission; assigned-mentor scope, comment, follow-up and review;
+  supervisor person/project/week filters and printable meeting summary; then
+  member notification, reply and follow-up completion. These are user-confirmed
+  live browser results. Passwords remained private on Windows. The corresponding
+  automated lifecycle/permission/mentor/follow-up tests passed in isolated databases.
+- After preview redeployment `dpl_4Pg5Ttc4RiPNEF8a2q5VrrnszmbW`, live health,
+  all 15 instruments, both agent-test report revisions, the original submission
+  timestamp, author reply, cancelled booking history, archived sample and
+  notifications persisted. Hosted JS/CSS matched the tested local build exactly.
+  Logout then denied authenticated report access. No additional test data was
+  created for that persistence check.
+- Both branch and [PR CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39962423194)
+  passed at application commit `4b57d02`: build/type checks, 84 isolated tests,
+  14 desktop/phone browser checks and 8 native PostgreSQL checks. PR #2 remains
+  open and unmerged. Later documentation-only commits do not alter app behavior.
+- The user could not find desktop logout. The feature branch now presents a visible
+  **Sign out** button at the top-right on both desktop and phone, replacing the
+  desktop icon-only control. This is a preview-only usability correction. Build/type
+  checks and all 14 desktop/phone browser regressions passed after this change.
+- Direct cloud Chromium access to the hosted preview is still blocked by
+  `ERR_CERT_AUTHORITY_INVALID`; TLS verification remains enabled. Local browser
+  checks and live HTTPS API checks are distinct evidence. Native cloud PostgreSQL
+  DNS still returns `EAI_AGAIN/getaddrinfo`, including outside the sandbox; this
+  does not prevent the verified Vercel-to-Neon runtime connection.
+- Existing Vercel Hobby plan, no trial, production deployment and prior environment
+  bindings are unchanged. Only synthetic preview records were used. No production
+  migration/deployment, merge, paid service or additional infrastructure.
+
+## Phase 3A implementation (2026-10-23)
+
+- Confirmed final Phase 2 CI run [39914900067](https://github.com/govindjocose006/QuEMat-App/actions/runs/39914900067)
+  completed successfully at `bf12ebf`. Started `feature/phase-3a-weekly-progress`
+  from that updated `main`; no Phase 2 CI failures required repair.
+- Added private weekly drafts, six report sections, explicit selection of relevant
+  bookings/samples, review-before-submit, immutable submitted snapshots, original
+  submission timestamps and revision history. Weeks use Monday–Sunday IST with
+  half-open interval boundaries; scheduled reservations and actual usage are distinct.
+- Added server-scoped supervisor/administrator review and assigned-mentor review,
+  person/project/week filters, eligible active-member missing indicators, comments,
+  follow-up actions/state history, per-revision review acknowledgement, printable
+  meeting summary, dashboard summaries and persistent in-app notifications.
+  Academic Supervisor selection grants no review privilege. Drafts remain private.
+- Added `003_weekly_progress.sql`; existing migrations are unchanged. A preservation
+  test retains actual legacy user, instrument, training, audit, sample, booking and
+  notification rows and checks the booking exclusion constraint after migration.
+- Local build/type checks passed. All **84 API/configuration/tool tests** passed,
+  including 12 weekly tests and an additional guarded-preview fixture test.
+  Coverage includes lifecycle/history, roles, mentor reassignment, private drafts,
+  concurrent/stale requests, snapshot changes, source relevance, week boundaries,
+  follow-up history, notifications and migration preservation.
+- All **14 desktop/phone browser tests** passed, including Phase 1/2 regressions
+  and four weekly tests for drafts/selection/submission/revisions, mentor review,
+  follow-ups, notification links, filters and print layout. Automated WCAG checks
+  and no-horizontal-overflow assertions passed. Tests used only local temporary
+  databases with synthetic records; they are not live Neon verification.
+- Added [workflow, eligibility and Windows preview instructions](phase-3a.md).
+  Preview fixture tooling reuses the existing database and adds four synthetic
+  weekly-role accounts and a sample, preserving existing accounts/passwords.
+- Existing Vercel `quemat-app` remains Hobby with no trial and `main` as production
+  branch. Production and Phase 2 Preview bindings were inspected without changes.
+  No additional infrastructure, purchases, upgrades, paid services or trials.
+- Pushed implementation `964109a` and opened [PR #2](https://github.com/govindjocose006/QuEMat-App/pull/2).
+  Both [branch CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39959334262)
+  and [PR CI](https://github.com/govindjocose006/QuEMat-App/actions/runs/39959396510)
+  passed, including build/type checks, all 84 tests, 14 browser checks and the
+  eight native PostgreSQL regression checks with migration 003 applied.
+- Configured only `DATABASE_URL` and `APP_ORIGIN` Preview bindings for the new
+  feature branch. Deployed `964109a` to Vercel Preview, deployment
+  `dpl_9fjz69RxCsugBgzEFukjeyyKnFB3`, READY. Preview address:
+  https://quemat-app-git-feature-phase-3a-weekly-7e18d7-govindjocose-2552.vercel.app.
+  READY confirms the build, not healthy application/database operation.
+- Verified every prior environment binding is identical, production still points
+  to `dpl_2FN7wRhEKb8weaFCbf42vFHTZwK9`, and preview protection remains enabled.
+  Temporary automation access was revoked; no bypass secret remains active.
+- Initial preparation was blocked by cloud PostgreSQL DNS (`EAI_AGAIN/getaddrinfo`)
+  and HTTP 403 for the preview hostname. The user subsequently applied the guarded
+  Windows migration/fixtures and allowed the preview hostname. Those initial
+  readiness blockers are resolved by the live validation recorded above. Direct
+  cloud SQL and cloud Chromium certificate trust remain operator-tool limitations;
+  hosted database connectivity and user browser workflows have been verified.
+- No production migration, merge or production deployment. No Phase 3B/3C,
+  uploads, background reminders or research-quality rankings.
 
 ## Phase 2 production release (2026-10-23)
 

@@ -79,7 +79,7 @@ it("initializes an empty isolated database and repeatable synthetic fixtures wit
   expect((await db.query("SELECT id FROM users")).length).toBe(4);
   expect((await db.query("SELECT id FROM samples")).length).toBe(2);
   expect((await db.query("SELECT id FROM instruments")).length).toBe(15);
-  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(2);
+  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(3);
   expect(
     (
       await db.query(
@@ -105,6 +105,40 @@ it("refuses an unmarked nonempty database before migration or fixture writes", a
     ).length,
   ).toBe(1);
 });
+it("adds repeatable weekly synthetic roles and mentor relationships without overwriting existing accounts", async () => {
+  await run("prepare");
+  await run("fixtures");
+  const before = await db.query("SELECT * FROM users ORDER BY id");
+  expect(await run("weekly-fixtures")).toBeUndefined();
+  expect(await run("weekly-fixtures")).toBeUndefined();
+  expect((await db.query("SELECT id FROM users")).length).toBe(8);
+  expect(
+    await db.query(
+      "SELECT * FROM users WHERE email NOT LIKE 'weekly-preview-%' ORDER BY id",
+    ),
+  ).toEqual(before);
+  const [mentee] = await db.query<{ mentor_id: string }>(
+    "SELECT mentor_id FROM users WHERE email='weekly-preview-member@example.test'",
+  );
+  expect(
+    (
+      await db.query("SELECT id FROM users WHERE id=$1 AND app_role='mentor'", [
+        mentee.mentor_id,
+      ])
+    ).length,
+  ).toBe(1);
+  const secrets = JSON.parse(
+    readFileSync(join(directory, ".env.weekly-accounts.json"), "utf8"),
+  );
+  for (const value of Object.values(secrets) as { password: string }[])
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain(
+      value.password,
+    );
+  await db.query(
+    "UPDATE users SET app_role='member' WHERE email='weekly-preview-mentor@example.test'",
+  );
+  expect(await run("weekly-fixtures")).toBe(1);
+}, 20000);
 it("refuses fixtures when the stored preview identity does not match", async () => {
   expect(await run("prepare")).toBeUndefined();
   await db.query(

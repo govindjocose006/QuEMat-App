@@ -10,7 +10,9 @@ register of the 15 supplied instruments. Phase 2 provides
 shared samples, calendars, conflict-protected bookings, actual usage and notifications.
 See [Phase 2 workflows and isolated validation](docs/phase-2.md). The app uses TypeScript,
 React, Express, and PostgreSQL, with **Vercel + Neon** as the deployment target.
-Later phases remain unimplemented.
+**Phase 3A: Weekly Progress** is implemented on `feature/phase-3a-weekly-progress`
+for review and isolated preview only. See [the workflow and preview guide](docs/phase-3a.md).
+Production remains Phase 2; Phase 3B/3C and later phases are not implemented.
 
 - [Deploy to Vercel and Neon](docs/deployment.md)
 - [Reusable cloud environment setup](docs/cloud-environment.md)
@@ -74,10 +76,10 @@ seeding, and administrator bootstrap as explicit operator steps; builds and
 function cold starts do not mutate the schema or create accounts. See the
 [deployment guide](docs/deployment.md) for exact steps and preview isolation.
 
-Phase 1 is deployed at https://quemat-app.vercel.app. The user verified its health
-endpoint and application startup after production database initialization. Phase 2
-remains on a feature branch for review. Deployment and isolated-database guidance
-are in the deployment and Phase 2 guides.
+Phases 1 and 2 are deployed at https://quemat-app.vercel.app. Phase 3A requires
+`003_weekly_progress.sql` in the isolated preview database before its health check
+can pass. Phase 3A production release requires the [guarded fresh-backup and
+migration procedure](docs/phase-3a-release.md) before merge/deployment.
 
 ## Built local server
 
@@ -108,14 +110,15 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 API/browser tests use temporary PostgreSQL databases and synthetic accounts,
 separate from development and hosted data. Browser tests cover desktop and phone
 workflows, keyboard focus, and automated accessibility checks. CI is configured in
-`.github/workflows/ci.yml`; a hosted CI run has not been verified here.
+`.github/workflows/ci.yml`; see [progress](docs/progress.md) for verified runs.
 
 ## Phase boundaries
 
 1. **Implemented:** foundation, accounts, approval, instrument register.
-2. **Implemented for review:** samples, database-protected reservations, measurement details, check-in
-   and completion. No production Phase 2 deployment yet.
-3. Weekly progress, issues, supervisor announcements, meetings.
+2. **Deployed:** samples, database-protected reservations, measurement details, check-in
+   and completion.
+3. **3A implemented for review:** weekly reports, revisions, scoped review, follow-ups
+   and meeting summaries. Issues, announcements and meeting scheduling remain deferred.
 4. Chemical orders and incoming external samples.
 5. Facility calls and proposals.
 6. Server-scheduled reminders, PWA installation, and release verification.
