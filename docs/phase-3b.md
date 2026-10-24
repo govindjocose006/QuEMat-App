@@ -5,6 +5,15 @@ preview only. Production remains Phase 3A plus the PR #3 sample-list improvement
 Do not merge this phase, migrate production or deploy it to production without
 separate authorization. Budget is ₹0; no new infrastructure or paid services.
 
+## Accepted preview; release preparation only
+
+The user confirmed preview issue assignment, acknowledgement, progress and
+resolution on 2026-10-24. [Guarded production steps](phase-3b-release.md) are
+prepared for a future separately authorized release. They are not an instruction
+to run them now. PR #4 stays unmerged; production migration/deployment are not
+currently authorized. Preparation is kept local to avoid triggering an automatic
+preview deployment. Existing private backups and receipts remain untouched.
+
 ## Working workflows
 
 Approved, onboarded members can read the shared register and create an item with

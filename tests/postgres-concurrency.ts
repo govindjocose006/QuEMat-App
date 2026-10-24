@@ -14,6 +14,13 @@ import {
   verifyRetained,
 } from "../scripts/phase3a-production-release-core.js";
 import { inspectReadOnly } from "../scripts/phase3a-release-inspection.js";
+import {
+  applyReviewedPhase3B,
+  fingerprints as fingerprints3b,
+  verifyRetained as verifyRetained3b,
+} from "../scripts/phase3b-production-release-core.js";
+import { inspectReadOnly as inspectReadOnly3b } from "../scripts/phase3b-release-inspection.js";
+import { addWeeklyFixture } from "./phase3b-release-fixture.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -137,6 +144,12 @@ try {
   assert.equal(inspected.state.counts.bookingsWithActualStart, 1);
   assert.deepEqual(await fingerprints(db), before);
   count++;
+  await addWeeklyFixture(db, user, instrument);
+  const baselineUserCount = (await db.query("SELECT id FROM users")).length;
+  const readOnly3b = await inspectReadOnly3b(db);
+  assert.equal(readOnly3b.structure, "PHASE3A_STRUCTURE_NO_004_OBJECTS");
+  assert.equal(readOnly3b.state.counts.weeklyRevisions, 2);
+  count++;
   const preservationTables = [
     "users",
     "instruments",
@@ -162,6 +175,28 @@ try {
       ),
     );
   const beforeIssues = await snapshot();
+  const original3b = await fingerprints3b(db);
+  const release3b = await applyReviewedPhase3B(
+    db,
+    readFileSync("server/migrations/004_issues_requests.sql", "utf8"),
+  );
+  assert.deepEqual(release3b.before, original3b);
+  assert.deepEqual(release3b.after, original3b);
+  assert.equal(
+    (
+      await applyReviewedPhase3B(
+        db,
+        readFileSync("server/migrations/004_issues_requests.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await verifyRetained3b(db, original3b);
+  assert.equal(
+    (await inspectReadOnly3b(db)).structure,
+    "PHASE3B_STRUCTURE_PRESENT",
+  );
+  count++;
   await migrate(db);
   assert.deepEqual(await snapshot(), beforeIssues);
   assert.equal(
@@ -279,7 +314,10 @@ try {
   assert.equal(restored.comments[0].body, "Native retained discussion");
   assert.equal(restored.acknowledgedBy, user);
   count++;
-  assert.equal((await db.query("SELECT id FROM users")).length, 2);
+  assert.equal(
+    (await db.query("SELECT id FROM users")).length,
+    baselineUserCount + 1,
+  );
   count++;
   const a = await pool.connect(),
     b = await pool.connect();
@@ -409,7 +447,7 @@ try {
     b.release();
   }
   console.log(
-    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A preservation/idempotency, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
+    `${count} native PostgreSQL checks passed: read-only release diagnostics, guarded Phase 3A/3B preservation/idempotency including populated weekly history, additive migrations, independent-connection conflicts, adjacency, buffers, cancellation, concurrent rescheduling, exclusive actual usage.`,
   );
 } finally {
   await pool.end();

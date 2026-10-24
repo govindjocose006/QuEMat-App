@@ -10,6 +10,53 @@ improvement is released. Phase 3B Issues & Requests is implemented on a new
 feature branch for isolated review/preview only. No Phase 3B production migration,
 merge or deployment is authorized. Phase 3C and later phases remain unimplemented.
 
+## Phase 3B user acceptance and guarded release preparation (2026-10-24)
+
+- **User-confirmed preview acceptance:** issue assignment, acknowledgement,
+  progress and resolution worked correctly. This records those specific private
+  checks; the broader automated/live results remain separate evidence below.
+- Current authorization is **preparation only**: no production migration, PR #4
+  merge or deployment. The accepted remote head remains `a9a5485`. New preparation
+  is kept local because pushing the feature branch would automatically deploy
+  another preview. No production or preview deployment was triggered this turn.
+- Added independent `phase3b-production-release` tooling and a
+  [future-only Windows runbook](phase-3b-release.md), pinned to reviewed 004 SHA-256
+  `2093f0203026ff677fd89366dba244e6ef7880141d7f45f441b15e2711ed44bc`.
+  Earlier 002/003 pins and receipts remain unchanged. New 3B-purpose private
+  configuration/backup receipt, direct production host/role/database/5432,
+  PostgreSQL 18 clients and a clean 001/002/003 baseline are required.
+- Fresh backup uses existing free pg_dump/pg_restore clients, AES-256-GCM/scrypt,
+  roundtrip hashes and complete archive-read validation. It preserves all older
+  backup folders/receipts. The original 24-hour limit begins before pg_dump, is
+  not refreshed by diagnostics/retry, and is rechecked inside the transaction
+  immediately before DDL. A newly added backup cannot disguise already-applied
+  004 as a clean pre-migration state.
+- Preservation now covers all 19 existing tables, including every weekly draft,
+  revision, comment, review and action event, composite keys, notification source,
+  actual booking usage/unloading/handover, audit/auth and sample numbering. Only
+  new NULL issue_id values are normalized. Full equality is atomic; subsequent
+  verification allows legitimate drafts/actions/reads while retaining immutable
+  histories/comment content/known first-submission times and original identities.
+- Added sanitized read-only structure/identity diagnostics without requiring a
+  backup; partial 004/source/trigger/constraint states and inconsistent receipt
+  versus ledger block blind retries. New function-body checks compare the exact
+  reviewed immutable-history/identity functions. No missing ledger alone proves
+  rollback; errors retain stage/type/code with no records/credentials/raw SQL.
+- All **14 new guarded-release checks** pass locally, including populated 003
+  preservation, no fixtures, rollback, stale receipts, wrong target/purpose/hash,
+  driver-port/TLS, read-only diagnostics, history/notification verification and
+  offline CLI gates. The full local suite passes **137 tests in 13 files**, with
+  build/application/release type checks and audit (zero known vulnerabilities).
+  Native guard checks and Windows syntax
+  parsing are wired into existing CI but are **not run for this local preparation**;
+  native PostgreSQL clients and PowerShell are unavailable in this workspace.
+- Future release gates: authorize publication/execution, review exact-head CI,
+  fresh private encrypted 3B backup, guarded 004 migration, preservation verify,
+  then exact-head merge/deploy and private production acceptance. No command is
+  requested from the user now. Existing preview and production remain separate;
+  no credentials, backup or production records have been requested or copied.
+  Strict ₹0; no services, resources, upgrades, trials or purchases.
+
 ## Phase 3B implementation and preview preparation (2026-10-24)
 
 - Started `feature/phase-3b-issues-requests` from updated main after releasing

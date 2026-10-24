@@ -91,6 +91,16 @@ have now succeeded. The pinned Phase 2
 release tool deliberately does not authorize migration 003; use the separate
 Phase 3A tool, never preview fixtures or the general migration CLI.
 
+## Phase 3B future release preparation
+
+The user accepted preview assignment/acknowledgement/progress/resolution and
+requested guarded preparation only. The [Phase 3B runbook](phase-3b-release.md)
+requires an independent 004 hash/purpose, fresh private encrypted backup,
+full Phase 1/2/3A preservation and green exact-head CI before any later release.
+The tooling is local/unpublished to avoid an automatic Vercel preview deployment.
+Do not execute production commands, merge PR #4 or deploy now. Older 002/003
+release tools and receipts cannot authorize 004. No new infrastructure or cost.
+
 ## 1. Link the existing Neon database
 
 Reuse organization `org-ancient-moon-23673941`, project
