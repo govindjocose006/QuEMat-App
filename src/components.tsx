@@ -15,63 +15,84 @@ export function Brand({ small = false }: { small?: boolean }) {
     </div>
   );
 }
-export function Icon({ name }: { name: string }) {
-  const paths: Record<string, ReactNode> = {
-    weekly: (
-      <>
-        <path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5" />
-      </>
-    ),
-    issues: <path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1" />,
-    overview: (
-      <>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </>
-    ),
-    instruments: (
-      <>
-        <path d="M9 3h6M10 3v6l-6 10a1 1 0 0 0 1 2h14a1 1 0 0 0 1-2L14 9V3M8 15h8" />
-      </>
-    ),
-    members: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3 21v-3a6 6 0 0 1 12 0v3M17 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5" />
-      </>
-    ),
-    audit: (
-      <>
-        <path d="M6 3h12v18H6zM9 7h6M9 11h6M9 15h4" />
-      </>
-    ),
-    settings: (
-      <>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
-      </>
-    ),
-    arrow: <path d="m9 5 7 7-7 7" />,
-    lock: (
-      <>
-        <rect x="5" y="10" width="14" height="11" rx="2" />
-        <path d="M8 10V6a4 4 0 0 1 8 0v4" />
-      </>
-    ),
-    search: (
-      <>
-        <circle cx="10" cy="10" r="6" />
-        <path d="m15 15 6 6" />
-      </>
-    ),
-    logout: (
-      <>
-        <path d="M10 3H4v18h6M9 12h12m-4-4 4 4-4 4" />
-      </>
-    ),
-  };
+const iconPaths = {
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M7 3v4M17 3v4M3 10h18M7 14h2M15 14h2M7 18h2M15 18h2" />
+    </>
+  ),
+  samples: (
+    <>
+      <path d="M8 3h8M9 3v5l-5 9a3 3 0 0 0 2.6 4h10.8a3 3 0 0 0 2.6-4l-5-9V3M6 15h12" />
+      <circle cx="10" cy="18" r=".5" />
+      <circle cx="14" cy="17" r=".5" />
+    </>
+  ),
+  notifications: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+    </>
+  ),
+  weekly: (
+    <>
+      <path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5" />
+    </>
+  ),
+  meetings: <path d="M4 4h16v13H9l-5 4V4ZM8 8h8M8 12h5" />,
+  issues: <path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1" />,
+  overview: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </>
+  ),
+  instruments: (
+    <>
+      <rect x="3" y="4" width="18" height="15" rx="2" />
+      <rect x="6" y="7" width="9" height="8" rx="1" />
+      <path d="M7 12h2l1-3 2 5 1-2h1M18 8v1M18 12v2M7 19v2M17 19v2" />
+    </>
+  ),
+  members: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 21v-3a6 6 0 0 1 12 0v3M17 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5" />
+    </>
+  ),
+  audit: (
+    <>
+      <path d="M3 11a9 9 0 1 1 2.7 7.4M3 4v7h7M12 7v5l4 2" />
+    </>
+  ),
+  settings: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
+    </>
+  ),
+  arrow: <path d="m9 5 7 7-7 7" />,
+  lock: (
+    <>
+      <rect x="5" y="10" width="14" height="11" rx="2" />
+      <path d="M8 10V6a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="10" cy="10" r="6" />
+      <path d="m15 15 6 6" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M10 3H4v18h6M9 12h12m-4-4 4 4-4 4" />
+    </>
+  ),
+} satisfies Record<string, ReactNode>;
+export function Icon({ name }: { name: keyof typeof iconPaths }) {
   return (
     <svg
       width="20"
@@ -84,7 +105,7 @@ export function Icon({ name }: { name: string }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {paths[name] ?? paths.instruments}
+      {iconPaths[name]}
     </svg>
   );
 }

@@ -1,3 +1,8 @@
+> Phase 3B has since been released through PR #4, with guarded 004 preservation
+> and green CI; PR #5 released optional status reasons without a migration. See
+> [progress](progress.md). Preview-only/preparation authorization statements below
+> are retained as historical context. Do not rerun 004 for deployment.
+
 # Phase 3B: Issues & Requests
 
 This phase is for feature-branch review and the existing isolated synthetic
@@ -54,7 +59,7 @@ Status transitions:
 - Blocked → in progress or resolved.
 - Resolved → open (reporter, assignee or manager), then explicitly acknowledge again.
 
-Every status change requires a reason and expected version. Concurrent/stale
+Every status change requires an expected version; the reason is optional (0–2,000 characters). Blank history shows “No reason provided.” Concurrent/stale
 changes return 409 without duplicate events/notifications. A supervisor-attention
 checkbox alone leaves the item open/unacknowledged. First acknowledgement and
 most recent resolution names/times are retained after reopening; every later

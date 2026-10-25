@@ -5,10 +5,135 @@
 The complete original specification is saved in [requirements.md](requirements.md).
 The user selected **Phase 1: foundation, accounts, onboarding, and instruments**,
 then requested **Vercel** and confirmed **Neon PostgreSQL** as the hosted database.
-Phases 1, 2 and 3A are deployed and user-confirmed. PR #3's sample-list
-improvement is released. Phase 3B Issues & Requests is implemented on a new
-feature branch for isolated review/preview only. No Phase 3B production migration,
-merge or deployment is authorized. Phase 3C and later phases remain unimplemented.
+Phases 1, 2, 3A and 3B are released. PR #3's sample views and PR #5's
+optional issue-status reasons are released. Phase 3C Meetings & Notices is on
+`feature/phase-3c-meetings-notices` for isolated synthetic review/preview only.
+No production 005 migration, Phase 3C merge or production deployment is authorized.
+
+## Phase 3C preview acceptance and release preparation (2026-10-25)
+
+- **User-confirmed live preview acceptance:** meetings, attendee privacy, notes,
+  actions, calendar export, notice acknowledgements and acknowledgement after
+  corrections all passed. This records the user's private checks; agent-native
+  cloud DNS/proxy checks and isolated automated tests remain separate evidence.
+- Pulled the existing newer green PR #6 head `311ad1a` (distinct navigation icons)
+  before preparing release tooling. The application and reviewed 005 SQL stay
+  unchanged. User authorization covers tooling/runbook publication, automatic
+  preview redeployment, all CI and the first Windows checkout/dependency/type-check
+  step only. No production configuration, backup, diagnostics, migration, merge
+  or production deployment is authorized. No Phase 4.
+- Added independent `phase3c-production-release` CLI/core, sanitized diagnostics,
+  one-statement read-only SQL inspection and unique ACL-restricted Windows setup.
+  Pinned 005 LF SHA-256 is
+  `edec82141df539734e79d90d694b8ec09977f9171e058283de80ffbefe543d59`;
+  purpose `quemat-phase3c-production` / receipt
+  `quemat-phase3c-production-backup-v1`. Earlier 002/003/004 tools/pins/receipts
+  remain untouched. The [guarded Windows runbook](phase-3c-release.md) separates
+  the currently authorized first step from all future separately authorized steps.
+- Guards require the exact direct production identity/5432/PG18, clean 001–004
+  baseline, intact booking/weekly/issue safeguards, fresh private encrypted backup
+  and an original age strictly under 24 hours. Checks repeat after validation/
+  connection and immediately before DDL inside the locked transaction; no age
+  refresh or old-purpose receipt reuse. New archive/receipt paths are exclusive.
+- Full pre/post canonical hashes cover all **22 existing tables**, including issue
+  identity/status/history/discussion and optional blank reasons, weekly private
+  drafts/revisions/comments/reviews/actions, bookings/actual usage/unloading,
+  notifications/auth/audit and both sample/issue sequences. Only two new NULL
+  notification columns are normalized. All nine new meeting/notice tables must
+  be empty; no seeds/fixtures/accounts are run by the production CLI.
+- Schema verification checks new column types/nullability/defaults, named validated
+  constraint definitions, indexes, exact function bodies, enabled immutable/identity
+  triggers, five-source notification exclusivity and all old safeguards. Partial
+  state, missing receipt evidence or uncertain commit outcome blocks blind retry.
+  Later read-only verification preserves immutable histories/identities and known
+  first weekly submission/issue acknowledgement while allowing legitimate activity.
+- All **21 local guarded-release/offline cases pass** (17 preservation/guard
+  cases and four cross-platform offline cases), including issue history/optional
+  reasons, exact schema definitions/defaults and old-safeguard corruption. Build/
+  application/release type checks and audit pass (zero vulnerabilities). Existing
+  native CI now exercises guarded 005 over populated 004 history. A real standard
+  Windows hosted CI job runs release type checks, PowerShell syntax parsing and
+  TCP-blocked CLI/encryption checks with synthetic files; it never queries a DB.
+  Final local and hosted outcomes must be recorded after publication, not assumed.
+- No production backup/migration/verification or credential setup was executed.
+  All prior private backups/receipts stay preserved. Existing free resources only;
+  public-repository standard CI is free, with no purchase, upgrade, trial, paid
+  service or new cloud infrastructure.
+
+## PR #5 production release and Phase 3C development (2026-10-24)
+
+- Reviewed PR #5 head `700e881dcd2ff2e3bf3c840b470a66e777a7e2fc`: four
+  shared/UI/test files only; blank/omitted/short status reasons are allowed while
+  actor/time/history/transition/permission/version checks remain. No migration.
+- All PR and branch checks passed. One branch validation took longer; it completed
+  before an attempted cancellation took effect, so no cancellation/restart occurred.
+  Post-merge main CI also passed at `0057a839586990fd03382eb6762b9a98e0b0bc2d`.
+- Existing Vercel Git integration deployed PR #5 as
+  `dpl_4uTAyZVLwvVJx9c1TH2wJFHC97HS`; canonical production health is 200 with
+  `{"status":"ok"}`. Served JS/CSS match the reviewed rebuild. Nine protected APIs
+  rejected anonymous access; project settings and all eight saved environment
+  bindings (including older previews) compare unchanged. Hobby, no trial; ₹0.
+  No database migration, backup/receipt edit or production test record was created.
+- Phase 3C starts from that updated main on a separate feature branch. Adds scoped
+  meetings, selected attendees, agenda/venue/video/data links, rescheduling and
+  cancellation, retained notes/history, owned dated action items and completion
+  history; lab notices with drafts/publishing/pinning/expiry/withdrawal and explicit
+  per-revision read confirmations; dashboard, persistent inbox and private IST ICS.
+- Server permissions distinguish application supervisor/administrator from academic
+  Supervisor/mentor. Only selected attendees/managers can access meetings/notes/
+  history/export; audience changes revoke removed members' access and inbox links.
+  Notes/read receipts/events are append-only, writes recheck membership/versions,
+  private details stay out of the general audit, and notification sources remain
+  exclusive. Old issue-status reasons stay optional. Additive preview-only 005.
+- [Workflow, assumptions and guarded Windows preview steps](phase-3c.md) document
+  selected group scope, immutable corrections, expiry/read-revision semantics,
+  static calendar limitations and no uploads/reminders/email/push/order/payment.
+- Exact implementation/test head `c480747` passed all branch/PR checks: **153
+  isolated tests in 14 files**, **19 native PostgreSQL checks**, **24 desktop/phone
+  browser checks**, build/application/release types, Windows script syntax parsing
+  and audit (zero known vulnerabilities). CI run `40120269727`. Native coverage
+  includes populated pre-005 preservation and concurrent cancellation/read receipts;
+  browser checks include WCAG/overflow plus previous bookings/furnaces/weekly/issues/
+  accounts. Screenshots were inspected for desktop/phone readability. Earlier
+  selector-only browser failures were fixed; two load-related local integration
+  timeouts passed in a sequential 27-check rerun, then full hosted suites passed.
+- Final review adds a regression guard against reopening completed actions whose
+  owner has lost active meeting access, and suppresses read requests on withdrawn
+  notice notifications. The local meeting suite passes 14 checks; total isolated
+  cases are now 154. Migration 005 is unchanged; do not rerun preview preparation
+  just for this fix. Latest-head hosted results are tracked in PR #6.
+- Cloud read-only preview verification fails `EAI_AGAIN` at
+  `ep-old-haze-a1w10w9n.ap-southeast-1.aws.neon.tech`, also outside the sandbox.
+  The user subsequently completed preview prepare/meetings-fixtures/verify on
+  Windows: migrations 001–005, 15 instruments, 11 accounts, 7 samples. Existing
+  account/password files remain private and unchanged. Only two new Preview
+  bindings were added for this branch; all eight old bindings compare unchanged.
+  Preview origin is
+  https://quemat-app-git-feature-phase-3c-meetin-2d790f-govindjocose-2552.vercel.app .
+  That new hostname's proxy tunnel returns 403 outside the sandbox; network-domain
+  allowance was requested. Configured preview `dpl_G6EKThccYsEC3LLDQZHdXNN7bf6W`
+  is READY at c480747. Live health/authenticated acceptance remains blocked/pending,
+  not claimed. No preview protection was disabled or bypass key created.
+  No new infrastructure, paid service, purchase, upgrade or trial.
+
+## Phase 3B production release (operator and agent evidence)
+
+- User-confirmed Windows prerequisites: new private encrypted backup/full archive
+  read (71,233 encrypted bytes), original-age inspection at 293 minutes (<24h),
+  guarded 004 APPLIED with full record preservation PASSED, then verification of
+  migrations 001–004/original records RETAINED/constraints VERIFIED/fixturesRun:false.
+  These are operator results, not a cloud-native SQL connectivity claim.
+- Subsequently authorized exact-head merge of PR #4 (`397d699`) produced
+  `c001f5447b01a9d33968e5ff9701a6fc7413504a`. All exact-head and post-merge CI passed;
+  existing Vercel deployment `dpl_BqTvKMbyYys6EJJgFXQie2tWnHTu` was READY at the
+  canonical URL. Live health queried 004; client hashes and protected access passed.
+- Project settings and eight production/preview bindings remained unchanged, on
+  Hobby with no trial. Agent did not rerun migrations, access private backup files
+  or create production test records. Private production issue acceptance was
+  requested, not yet user-confirmed in this session.
+- Historical preparation-only statements below record their earlier authorization
+  stage; they are superseded by the successful authorized release above. Do not
+  rerun older release commands against the now-migrated database.
 
 ## Phase 3B release-tool publication authorization (2026-10-24)
 

@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { previewConfig } from "./preview-config.js";
 import { openDatabase, migrate, seed, type DB } from "../server/db.js";
 import { bootstrapAdmin, hashPassword } from "../server/auth.js";
+import { meetingsPreviewFixtures } from "./meetings-preview-fixtures.js";
 import { weeklyPreviewFixtures } from "./weekly-preview-fixtures.js";
 
 process.umask(0o077);
@@ -19,13 +20,14 @@ if (
     "prepare",
     "fixtures",
     "weekly-fixtures",
+    "meetings-fixtures",
     "verify",
     "admin",
     "reset-password",
   ].includes(action)
 )
   throw new Error(
-    "Choose prepare, fixtures, weekly-fixtures, verify, admin or reset-password.",
+    "Choose prepare, fixtures, weekly-fixtures, meetings-fixtures, verify, admin or reset-password.",
   );
 let db: DB | undefined;
 async function marker() {
@@ -178,6 +180,12 @@ try {
     );
     console.log(
       "Synthetic weekly mentor, mentee, supervisor and other member ready. Passwords are only in .env.weekly-accounts.json beside the private preview config. Existing accounts were preserved.",
+    );
+  }
+  if (action === "meetings-fixtures") {
+    await meetingsPreviewFixtures(db);
+    console.log(
+      "Synthetic meeting and notice ready. Existing accounts/passwords/records were preserved.",
     );
   }
   if (action === "verify") {

@@ -1,3 +1,11 @@
+> Historical preparation runbook: Phase 3B backup, migration 004, preservation
+> verification and the separately authorized PR #4 production release have now
+> succeeded. PR #5 later changed optional reasons without a migration. See
+> [progress](progress.md). Preparation-only statements below describe the earlier
+> authorization stage; do not rerun migration/backup commands for deployment.
+> Existing encrypted backups/receipts remain private and unchanged. Phase 3C's 005
+> is preview-only and cannot be authorized by this pinned 004 tooling.
+
 # Phase 3B production release — preparation only
 
 **Authorization is limited to publication, automatic preview redeployment and

@@ -65,3 +65,27 @@ jobs:
           PG_TEST_PORT: 5432
           PG_TEST_USER: postgres
           PG_TEST_PASSWORD: synthetic-ci-only
+
+  windows-release:
+    # This public repository uses existing free standard hosted CI, no cloud DB.
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck:release
+      - name: Parse release setup scripts without executing interactive setup
+        shell: pwsh
+        run: |
+          Get-ChildItem scripts/*release-setup.ps1 | ForEach-Object {
+            $parseTokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$parseTokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -ne 0) { throw "Release setup script syntax check failed: $($_.Name)" }
+          }
+      - name: Exercise guarded CLI and archive checks offline on Windows
+        run: npx --no-install vitest run tests/phase3c-release-offline.test.ts
