@@ -258,6 +258,13 @@ it("revokes removed participant access immediately, including previous notes, ex
     other = await client("other");
   let m = await meeting(a);
   await c.write(`/meetings/${m.id}/notes`, { body: "Retained private note" });
+  const privateNotification = (
+    await c.get("/notifications/page")
+  ).body.items.find((n: { meetingId: string }) => n.meetingId === m.id);
+  expect(privateNotification).toBeTruthy();
+  expect(
+    (await c.get("/notifications/summary")).body.unreadCount,
+  ).toBeGreaterThan(0);
   expect(
     (await c.get("/notifications")).body.some(
       (n: { meetingId: string }) => n.meetingId === m.id,
@@ -270,6 +277,15 @@ it("revokes removed participant access immediately, including previous notes, ex
   );
   expect(r.status, r.body.error).toBe(200);
   m = r.body;
+  expect(
+    (await c.get("/notifications/page")).body.items.some(
+      (n: { meetingId: string }) => n.meetingId === m.id,
+    ),
+  ).toBe(false);
+  expect((await c.get("/notifications/summary")).body.unreadCount).toBe(0);
+  expect(
+    (await c.write(`/notifications/${privateNotification.id}/read`)).status,
+  ).toBe(404);
   expect((await c.get(`/meetings/${m.id}`)).status).toBe(404);
   expect((await c.get(`/meetings/${m.id}/calendar`)).status).toBe(404);
   expect(

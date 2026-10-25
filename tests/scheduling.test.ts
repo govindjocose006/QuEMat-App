@@ -103,6 +103,170 @@ beforeEach(async () => {
   sampleId = s.body.id;
 });
 afterAll(() => db.close());
+it("refreshes instrument state with usage and retains the latest old handover", async () => {
+  const c = await client();
+  const old = randomUUID(),
+    newer = randomUUID();
+  const sample = (
+    await db.query("SELECT * FROM samples WHERE id=$1", [sampleId])
+  )[0];
+  for (const [id, days, notes] of [
+    [old, 9, "Older handover"],
+    [newer, 8, "Check the sample holder before use"],
+  ] as const) {
+    await db.query(
+      `INSERT INTO bookings(id,instrument_id,booked_by,operator_id,kind,status,starts_at,ends_at,actual_start,actual_end,measurement_type,handover_notes,sample_snapshots)
+      VALUES($1,$2,$3,$3,'booking','completed',now()-make_interval(days=>$4)-interval '1 hour',now()-make_interval(days=>$4),now()-make_interval(days=>$4)-interval '1 hour',now()-make_interval(days=>$4),'Synthetic scan',$5,$6::jsonb)`,
+      [
+        id,
+        instrumentId,
+        memberId,
+        days,
+        notes,
+        JSON.stringify([{ id: sampleId, code: sample.code, compound: "FeSe" }]),
+      ],
+    );
+  }
+  const initial = await c.agent.get("/api/monitoring");
+  expect(initial.status, initial.body.error).toBe(200);
+  expect(initial.body.instruments).toHaveLength(15);
+  expect(
+    initial.body.handovers
+      .filter((b: Booking) => b.instrumentId === instrumentId)
+      .map((b: Booking) => b.id),
+  ).toEqual([newer]);
+  expect(initial.body.handovers[0].sampleSnapshots[0].code).toBe(sample.code);
+  expect(initial.body.bookings.some((b: Booking) => b.id === newer)).toBe(
+    false,
+  );
+  const i = initial.body.instruments.find(
+    (x: { id: string }) => x.id === instrumentId,
+  );
+  expect(
+    (
+      await c.write(
+        `/instruments/${instrumentId}`,
+        { ...i, status: "maintenance" },
+        "put",
+      )
+    ).status,
+  ).toBe(200);
+  const refreshed = (await c.agent.get("/api/monitoring")).body;
+  expect(
+    refreshed.instruments.find((x: { id: string }) => x.id === instrumentId)
+      .status,
+  ).toBe("maintenance");
+  expect(refreshed.refreshedAt).toBeTruthy();
+  expect(refreshed.handovers[0].handoverNotes).toBe(
+    "Check the sample holder before use",
+  );
+});
+it("retrieves more than 200 notifications without duplicates or lost timestamp ties", async () => {
+  const c = await client("member@example.test"),
+    other = await client("other@example.test");
+  const b = await create(c);
+  await db.exec("TRUNCATE notifications");
+  await db.query(
+    `INSERT INTO notifications(id,user_id,booking_id,event_key,message,created_at)
+    SELECT gen_random_uuid(),$1,$2,'bulk-'||n,'Synthetic update '||n,
+      '2026-01-01T00:00:00Z'::timestamptz+(n%3)*interval '0.000001 second' FROM generate_series(1,205) n`,
+    [memberId, b.id],
+  );
+  expect((await c.agent.get("/api/notifications")).body).toHaveLength(200);
+  expect(
+    (await c.agent.get("/api/notifications/summary")).body.unreadCount,
+  ).toBe(205);
+  expect(
+    (await other.agent.get("/api/notifications/summary")).body.unreadCount,
+  ).toBe(0);
+  const ids = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const page = await c.agent.get(
+      "/api/notifications/page?path=notifications%2Fpage&limit=50&unread=true" +
+        (cursor ? `&before=${cursor}` : ""),
+    );
+    expect(page.status, page.body.error).toBe(200);
+    for (const n of page.body.items) {
+      expect(ids.has(n.id)).toBe(false);
+      ids.add(n.id);
+    }
+    cursor = page.body.nextCursor;
+  } while (cursor);
+  expect(ids.size).toBe(205);
+  const first = [...ids][0];
+  expect((await other.write(`/notifications/${first}/read`)).status).toBe(404);
+  expect((await c.write(`/notifications/${first}/read`)).status).toBe(200);
+  expect(
+    (await c.agent.get("/api/notifications/summary")).body.unreadCount,
+  ).toBe(204);
+  expect(
+    (await c.agent.get("/api/notifications/page?unread=true")).body.items.some(
+      (n: { id: string }) => n.id === first,
+    ),
+  ).toBe(false);
+  expect(
+    (await c.agent.get("/api/notifications/page")).body.items.find(
+      (n: { id: string }) => n.id === first,
+    ).readAt,
+  ).toBeTruthy();
+});
+it("accepts Vercel routing metadata without changing notification visibility or filter validation", async () => {
+  const c = await client("member@example.test");
+  await create(c);
+  const baseline = await c.agent.get("/api/notifications/page?unread=true");
+  expect(baseline.status).toBe(200);
+  for (const path of ["path=notifications%2Fpage", "path=notifications&path=page"]) {
+    const page = await c.agent.get(`/api/notifications/page?unread=true&${path}`);
+    expect(page.status, page.body.error).toBe(200);
+    expect(page.body).toEqual(baseline.body);
+  }
+  const other = await client("other@example.test");
+  const scoped = await other.agent.get("/api/notifications/page?path=notifications%2Fpage");
+  expect(scoped.status).toBe(200);
+  expect(scoped.body.items).toEqual([]);
+  for (const query of ["limit=0", "before=bad", "unread=maybe", "extra=1"]) {
+    const result = await c.agent.get(`/api/notifications/page?path=notifications%2Fpage&${query}`);
+    expect(result.status).toBe(400);
+  }
+  expect((await request(app).get("/api/notifications/page?path=notifications%2Fpage")).status).toBe(401);
+});
+it("keeps notification cursors stable when new updates arrive and validates page inputs", async () => {
+  const c = await client("member@example.test");
+  const b = await create(c);
+  await db.exec("TRUNCATE notifications");
+  await db.query(
+    `INSERT INTO notifications(id,user_id,booking_id,event_key,message,created_at)
+    SELECT gen_random_uuid(),$1,$2,'page-'||n,'Original '||n,'2026-01-01T00:00:00Z' FROM generate_series(1,4) n`,
+    [memberId, b.id],
+  );
+  const first = (await c.agent.get("/api/notifications/page?limit=2")).body;
+  await db.query(
+    "INSERT INTO notifications(id,user_id,booking_id,event_key,message) VALUES($1,$2,$3,'new-update','Newer update')",
+    [randomUUID(), memberId, b.id],
+  );
+  const second = (
+    await c.agent.get(
+      `/api/notifications/page?limit=2&before=${first.nextCursor}`,
+    )
+  ).body;
+  expect(
+    new Set([...first.items, ...second.items].map((n: { id: string }) => n.id))
+      .size,
+  ).toBe(4);
+  expect(second.nextCursor).toBeNull();
+  expect(second.unreadCount).toBe(5);
+  for (const query of [
+    "limit=0",
+    "limit=101",
+    "before=bad",
+    "unread=maybe",
+    "extra=1",
+  ])
+    expect((await c.agent.get(`/api/notifications/page?${query}`)).status).toBe(
+      400,
+    );
+});
 it("migrates additively and preserves Phase 1 records when repeated", async () => {
   await migrate(db);
   expect((await instruments(db)).length).toBe(15);
@@ -116,6 +280,9 @@ it("blocks anonymous/pending access, forged owners, academic privilege escalatio
     "operators",
     "availability",
     "notifications",
+    "notifications/page",
+    "notifications/summary",
+    "monitoring",
   ];
   for (const p of paths)
     await request(app)

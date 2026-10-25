@@ -394,6 +394,74 @@ try {
   );
   assert.equal((await nativeAssignee.agent.get("/api/health")).status, 200);
   count++;
+  const monitoring = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(monitoring.status, 200);
+  const monitoringResource = await nativeAssignee.write("/instruments", {
+    ...monitoring.body.instruments.find(
+      (row: { name: string }) => row.name === "PPMS",
+    ),
+    name: "Native monitoring instrument",
+    status: "available",
+  });
+  assert.equal(monitoringResource.status, 201);
+  const monitoringInstrument = monitoringResource.body.id;
+  const monitoringHandover = randomUUID();
+  await db.query(
+    `INSERT INTO bookings(id,instrument_id,booked_by,operator_id,kind,status,starts_at,ends_at,actual_start,actual_end,measurement_type,handover_notes)
+    VALUES($1,$2,$3,$3,'booking','completed',now()-interval '8 days 1 hour',now()-interval '8 days',now()-interval '8 days 1 hour',now()-interval '8 days','Synthetic monitoring scan','Retain this old handover')`,
+    [monitoringHandover, monitoringInstrument, user],
+  );
+  const withHandover = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(withHandover.status, 200);
+  assert.ok(
+    withHandover.body.handovers.some(
+      (row: { id: string }) => row.id === monitoringHandover,
+    ),
+  );
+  await db.query("UPDATE instruments SET status='maintenance' WHERE id=$1", [
+    monitoringInstrument,
+  ]);
+  const changedMonitoring = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(
+    changedMonitoring.body.instruments.find(
+      (row: { id: string }) => row.id === monitoringInstrument,
+    ).status,
+    "maintenance",
+  );
+  await db.query("UPDATE instruments SET status='available' WHERE id=$1", [
+    monitoringInstrument,
+  ]);
+  count++;
+  await db.query(
+    `INSERT INTO notifications(id,user_id,booking_id,event_key,message,created_at)
+    SELECT gen_random_uuid(),$1,$2,'native-page-'||n,'Synthetic page update '||n,
+      '2026-01-01T00:00:00Z'::timestamptz+(n%3)*interval '0.000001 second' FROM generate_series(1,205) n`,
+    [user, preservedBooking],
+  );
+  const [{ total }] = await db.query<{ total: string }>(
+    "SELECT count(*) AS total FROM notifications WHERE user_id=$1",
+    [user],
+  );
+  const notificationIds = new Set<string>();
+  let notificationCursor: string | null = null;
+  do {
+    const page = await nativeAssignee.agent.get(
+      "/api/notifications/page?limit=100" +
+        (notificationCursor ? `&before=${notificationCursor}` : ""),
+    );
+    assert.equal(page.status, 200);
+    for (const n of page.body.items) {
+      assert.ok(!notificationIds.has(n.id));
+      notificationIds.add(n.id);
+    }
+    notificationCursor = page.body.nextCursor;
+  } while (notificationCursor);
+  assert.equal(notificationIds.size, Number(total));
+  assert.ok(
+    (await nativeAssignee.agent.get("/api/notifications/summary")).body
+      .unreadCount >= 205,
+  );
+  count++;
   const nativeMeeting = await nativeAssignee.write("/meetings", {
     title: "Native synthetic private meeting",
     kind: "individual",

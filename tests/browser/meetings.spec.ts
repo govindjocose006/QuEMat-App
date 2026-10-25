@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
@@ -26,9 +27,7 @@ async function signOut(page: Page) {
   ).toBeVisible();
 }
 async function open(page: Page) {
-  await page
-    .getByRole("button", { name: "Meetings & Notices", exact: true })
-    .click();
+  await navigate(page, "Meetings & Notices");
   await expect(
     page.getByRole("combobox", { name: "Meeting view", exact: true }),
   ).toBeVisible();

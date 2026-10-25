@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { Instrument, Member, Session } from "../shared/schema.js";
 import { api, setSessionToken } from "./api.js";
 import { Schedule, Samples, LiveUsage, Notifications } from "./Scheduling.js";
@@ -156,6 +162,38 @@ function Workspace({
   onSession: (s: Session) => void;
 }) {
   const [page, setPage] = useState<Page>("overview");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const unreadGeneration = useRef(0);
+  const refreshUnread = useCallback(async () => {
+    const request = ++unreadGeneration.current;
+    try {
+      const data = await api<{ unreadCount: number }>("/notifications/summary");
+      if (request === unreadGeneration.current)
+        setUnreadCount(data.unreadCount);
+    } catch {
+      /* Retain the last confirmed count during transient outages. */
+    }
+  }, []);
+  useEffect(() => {
+    void refreshUnread();
+    const visible = () => {
+      if (document.visibilityState === "visible") void refreshUnread();
+    };
+    const timer = setInterval(visible, 30000);
+    window.addEventListener("focus", visible);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      unreadGeneration.current++;
+      clearInterval(timer);
+      window.removeEventListener("focus", visible);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [refreshUnread]);
+  useEffect(() => {
+    document.getElementById("main-content")?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }, [page]);
   const [collaboration, setCollaboration] = useState<{
     kind: "meeting" | "notice";
     id: string;
@@ -166,22 +204,40 @@ function Workspace({
   const [includeArchived, setIncludeArchived] = useState(false);
   const [error, setError] = useState("");
   const admin = user.appRole === "administrator";
-  const reload = useCallback(async () => {
+  const instrumentGeneration = useRef(0);
+  const acceptInstruments = useCallback((data: Instrument[]) => {
+    instrumentGeneration.current++;
+    setItems(data);
     setError("");
+  }, []);
+  const reload = useCallback(async () => {
+    const request = ++instrumentGeneration.current;
     try {
-      setItems(
-        await api<Instrument[]>(
-          `/instruments${admin && includeArchived ? "?includeArchived=true" : ""}`,
-        ),
+      const data = await api<Instrument[]>(
+        `/instruments${admin && includeArchived ? "?includeArchived=true" : ""}`,
       );
+      if (request === instrumentGeneration.current) {
+        setItems(data);
+        setError("");
+      }
     } catch (e) {
-      setError(messageOf(e));
+      if (request === instrumentGeneration.current) setError(messageOf(e));
       throw e;
     }
   }, [admin, includeArchived]);
   useEffect(() => {
+    if (page !== "instruments" && page !== "calendar") return;
     void reload().catch(() => {});
-  }, [reload]);
+    const visible = () => {
+      if (document.visibilityState === "visible") void reload().catch(() => {});
+    };
+    const timer = setInterval(visible, 30000);
+    window.addEventListener("focus", visible);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", visible);
+    };
+  }, [reload, page]);
   useEffect(() => {
     if (!admin && (page === "members" || page === "audit")) setPage("overview");
   }, [admin, page]);
@@ -211,6 +267,36 @@ function Workspace({
         "settings",
       ];
   const active = items?.filter((i) => !i.archived) ?? [];
+  const primaryPages: Page[] = ["overview", "calendar", "notifications"];
+  const badge =
+    unreadCount !== null && unreadCount > 0 ? (
+      <span className="unread-badge" aria-hidden="true">
+        {unreadCount > 99 ? "99+" : unreadCount}
+      </span>
+    ) : null;
+  const navigate = (p: Page) => {
+    setPage(p);
+    setMoreOpen(false);
+    if (p === page) {
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+  };
+  const navButton = (p: Page) => (
+    <button
+      key={p}
+      className={page === p ? "nav-item selected" : "nav-item"}
+      aria-current={page === p ? "page" : undefined}
+      aria-describedby={
+        p === "notifications" ? "unread-notification-status" : undefined
+      }
+      onClick={() => navigate(p)}
+    >
+      <Icon name={p} />
+      <span>{pageLabels[p]}</span>
+      {p === "notifications" && badge}
+    </button>
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -219,18 +305,29 @@ function Workspace({
       <aside className="sidebar">
         <Brand small />
         <div className="workspace-label">LAB WORKSPACE</div>
-        <nav aria-label="Main navigation">
-          {pages.map((p) => (
+        <nav className="desktop-navigation" aria-label="Main navigation">
+          {pages.map(navButton)}
+        </nav>
+        <nav className="mobile-navigation" aria-label="Main navigation">
+          <div className="mobile-primary">
+            {primaryPages.map(navButton)}
             <button
-              key={p}
-              className={page === p ? "nav-item selected" : "nav-item"}
-              aria-current={page === p ? "page" : undefined}
-              onClick={() => setPage(p)}
+              className={`nav-item more-toggle${!primaryPages.includes(page) ? " selected" : ""}`}
+              aria-expanded={moreOpen}
+              aria-controls="mobile-more-navigation"
+              onClick={() => setMoreOpen((v) => !v)}
             >
-              <Icon name={p} />
-              {pageLabels[p]}
+              <span aria-hidden="true">⋯</span>
+              <span>More</span>
             </button>
-          ))}
+          </div>
+          <div
+            className="mobile-more-panel"
+            id="mobile-more-navigation"
+            hidden={!moreOpen}
+          >
+            {pages.filter((p) => !primaryPages.includes(p)).map(navButton)}
+          </div>
         </nav>
         <div className="sidebar-bottom">
           <div className="lab-info">
@@ -261,6 +358,26 @@ function Workspace({
           <span className="private-label">
             <Icon name="lock" /> Members only
           </span>
+          <span
+            id="unread-notification-status"
+            className="sr-only"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {unreadCount === null
+              ? "Unread count not yet available"
+              : `${unreadCount} unread notifications at last check`}
+          </span>
+          <button
+            className="secondary inbox-button"
+            aria-label="Open inbox"
+            aria-describedby="unread-notification-status"
+            onClick={() => navigate("notifications")}
+          >
+            <Icon name="notifications" />
+            <span>Inbox</span>
+            {badge}
+          </button>
           <button className="workspace-logout secondary" onClick={onLogout}>
             Sign out
           </button>
@@ -332,13 +449,11 @@ function Workspace({
                   <small>Maintenance or out of service</small>
                 </div>
               </div>
-              {items && (
-                <LiveUsage
-                  items={items}
-                  user={user}
-                  onCalendar={() => setPage("calendar")}
-                />
-              )}
+              <LiveUsage
+                user={user}
+                onCalendar={() => setPage("calendar")}
+                onInstruments={acceptInstruments}
+              />
               <IssuesOverview
                 user={user}
                 onOpen={(id) => {
@@ -393,6 +508,7 @@ function Workspace({
           {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
           {page === "notifications" && (
             <Notifications
+              onRead={() => void refreshUnread()}
               onMeeting={(id) => {
                 setCollaboration({ kind: "meeting", id });
                 setPage("meetings");

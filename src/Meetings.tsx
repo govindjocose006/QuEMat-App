@@ -1239,7 +1239,10 @@ export function MeetingsOverview({ open }: { open: (s: Selection) => void }) {
   const reload = useCallback(
     () =>
       api<CollaborationSummary>("/collaboration/summary")
-        .then(setData)
+        .then((data) => {
+          setData(data);
+          setError("");
+        })
         .catch((e) => setError(messageOf(e))),
     [],
   );

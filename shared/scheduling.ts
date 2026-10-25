@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Instrument } from "./schema.js";
 const text = (max = 2000) => z.string().trim().max(max);
 const id = z.string().uuid();
 const instant = z.iso
@@ -185,4 +186,15 @@ export type Notification = {
   readAt: string | null;
 };
 export type Operator = { id: string; fullName: string };
+export type MonitoringSnapshot = {
+  instruments: Instrument[];
+  bookings: Booking[];
+  handovers: Booking[];
+  refreshedAt: string;
+};
+export type NotificationPage = {
+  items: Notification[];
+  nextCursor: string | null;
+  unreadCount: number;
+};
 export { managesOperations } from "./scheduling-ui.js";

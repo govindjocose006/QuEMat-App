@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import { expect, test, type Page } from "@playwright/test";
 
 const password = "Browser-tests-only-passphrase!";
@@ -62,9 +63,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   });
   const admin = await adminContext.newPage();
   await login(admin);
-  await admin
-    .getByRole("button", { name: "Members & access", exact: true })
-    .click();
+  await navigate(admin, "Members & access");
   await admin
     .getByRole("button", { name: `Manage ${fullName}`, exact: true })
     .click();
@@ -99,7 +98,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
     path: info.outputPath("member-overview.png"),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await navigate(page, "Instruments");
   await page.getByRole("textbox", { name: "Search instruments" }).fill("BET");
   await expect(
     page.getByRole("heading", { name: "BET", exact: true }),
@@ -113,7 +112,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "My account", exact: true }).click();
+  await navigate(page, "My account");
   await page.getByLabel("Current password", { exact: true }).fill(password);
   await page
     .getByLabel("New password", { exact: true })
@@ -157,7 +156,7 @@ test("administrator creates, edits, archives, restores an instrument, and review
     path: info.outputPath("admin-overview.png"),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await navigate(page, "Instruments");
   await page.getByRole("button", { name: "Add instrument" }).click();
   const name = `Test resource ${info.project.name}`;
   await page.getByLabel("Instrument name", { exact: true }).fill(name);
@@ -206,19 +205,17 @@ test("administrator creates, edits, archives, restores an instrument, and review
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator(".status.maintenance")).toBeVisible();
   await noOverflow(page);
-  await page
-    .getByRole("button", { name: "Audit history", exact: true })
-    .click();
+  await navigate(page, "Audit history");
   await expect(
     page.getByText("instrument · restored", { exact: true }).first(),
   ).toBeVisible();
-  await page.getByRole("button", { name: "My account", exact: true }).click();
+  await navigate(page, "My account");
   await expect(
     page.getByRole("heading", { name: "Change password" }),
   ).toBeVisible();
   await noOverflow(page);
   // Keyboard navigation and native dialog focus trapping.
-  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await navigate(page, "Instruments");
   await page.getByRole("button", { name: "Add instrument" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
