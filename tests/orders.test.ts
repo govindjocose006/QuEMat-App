@@ -299,6 +299,8 @@ it("validates money, quantities, real dates, references and disallowed lifecycle
   for (const extra of [
     { quantity: -1 },
     { quantity: 1.0001 },
+    { quantity: 0.000000000001 },
+    { quantity: 1.0000000001 },
     { estimatedCostPaise: 1.5 },
     { chemical: "x" },
     { quantity: Infinity },
@@ -320,6 +322,7 @@ it("validates money, quantities, real dates, references and disallowed lifecycle
   for (const extra of [
     { orderedOn: "2035-01-01" },
     { orderedOn: "2026-02-30" },
+    { orderedOn: "0000-01-01" },
     { expectedOn: "2000-01-01" },
 
     { costPaise: -1 },

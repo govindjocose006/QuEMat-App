@@ -18,10 +18,10 @@ export const orderLabels: Record<OrderStatus, string> = {
 };
 export const quantity = z
   .number()
-  .positive()
+  .min(0.001)
   .max(1000000)
   .refine(
-    (n) => Math.abs(n * 1000 - Math.round(n * 1000)) < 0.000001,
+    (n) => /^\d+(?:\.\d{1,3})?$/.test(String(n)),
     "Use at most three decimal places.",
   );
 export const money = z.number().int().min(0).max(100000000000).nullable();
@@ -41,13 +41,16 @@ export const requestSchema = z
   })
   .strict();
 export type ChemicalRequest = z.infer<typeof requestSchema>;
+const calendarDate = z.iso
+  .date()
+  .refine((d) => !d.startsWith("0000"), "Use a valid calendar year.");
 export const recordOrderSchema = z
   .object({
     version: z.number().int().positive(),
     supplier: text(200).min(2),
     orderedBy: z.string().uuid(),
-    orderedOn: z.iso.date(),
-    expectedOn: z.iso.date().nullable().default(null),
+    orderedOn: calendarDate,
+    expectedOn: calendarDate.nullable().default(null),
     costPaise: money,
     reference: text(200).default(""),
   })
@@ -56,7 +59,7 @@ export const receiveSchema = z
   .object({
     version: z.number().int().positive(),
     quantity,
-    receivedOn: z.iso.date(),
+    receivedOn: calendarDate,
     notes: text(2000).default(""),
   })
   .strict();
