@@ -27,6 +27,14 @@ import {
   verifyRetained as verifyRetained3c,
 } from "../scripts/phase3c-production-release-core.js";
 import { inspectReadOnly as inspectReadOnly3c } from "../scripts/phase3c-release-inspection.js";
+import {
+  applyReviewedPhase4,
+  fingerprints as fingerprints4,
+  verifyRetained as verifyRetained4,
+  checkOrders,
+} from "../scripts/phase4-production-release-core.js";
+import { inspectReadOnly as inspectReadOnly4 } from "../scripts/phase4-release-inspection.js";
+import { collaborationFixture } from "./phase4-release-fixture.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -387,8 +395,57 @@ try {
   );
   await verifyRetained3c(db, before005);
   count++;
+  await collaborationFixture(db, user, user);
+  const before006Domain = await snapshot();
+  const before006 = await fingerprints4(db);
+  assert.equal(
+    (await inspectReadOnly4(db)).structure,
+    "PHASE3C_STRUCTURE_NO_006_OBJECTS",
+  );
+  const guarded006 = await applyReviewedPhase4(
+    db,
+    readFileSync("server/migrations/006_chemical_orders.sql", "utf8"),
+  );
+  assert.deepEqual(guarded006.before, before006);
+  assert.deepEqual(guarded006.after, before006);
+  assert.equal(guarded006.before.schema_migrations.count, 5);
+  assert.equal(guarded006.before.notice_acknowledgements.count, 2);
+  assert.equal(
+    (await inspectReadOnly4(db)).structure,
+    "PHASE4_STRUCTURE_PRESENT",
+  );
+  count++;
+  await verifyRetained4(db, before006);
+  assert.equal(
+    (
+      await applyReviewedPhase4(
+        db,
+        readFileSync("server/migrations/006_chemical_orders.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await db.transaction(async (tx) => {
+    await tx.exec("SAVEPOINT tamper");
+    await tx.exec(
+      "ALTER TABLE chemical_order_events DISABLE TRIGGER chemical_events_immutable",
+    );
+    await assert.rejects(checkOrders(tx));
+    await tx.exec("ROLLBACK TO SAVEPOINT tamper");
+  });
+  await checkOrders(db);
+  count++;
+  await db.transaction(async (tx) => {
+    await tx.exec("SAVEPOINT tamper");
+    await tx.exec(
+      "ALTER TABLE chemical_orders ALTER COLUMN received_quantity SET DEFAULT 1",
+    );
+    await assert.rejects(checkOrders(tx));
+    await tx.exec("ROLLBACK TO SAVEPOINT tamper");
+  });
+  count++;
   await migrate(db);
-  assert.deepEqual(await snapshot(), beforeCollaboration);
+  assert.deepEqual(await snapshot(), before006Domain);
   assert.deepEqual(
     await Promise.all(
       retainedIssueTables.map((t) =>

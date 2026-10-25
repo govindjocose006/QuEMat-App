@@ -64,3 +64,12 @@ The current app does not deliver background email/push reminders.
 Keep all credentials, local configuration, backup archives, receipts and
 passphrases private. Historical migrations and guarded release scripts are not
 to be rerun for application-only updates. Preserve the existing free resources.
+
+## Phase 4 release preparation
+
+Private Phase 4 preview acceptance is user-confirmed, including the repeated-open
+correction. Independent migration-006 backup, full-row preservation, catalog
+validation, offline diagnostics and Windows setup are prepared for review. See
+[the guarded release guide](phase-4-release.md). No production config, backup,
+migration, merge or deployment has been performed for Phase 4. Exact-head CI
+results and readiness are recorded in PR #8; previous guards/backups stay pinned.

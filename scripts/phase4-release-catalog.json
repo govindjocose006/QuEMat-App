@@ -1,0 +1,964 @@
+{
+  "tables": [
+    {
+      "name": "chemical_deliveries",
+      "kind": "r",
+      "rls": false
+    },
+    {
+      "name": "chemical_order_events",
+      "kind": "r",
+      "rls": false
+    },
+    {
+      "name": "chemical_order_number",
+      "kind": "S",
+      "rls": false
+    },
+    {
+      "name": "chemical_orders",
+      "kind": "r",
+      "rls": false
+    }
+  ],
+  "columns": [
+    {
+      "relation": "chemical_deliveries",
+      "name": "id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "order_id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "received_by",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "quantity",
+      "type": "numeric(12,3)",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "received_on",
+      "type": "date",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "notes",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "expression": "now()",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "order_id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "actor_id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "kind",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "version",
+      "type": "integer",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "before_state",
+      "type": "jsonb",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "after_state",
+      "type": "jsonb",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "reason",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "expression": "now()",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "code",
+      "type": "text",
+      "required": true,
+      "expression": "('ORD-'::text || nextval('chemical_order_number'::regclass))",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "requester_id",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "cas_number",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "purity",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "catalogue",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "quantity",
+      "type": "numeric(12,3)",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "unit",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "purpose",
+      "type": "text",
+      "required": true,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "project",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "preferred_supplier",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "notes",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "estimated_cost_paise",
+      "type": "bigint",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "status",
+      "type": "text",
+      "required": true,
+      "expression": "'requested'::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "supplier",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "ordered_by",
+      "type": "text",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "ordered_on",
+      "type": "date",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "expected_on",
+      "type": "date",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "cost_paise",
+      "type": "bigint",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "reference",
+      "type": "text",
+      "required": true,
+      "expression": "''::text",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "received_quantity",
+      "type": "numeric(12,3)",
+      "required": true,
+      "expression": "0",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "version",
+      "type": "integer",
+      "required": true,
+      "expression": "1",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "expression": "now()",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "required": true,
+      "expression": "now()",
+      "identity": "",
+      "generated": ""
+    },
+    {
+      "relation": "notifications",
+      "name": "order_id",
+      "type": "text",
+      "required": false,
+      "expression": "",
+      "identity": "",
+      "generated": ""
+    }
+  ],
+  "constraints": [
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_created_at_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL id"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_notes_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL notes"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_order_id_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (order_id) REFERENCES chemical_orders(id)"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_order_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL order_id"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_pkey",
+      "kind": "p",
+      "valid": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_quantity_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((quantity > (0)::numeric) AND (quantity <= (1000000)::numeric)))"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_quantity_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL quantity"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_received_by_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (received_by) REFERENCES users(id)"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_received_by_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL received_by"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_received_on_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL received_on"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_actor_id_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (actor_id) REFERENCES users(id)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_actor_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL actor_id"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_after_state_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL after_state"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_created_at_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL id"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_kind_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((kind = ANY (ARRAY['requested'::text, 'edited'::text, 'ordered'::text, 'order_updated'::text, 'delivery'::text, 'cancelled'::text])))"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_kind_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL kind"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_order_id_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (order_id) REFERENCES chemical_orders(id)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_order_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL order_id"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_order_id_version_key",
+      "kind": "u",
+      "valid": true,
+      "definition": "UNIQUE (order_id, version)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_pkey",
+      "kind": "p",
+      "valid": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_reason_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL reason"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_version_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((version > 0))"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_version_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL version"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_cas_number_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL cas_number"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_catalogue_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL catalogue"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((received_quantity >= (0)::numeric) AND (received_quantity <= quantity)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_check1",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((((ordered_by IS NULL) AND (ordered_on IS NULL) AND (supplier = ''::text) AND (expected_on IS NULL) AND (cost_paise IS NULL) AND (reference = ''::text) AND (status = ANY (ARRAY['requested'::text, 'cancelled'::text]))) OR ((ordered_by IS NOT NULL) AND (ordered_on IS NOT NULL) AND (length(TRIM(BOTH FROM supplier)) >= 2) AND (status <> 'requested'::text))))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_check2",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((expected_on IS NULL) OR (expected_on >= ordered_on)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_check3",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((((status = ANY (ARRAY['requested'::text, 'ordered'::text])) AND (received_quantity = (0)::numeric)) OR ((status = 'part_received'::text) AND (received_quantity > (0)::numeric) AND (received_quantity < quantity)) OR ((status = 'received'::text) AND (received_quantity = quantity)) OR (status = 'cancelled'::text)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_chemical_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((length(TRIM(BOTH FROM chemical)) >= 2) AND (length(TRIM(BOTH FROM chemical)) <= 200)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_chemical_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL chemical"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_code_key",
+      "kind": "u",
+      "valid": true,
+      "definition": "UNIQUE (code)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_code_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL code"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_cost_paise_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((cost_paise >= 0) AND (cost_paise <= '100000000000'::bigint)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_created_at_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_estimated_cost_paise_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((estimated_cost_paise >= 0) AND (estimated_cost_paise <= '100000000000'::bigint)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL id"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_notes_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL notes"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_ordered_by_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (ordered_by) REFERENCES users(id)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_pkey",
+      "kind": "p",
+      "valid": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_preferred_supplier_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL preferred_supplier"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_project_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL project"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_purity_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL purity"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_purpose_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((length(TRIM(BOTH FROM purpose)) >= 3) AND (length(TRIM(BOTH FROM purpose)) <= 2000)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_purpose_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL purpose"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_quantity_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK (((quantity > (0)::numeric) AND (quantity <= (1000000)::numeric)))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_quantity_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL quantity"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_received_quantity_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL received_quantity"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_reference_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL reference"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_requester_id_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (requester_id) REFERENCES users(id)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_requester_id_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL requester_id"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_status_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((status = ANY (ARRAY['requested'::text, 'ordered'::text, 'part_received'::text, 'received'::text, 'cancelled'::text])))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_status_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL status"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_supplier_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL supplier"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_unit_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((unit = ANY (ARRAY['g'::text, 'kg'::text, 'mg'::text, 'mL'::text, 'L'::text, 'bottle'::text, 'pack'::text, 'piece'::text])))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_unit_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL unit"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_updated_at_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL updated_at"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_version_check",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((version > 0))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_version_not_null",
+      "kind": "n",
+      "valid": true,
+      "definition": "NOT NULL version"
+    },
+    {
+      "relation": "notifications",
+      "name": "notification_source",
+      "kind": "c",
+      "valid": true,
+      "definition": "CHECK ((num_nonnulls(booking_id, weekly_report_id, issue_id, meeting_id, notice_id, order_id) = 1))"
+    },
+    {
+      "relation": "notifications",
+      "name": "notifications_order_id_fkey",
+      "kind": "f",
+      "valid": true,
+      "definition": "FOREIGN KEY (order_id) REFERENCES chemical_orders(id)"
+    }
+  ],
+  "indexes": [
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_order",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX chemical_deliveries_order ON public.chemical_deliveries USING btree (order_id, created_at, id)"
+    },
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_pkey",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX chemical_deliveries_pkey ON public.chemical_deliveries USING btree (id)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_order_id_version_key",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX chemical_order_events_order_id_version_key ON public.chemical_order_events USING btree (order_id, version)"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_order_events_pkey",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX chemical_order_events_pkey ON public.chemical_order_events USING btree (id)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_code_key",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX chemical_orders_code_key ON public.chemical_orders USING btree (code)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_due",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX chemical_orders_due ON public.chemical_orders USING btree (expected_on) WHERE (status = ANY (ARRAY['ordered'::text, 'part_received'::text]))"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_pkey",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX chemical_orders_pkey ON public.chemical_orders USING btree (id)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_requester",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX chemical_orders_requester ON public.chemical_orders USING btree (requester_id, status)"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_orders_work",
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX chemical_orders_work ON public.chemical_orders USING btree (status, created_at DESC, id)"
+    }
+  ],
+  "functions": [
+    {
+      "name": "protect_chemical_history",
+      "arguments": "",
+      "body": "\nBEGIN RAISE EXCEPTION 'Chemical order history and deliveries are append only'; END; ",
+      "definer": false,
+      "settings": null,
+      "returns": "trigger",
+      "volatility": "v"
+    },
+    {
+      "name": "protect_chemical_identity",
+      "arguments": "",
+      "body": "\nBEGIN\n IF TG_OP='DELETE' THEN RAISE EXCEPTION 'Chemical orders are retained'; END IF;\n IF (NEW.id,NEW.code,NEW.requester_id,NEW.created_at) IS DISTINCT FROM (OLD.id,OLD.code,OLD.requester_id,OLD.created_at) THEN RAISE EXCEPTION 'Chemical order identity is immutable'; END IF;\n RETURN NEW;\nEND; ",
+      "definer": false,
+      "settings": null,
+      "returns": "trigger",
+      "volatility": "v"
+    }
+  ],
+  "triggers": [
+    {
+      "relation": "chemical_deliveries",
+      "name": "chemical_deliveries_immutable",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER chemical_deliveries_immutable BEFORE DELETE OR UPDATE ON public.chemical_deliveries FOR EACH ROW EXECUTE FUNCTION protect_chemical_history()"
+    },
+    {
+      "relation": "chemical_order_events",
+      "name": "chemical_events_immutable",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER chemical_events_immutable BEFORE DELETE OR UPDATE ON public.chemical_order_events FOR EACH ROW EXECUTE FUNCTION protect_chemical_history()"
+    },
+    {
+      "relation": "chemical_orders",
+      "name": "chemical_identity",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER chemical_identity BEFORE DELETE OR UPDATE ON public.chemical_orders FOR EACH ROW EXECUTE FUNCTION protect_chemical_identity()"
+    }
+  ],
+  "sequences": [
+    {
+      "name": "chemical_order_number",
+      "type": "bigint",
+      "start": "1",
+      "increment": "1",
+      "min": "1",
+      "max": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    }
+  ]
+}

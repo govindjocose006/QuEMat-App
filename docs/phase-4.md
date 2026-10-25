@@ -118,6 +118,6 @@ migration preservation. Desktop/phone tests exercise the form workflow and
 accessibility. Actual CI and live outcomes are recorded in the Phase 4 PR;
 implementation does not imply live readiness or production release.
 
-A future production release needs separately reviewed migration-006 backup,
-preservation and release tooling. Previous migration-specific release scripts
+The separately guarded [production release guide](phase-4-release.md) and
+migration-006 backup/preservation tooling are prepared for review. Previous migration-specific release scripts
 must not be reused or widened to authorize 006. Keep all backups/receipts untouched.
