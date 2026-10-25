@@ -55,10 +55,21 @@ separate from the user-confirmed preview checks.
 
 ## Next phase
 
-Phase 4 (chemicals and orders) is next and has not started. Incoming external samples, facility
+Phase 4 (chemicals and orders) is implemented for isolated preview review on
+`feature/phase-4-chemical-orders`; migration 006 and private preview acceptance
+are required before any production release. See [Phase 4](phase-4.md). Incoming external samples, facility
 calls/proposals, background reminders and PWA work remain future stages.
 The current app does not deliver background email/push reminders.
 
 Keep all credentials, local configuration, backup archives, receipts and
 passphrases private. Historical migrations and guarded release scripts are not
 to be rerun for application-only updates. Preserve the existing free resources.
+
+## Phase 4 release preparation
+
+Private Phase 4 preview acceptance is user-confirmed, including the repeated-open
+correction. Independent migration-006 backup, full-row preservation, catalog
+validation, offline diagnostics and Windows setup are prepared for review. See
+[the guarded release guide](phase-4-release.md). No production config, backup,
+migration, merge or deployment has been performed for Phase 4. Exact-head CI
+results and readiness are recorded in PR #8; previous guards/backups stay pinned.

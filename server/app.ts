@@ -28,6 +28,7 @@ import {
 import { digest, hashPassword, verifyPassword } from "./auth.js";
 import { installScheduling } from "./scheduling.js";
 import { installMeetings } from "./meetings.js";
+import { installOrders } from "./orders.js";
 import { installIssues } from "./issues.js";
 import { installWeekly } from "./weekly.js";
 
@@ -96,7 +97,7 @@ export function createApp(db: DB, options: Options) {
     if (
       !(
         await db.query(
-          "SELECT 1 FROM schema_migrations WHERE name='005_meetings_notices.sql'",
+          "SELECT 1 FROM schema_migrations WHERE name='006_chemical_orders.sql'",
         )
       ).length
     )
@@ -528,6 +529,7 @@ export function createApp(db: DB, options: Options) {
   });
   installScheduling(app, db, approved, (res) => context(res).user!, fail);
   installWeekly(app, db, approved, (res) => context(res).user!, fail);
+  installOrders(app, db, approved, (res) => context(res).user!, fail);
   installIssues(app, db, approved, (res) => context(res).user!, fail);
   installMeetings(app, db, approved, (res) => context(res).user!, fail);
   app.use("/api", (_req, _res, next) =>

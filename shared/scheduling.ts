@@ -175,6 +175,7 @@ export type Availability = {
   reference: string;
 };
 export type Notification = {
+  orderId: string | null;
   id: string;
   bookingId: string | null;
   weeklyReportId: string | null;

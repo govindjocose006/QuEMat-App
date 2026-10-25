@@ -121,7 +121,8 @@ workflows, keyboard focus, and automated accessibility checks. CI is configured 
    and completion.
 3. **Deployed:** weekly reports/revisions/scoped reviews; issues/requests with history;
    private meetings, owned actions, announcements and explicit read acknowledgements.
-4. **Next, after monitoring audit fixes:** chemical requests and order tracking.
+4. **Implemented for preview review:** [chemical requests and order tracking](docs/phase-4.md);
+   migration 006 and preview acceptance pending. Production remains on the audit release.
 5. Incoming external samples and their measurement workflow.
 6. Facility calls and proposals. Background reminders and PWA work remain separate
    later additions; the current app does not deliver email/push reminders while closed.

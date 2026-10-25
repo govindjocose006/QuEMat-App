@@ -2050,3 +2050,18 @@ fieldset > label:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+.orders-page {
+  overflow-wrap: anywhere;
+}
+.orders-page .filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 700px) {
+  .orders-page .filters {
+    grid-template-columns: 1fr;
+  }
+}

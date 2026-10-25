@@ -27,6 +27,14 @@ import {
   verifyRetained as verifyRetained3c,
 } from "../scripts/phase3c-production-release-core.js";
 import { inspectReadOnly as inspectReadOnly3c } from "../scripts/phase3c-release-inspection.js";
+import {
+  applyReviewedPhase4,
+  fingerprints as fingerprints4,
+  verifyRetained as verifyRetained4,
+  checkOrders,
+} from "../scripts/phase4-production-release-core.js";
+import { inspectReadOnly as inspectReadOnly4 } from "../scripts/phase4-release-inspection.js";
+import { collaborationFixture } from "./phase4-release-fixture.js";
 const host = process.env.PG_TEST_HOST ?? "127.0.0.1";
 assert.ok(
   ["127.0.0.1", "::1", "localhost"].includes(host),
@@ -174,7 +182,12 @@ try {
           table,
           (await db.query(`SELECT * FROM ${table}`)).map((row) => {
             const value = { ...row };
-            for (const column of ["issue_id", "meeting_id", "notice_id"])
+            for (const column of [
+              "issue_id",
+              "meeting_id",
+              "notice_id",
+              "order_id",
+            ])
               if (value[column] === null) delete value[column];
             return value;
           }),
@@ -382,8 +395,57 @@ try {
   );
   await verifyRetained3c(db, before005);
   count++;
+  await collaborationFixture(db, user, user);
+  const before006Domain = await snapshot();
+  const before006 = await fingerprints4(db);
+  assert.equal(
+    (await inspectReadOnly4(db)).structure,
+    "PHASE3C_STRUCTURE_NO_006_OBJECTS",
+  );
+  const guarded006 = await applyReviewedPhase4(
+    db,
+    readFileSync("server/migrations/006_chemical_orders.sql", "utf8"),
+  );
+  assert.deepEqual(guarded006.before, before006);
+  assert.deepEqual(guarded006.after, before006);
+  assert.equal(guarded006.before.schema_migrations.count, 5);
+  assert.equal(guarded006.before.notice_acknowledgements.count, 2);
+  assert.equal(
+    (await inspectReadOnly4(db)).structure,
+    "PHASE4_STRUCTURE_PRESENT",
+  );
+  count++;
+  await verifyRetained4(db, before006);
+  assert.equal(
+    (
+      await applyReviewedPhase4(
+        db,
+        readFileSync("server/migrations/006_chemical_orders.sql", "utf8"),
+      )
+    ).alreadyApplied,
+    true,
+  );
+  await db.transaction(async (tx) => {
+    await tx.exec("SAVEPOINT tamper");
+    await tx.exec(
+      "ALTER TABLE chemical_order_events DISABLE TRIGGER chemical_events_immutable",
+    );
+    await assert.rejects(checkOrders(tx));
+    await tx.exec("ROLLBACK TO SAVEPOINT tamper");
+  });
+  await checkOrders(db);
+  count++;
+  await db.transaction(async (tx) => {
+    await tx.exec("SAVEPOINT tamper");
+    await tx.exec(
+      "ALTER TABLE chemical_orders ALTER COLUMN received_quantity SET DEFAULT 1",
+    );
+    await assert.rejects(checkOrders(tx));
+    await tx.exec("ROLLBACK TO SAVEPOINT tamper");
+  });
+  count++;
   await migrate(db);
-  assert.deepEqual(await snapshot(), beforeCollaboration);
+  assert.deepEqual(await snapshot(), before006Domain);
   assert.deepEqual(
     await Promise.all(
       retainedIssueTables.map((t) =>
@@ -393,6 +455,66 @@ try {
     issueRows,
   );
   assert.equal((await nativeAssignee.agent.get("/api/health")).status, 200);
+  count++;
+  // Phase 4: HTTP writes serialize across connections and retain delivery history.
+  let chemical = await nativeAssignee.write("/orders", {
+    chemical: "Synthetic native reagent",
+    quantity: 10,
+    unit: "g",
+    purpose: "Native receipt concurrency",
+  });
+  assert.equal(chemical.status, 201);
+  let chemicalRow = chemical.body;
+  chemical = await nativeAssignee.write(`/orders/${chemicalRow.id}/record`, {
+    version: chemicalRow.version,
+    supplier: "Synthetic native supplier",
+    orderedBy: chemicalRow.requesterId,
+    orderedOn: "2020-01-01",
+    costPaise: 12345,
+  });
+  assert.equal(chemical.status, 200);
+  chemicalRow = chemical.body;
+  const simultaneousReceipts = await Promise.all(
+    [1, 2].map(() =>
+      nativeAssignee.write(`/orders/${chemicalRow.id}/receive`, {
+        version: chemicalRow.version,
+        quantity: 7,
+        receivedOn: "2020-01-02",
+      }),
+    ),
+  );
+  assert.deepEqual(
+    simultaneousReceipts.map((r) => r.status).sort(),
+    [200, 409],
+  );
+  const retainedChemical = await nativeAssignee.agent.get(
+    `/api/orders/${chemicalRow.id}`,
+  );
+  assert.equal(retainedChemical.body.receivedQuantity, 7);
+  assert.equal(retainedChemical.body.deliveries.length, 1);
+  assert.equal(retainedChemical.body.events.length, 3);
+  count++;
+  await assert.rejects(
+    db.query("DELETE FROM chemical_deliveries WHERE order_id=$1", [
+      chemicalRow.id,
+    ]),
+  );
+  await assert.rejects(
+    db.query("UPDATE chemical_orders SET received_quantity=11 WHERE id=$1", [
+      chemicalRow.id,
+    ]),
+  );
+  const chemicalNotices = await db.query(
+    "SELECT id FROM notifications WHERE order_id=$1",
+    [chemicalRow.id],
+  );
+  assert.ok(chemicalNotices.length > 0);
+  await assert.rejects(
+    db.query(
+      "INSERT INTO notifications(id,user_id,order_id,booking_id,event_key,message) VALUES($1,$2,$3,$4,'mixed-chemical','Must fail')",
+      [randomUUID(), chemicalRow.requesterId, chemicalRow.id, preservedBooking],
+    ),
+  );
   count++;
   const monitoring = await nativeAssignee.agent.get("/api/monitoring");
   assert.equal(monitoring.status, 200);

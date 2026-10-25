@@ -28,7 +28,7 @@ const bookingSelect = `SELECT b.id,b.instrument_id AS "instrumentId",i.name AS "
 const notificationVisible = `n.user_id=$1
  AND (n.meeting_id IS NULL OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')) OR EXISTS(SELECT 1 FROM meeting_attendees a WHERE a.meeting_id=n.meeting_id AND a.user_id=$1))
  AND (n.notice_id IS NULL OR EXISTS(SELECT 1 FROM notices x WHERE x.id=n.notice_id AND x.status='published') OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')))`;
-const notificationSelect = `SELECT n.id,n.booking_id AS "bookingId",n.weekly_report_id AS "weeklyReportId",n.issue_id AS "issueId",n.meeting_id AS "meetingId",n.notice_id AS "noticeId",n.message,n.created_at AS "createdAt",n.read_at AS "readAt" FROM notifications n`;
+const notificationSelect = `SELECT n.id,n.booking_id AS "bookingId",n.weekly_report_id AS "weeklyReportId",n.order_id AS "orderId",n.issue_id AS "issueId",n.meeting_id AS "meetingId",n.notice_id AS "noticeId",n.message,n.created_at AS "createdAt",n.read_at AS "readAt" FROM notifications n`;
 // pg and PGlite both serialize timestamptz to ISO through JSON.
 export async function readBooking(tx: SQL, id: string) {
   return (await tx.query<Booking>(bookingSelect + " WHERE b.id=$1", [id]))[0];

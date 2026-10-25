@@ -39,6 +39,7 @@ jobs:
             test-results/**/*monitoring-handover.png
             test-results/**/*inbox-pagination.png
             test-results/**/*phone-more-navigation.png
+            test-results/**/*chemical-order.png
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/upload-artifact@v4
@@ -99,4 +100,4 @@ jobs:
             if ($parseErrors.Count -ne 0) { throw "Release setup script syntax check failed: $($_.Name)" }
           }
       - name: Exercise guarded CLI and archive checks offline on Windows
-        run: npx --no-install vitest run tests/phase3c-release-offline.test.ts
+        run: npx --no-install vitest run tests/phase3c-release-offline.test.ts tests/phase4-release-offline.test.ts
