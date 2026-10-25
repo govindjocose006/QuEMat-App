@@ -2,15 +2,16 @@
 
 ## Current released baseline — 2026-10-25 (Asia/Kolkata)
 
-Phases 1, 2, 3A, 3B and 3C are released. Phase 3C was merged through
-[PR #6](https://github.com/govindjocose006/QuEMat-App/pull/6).
-It is no longer preview-only. The production database has migrations 001–005.
+Phases 1, 2, 3A, 3B, 3C and 4 are released. Phase 4 was merged through
+[PR #8](https://github.com/govindjocose006/QuEMat-App/pull/8) as `df0049c` after
+explicit user release authorization. The production database has migrations 001–006.
 
-The Windows operator confirmed a fresh encrypted backup/full archive read,
-guarded migration 005 with preservation across all 22 original tables, then
-retention/constraint verification. No fixtures ran. PR #6 records green reviewed-head
-and post-merge CI plus live health, matching client assets and protected-access checks.
-Private authenticated production acceptance is separate from those checks.
+The Windows operator confirmed a fresh encrypted Phase 4 backup/full archive read,
+guarded migration 006 with preservation across all 31 original tables, then
+retention/constraint verification. No fixtures ran. PR #8 records reviewed-head and
+post-merge CI, production deployment and live verification. Health checks migration
+006; client assets match the accepted build and eleven protected APIs reject
+anonymous requests. Private authenticated Phase 4 production acceptance is pending.
 
 The user confirmed the isolated preview workflows: meetings, attendee privacy,
 notes, owned actions, calendar export, notice acknowledgements and confirmation
@@ -32,6 +33,9 @@ republishing infrastructure inventories or operational history.
 - Private selected-attendee meetings, notes, owned dated actions and calendar export.
 - Notices with publishing/pinning/expiry and explicit revision-specific reading.
 - Persistent notifications, dashboard integration and distinct navigation icons.
+- Chemical requests, recorded orders and exact INR costs, partial deliveries,
+  corrections/cancellation, retained history and linked notifications. The tracker
+  does not place purchases or payments.
 
 ## Monitoring audit remediation — released
 
@@ -55,9 +59,8 @@ separate from the user-confirmed preview checks.
 
 ## Next phase
 
-Phase 4 (chemicals and orders) is implemented for isolated preview review on
-`feature/phase-4-chemical-orders`; migration 006 and private preview acceptance
-are required before any production release. See [Phase 4](phase-4.md). Incoming external samples, facility
+Phase 4 (chemicals and orders) is released; private production acceptance is the
+next check. See [Phase 4](phase-4.md). Incoming external samples, facility
 calls/proposals, background reminders and PWA work remain future stages.
 The current app does not deliver background email/push reminders.
 
@@ -65,11 +68,19 @@ Keep all credentials, local configuration, backup archives, receipts and
 passphrases private. Historical migrations and guarded release scripts are not
 to be rerun for application-only updates. Preserve the existing free resources.
 
-## Phase 4 release preparation
+## Phase 4 release evidence
 
 Private Phase 4 preview acceptance is user-confirmed, including the repeated-open
 correction. Independent migration-006 backup, full-row preservation, catalog
-validation, offline diagnostics and Windows setup are prepared for review. See
-[the guarded release guide](phase-4-release.md). No production config, backup,
-migration, merge or deployment has been performed for Phase 4. Exact-head CI
-results and readiness are recorded in PR #8; previous guards/backups stay pinned.
+validation, offline diagnostics and Windows setup passed. The operator's backup was
+122,837 encrypted bytes with full archive-read validation; migration reported
+APPLIED/PASSED and verify reported original records RETAINED and constraints
+VERIFIED. This is archive validation, not a full restore drill.
+
+Reviewed-head CI passed 206 isolated tests, 28 native PostgreSQL checks, 32
+desktop/phone workflows, twelve Windows offline checks, build/type checks and a
+zero-vulnerability audit. Deployment uses the existing free project/resources;
+production configuration and preview bindings were not changed by release. All
+earlier and current private backups/receipts remain untouched. The
+[guarded release guide](phase-4-release.md) is retained as operational history;
+do not rerun completed setup, backup or migration steps for application updates.
