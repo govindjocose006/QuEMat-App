@@ -79,7 +79,7 @@ it("initializes an empty isolated database and repeatable synthetic fixtures wit
   expect((await db.query("SELECT id FROM users")).length).toBe(4);
   expect((await db.query("SELECT id FROM samples")).length).toBe(2);
   expect((await db.query("SELECT id FROM instruments")).length).toBe(15);
-  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(5);
+  expect((await db.query("SELECT name FROM schema_migrations")).length).toBe(6);
   expect(
     (
       await db.query(

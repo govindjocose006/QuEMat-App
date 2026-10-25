@@ -40,6 +40,7 @@ const iconPaths = {
     </>
   ),
   meetings: <path d="M4 4h16v13H9l-5 4V4ZM8 8h8M8 12h5" />,
+  orders: <path d="M3 4h3l2 12h11l2-9H7M10 20h.01M18 20h.01M11 3h8v4" />,
   issues: <path d="M12 3 2 21h20L12 3Zm0 6v5m0 3v1" />,
   overview: (
     <>

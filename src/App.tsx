@@ -19,6 +19,7 @@ import {
 } from "./components.js";
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
+import { Orders, OrdersOverview } from "./Orders.js";
 import { Issues, IssuesOverview } from "./Issues.js";
 import { Meetings, MeetingsOverview } from "./Meetings.js";
 import { Weekly, WeeklyOverview } from "./Weekly.js";
@@ -132,6 +133,7 @@ type Page =
   | "samples"
   | "weekly"
   | "meetings"
+  | "orders"
   | "issues"
   | "notifications"
   | "members"
@@ -142,6 +144,7 @@ const pageLabels = {
   calendar: "Calendar",
   samples: "Samples",
   weekly: "Weekly Progress",
+  orders: "Chemicals & Orders",
   issues: "Issues & Requests",
   meetings: "Meetings & Notices",
   notifications: "Notifications",
@@ -198,6 +201,8 @@ function Workspace({
     kind: "meeting" | "notice";
     id: string;
   } | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const openedOrder = useCallback(() => setOrderId(null), []);
   const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [items, setItems] = useState<Instrument[] | null>(null);
@@ -247,6 +252,7 @@ function Workspace({
         "calendar",
         "samples",
         "weekly",
+        "orders",
         "issues",
         "meetings",
         "notifications",
@@ -260,6 +266,7 @@ function Workspace({
         "calendar",
         "samples",
         "weekly",
+        "orders",
         "issues",
         "meetings",
         "notifications",
@@ -454,6 +461,12 @@ function Workspace({
                 onCalendar={() => setPage("calendar")}
                 onInstruments={acceptInstruments}
               />
+              <OrdersOverview
+                open={() => {
+                  setOrderId(null);
+                  setPage("orders");
+                }}
+              />
               <IssuesOverview
                 user={user}
                 onOpen={(id) => {
@@ -491,6 +504,9 @@ function Workspace({
             <Schedule user={user} items={items} />
           )}
           {page === "samples" && <Samples user={user} />}
+          {page === "orders" && (
+            <Orders user={user} initialId={orderId} onOpened={openedOrder} />
+          )}
           {page === "issues" && (
             <Issues
               user={user}
@@ -508,6 +524,10 @@ function Workspace({
           {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
           {page === "notifications" && (
             <Notifications
+              onOrder={(id) => {
+                setOrderId(id);
+                setPage("orders");
+              }}
               onRead={() => void refreshUnread()}
               onMeeting={(id) => {
                 setCollaboration({ kind: "meeting", id });

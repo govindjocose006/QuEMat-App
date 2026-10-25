@@ -1542,12 +1542,14 @@ export function LiveUsage({
   );
 }
 export function Notifications({
+  onOrder,
   onMeeting,
   onNotice,
   onIssue,
   onWeekly,
   onRead,
 }: {
+  onOrder: (id: string) => void;
   onMeeting: (id: string) => void;
   onNotice: (id: string) => void;
   onWeekly: (id: string) => void;
@@ -1601,8 +1603,8 @@ export function Notifications({
     <section>
       <h2>In-app notifications</h2>
       <p>
-        Persistent booking, weekly progress, issue/request, meeting and notice
-        updates. Refreshed every 30 seconds while open.
+        Persistent booking, weekly progress, issue/request, chemical order,
+        meeting and notice updates. Refreshed every 30 seconds while open.
       </p>
       <div className="action-row">
         <label>
@@ -1643,7 +1645,11 @@ export function Notifications({
           </p>
           <p>{n.message}</p>
           <div className="action-row">
-            {n.meetingId ? (
+            {n.orderId ? (
+              <button className="secondary" onClick={() => onOrder(n.orderId!)}>
+                View chemical order
+              </button>
+            ) : n.meetingId ? (
               <button
                 className="secondary"
                 onClick={() => onMeeting(n.meetingId!)}
