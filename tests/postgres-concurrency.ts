@@ -396,23 +396,40 @@ try {
   count++;
   const monitoring = await nativeAssignee.agent.get("/api/monitoring");
   assert.equal(monitoring.status, 200);
+  const monitoringResource = await nativeAssignee.write("/instruments", {
+    ...monitoring.body.instruments.find(
+      (row: { name: string }) => row.name === "PPMS",
+    ),
+    name: "Native monitoring instrument",
+    status: "available",
+  });
+  assert.equal(monitoringResource.status, 201);
+  const monitoringInstrument = monitoringResource.body.id;
+  const monitoringHandover = randomUUID();
+  await db.query(
+    `INSERT INTO bookings(id,instrument_id,booked_by,operator_id,kind,status,starts_at,ends_at,actual_start,actual_end,measurement_type,handover_notes)
+    VALUES($1,$2,$3,$3,'booking','completed',now()-interval '8 days 1 hour',now()-interval '8 days',now()-interval '8 days 1 hour',now()-interval '8 days','Synthetic monitoring scan','Retain this old handover')`,
+    [monitoringHandover, monitoringInstrument, user],
+  );
+  const withHandover = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(withHandover.status, 200);
   assert.ok(
-    monitoring.body.handovers.some(
-      (row: { id: string }) => row.id === preservedBooking,
+    withHandover.body.handovers.some(
+      (row: { id: string }) => row.id === monitoringHandover,
     ),
   );
   await db.query("UPDATE instruments SET status='maintenance' WHERE id=$1", [
-    instrument,
+    monitoringInstrument,
   ]);
   const changedMonitoring = await nativeAssignee.agent.get("/api/monitoring");
   assert.equal(
     changedMonitoring.body.instruments.find(
-      (row: { id: string }) => row.id === instrument,
+      (row: { id: string }) => row.id === monitoringInstrument,
     ).status,
     "maintenance",
   );
   await db.query("UPDATE instruments SET status='available' WHERE id=$1", [
-    instrument,
+    monitoringInstrument,
   ]);
   count++;
   await db.query(
