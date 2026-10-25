@@ -1401,6 +1401,10 @@ fieldset > label:last-child {
   }
   .topbar {
     padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: white;
     height: 58px;
     font-size: 10px;
     gap: 8px;

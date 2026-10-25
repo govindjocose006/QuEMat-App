@@ -191,7 +191,8 @@ function Workspace({
     };
   }, [refreshUnread]);
   useEffect(() => {
-    document.getElementById("main-content")?.focus();
+    document.getElementById("main-content")?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
   }, [page]);
   const [collaboration, setCollaboration] = useState<{
     kind: "meeting" | "notice";
@@ -276,7 +277,10 @@ function Workspace({
   const navigate = (p: Page) => {
     setPage(p);
     setMoreOpen(false);
-    if (p === page) document.getElementById("main-content")?.focus();
+    if (p === page) {
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
   };
   const navButton = (p: Page) => (
     <button

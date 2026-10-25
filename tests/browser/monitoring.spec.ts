@@ -226,6 +226,10 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
   await expect(page.locator("#unread-notification-status")).toContainText(
     "204 unread",
   );
+  if (info.project.name === "phone")
+    await expect(
+      page.getByRole("button", { name: "Open inbox", exact: true }),
+    ).toBeInViewport();
   await page
     .getByRole("combobox", { name: "Notification view", exact: true })
     .selectOption("unread");
