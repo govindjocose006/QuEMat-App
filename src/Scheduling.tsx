@@ -179,6 +179,7 @@ function SampleForm({
 }
 export function Samples({ user }: { user: Member }) {
   const [items, setItems] = useState<Sample[]>([]),
+    [loading, setLoading] = useState(true),
     [search, setSearch] = useState(""),
     [sampleStatus, setSampleStatus] = useState<"active" | "archived" | "all">(
       "active",
@@ -186,16 +187,16 @@ export function Samples({ user }: { user: Member }) {
     [editing, setEditing] = useState<Sample | null | undefined>(),
     [history, setHistory] = useState<Booking[] | null>(null),
     [error, setError] = useState("");
-  const reload = useCallback(
-    () =>
-      api<Sample[]>("/samples")
-        .then((data) => {
-          setItems(data);
-          setError("");
-        })
-        .catch((e) => setError(messageOf(e))),
-    [],
-  );
+  const reload = useCallback(() => {
+    setLoading(true);
+    return api<Sample[]>("/samples")
+      .then((data) => {
+        setItems(data);
+        setError("");
+      })
+      .catch((e) => setError(messageOf(e)))
+      .finally(() => setLoading(false));
+  }, []);
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -218,9 +219,14 @@ export function Samples({ user }: { user: Member }) {
         </button>
       </div>
       <ErrorNotice message={error} />
+      {loading && <p role="status">Loading samples…</p>}
       <div className="schedule-controls">
         {error && (
-          <button className="secondary" onClick={() => void reload()}>
+          <button
+            className="secondary"
+            disabled={loading}
+            onClick={() => void reload()}
+          >
             Retry samples
           </button>
         )}
@@ -294,7 +300,7 @@ export function Samples({ user }: { user: Member }) {
           </article>
         ))}
       </div>
-      {!visibleSamples.length && (
+      {!loading && !error && !visibleSamples.length && (
         <p role="status">
           {query
             ? "No samples match your search in this view."

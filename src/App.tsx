@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Instrument, Member, Session } from "../shared/schema.js";
 import { api, setSessionToken } from "./api.js";
+import { pageLabels, useWorkspaceNavigation, type Page } from "./navigation.js";
 import { Schedule, Samples, LiveUsage, Notifications } from "./Scheduling.js";
 import { Auth, Onboarding } from "./Auth.js";
 import {
@@ -126,33 +127,6 @@ export function App() {
     </>
   );
 }
-type Page =
-  | "overview"
-  | "instruments"
-  | "calendar"
-  | "samples"
-  | "weekly"
-  | "meetings"
-  | "orders"
-  | "issues"
-  | "notifications"
-  | "members"
-  | "audit"
-  | "settings";
-const pageLabels = {
-  overview: "Overview",
-  calendar: "Calendar",
-  samples: "Samples",
-  weekly: "Weekly Progress",
-  orders: "Chemicals & Orders",
-  issues: "Issues & Requests",
-  meetings: "Meetings & Notices",
-  notifications: "Notifications",
-  instruments: "Instruments",
-  members: "Members & access",
-  audit: "Audit history",
-  settings: "My account",
-};
 function Workspace({
   user,
   onLogout,
@@ -164,7 +138,9 @@ function Workspace({
   refresh: () => Promise<void>;
   onSession: (s: Session) => void;
 }) {
-  const [page, setPage] = useState<Page>("overview");
+  const [page, setPage] = useWorkspaceNavigation(
+    user.appRole === "administrator",
+  );
   const [moreOpen, setMoreOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const unreadGeneration = useRef(0);
@@ -196,6 +172,7 @@ function Workspace({
   useEffect(() => {
     document.getElementById("main-content")?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
+    setMoreOpen(false);
   }, [page]);
   const [collaboration, setCollaboration] = useState<{
     kind: "meeting" | "notice";
