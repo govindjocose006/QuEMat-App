@@ -61,19 +61,25 @@ function cli(dir: string, file?: string, action = "inspect-backup") {
     { encoding: "utf8", timeout: 20000 },
   );
 }
-it("fails closed for missing/older configuration and missing receipt without any TCP connection", () => {
-  const dir = temp();
-  let r = cli(dir);
+it("fails closed for missing configuration without any TCP connection", () => {
+  const dir = temp(),
+    r = cli(dir);
   expect(r.status).toBe(1);
   expect(JSON.parse(r.stderr).stage).toBe("configuration");
-  const file = config(dir, "quemat-phase3c-production"),
+});
+it("rejects older configuration without modifying its bytes or making TCP connections", () => {
+  const dir = temp(),
+    file = config(dir, "quemat-phase3c-production"),
     original = readFileSync(file);
-  r = cli(dir, file);
+  const r = cli(dir, file);
   expect(r.status).toBe(1);
   expect(JSON.parse(r.stderr).stage).toBe("configuration");
   expect(readFileSync(file)).toEqual(original);
-  config(dir);
-  r = cli(dir, file);
+});
+it("rejects a missing receipt without any TCP connection or credential output", () => {
+  const dir = temp(),
+    file = config(dir),
+    r = cli(dir, file);
   expect(r.status).toBe(1);
   expect(JSON.parse(r.stderr)).toMatchObject({
     stage: "backup.receipt.read",
