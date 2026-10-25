@@ -21,7 +21,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     .click();
   const chemical = "Synthetic order " + info.project.name;
   await page.getByLabel("Chemical name", { exact: true }).fill(chemical);
-  await page.getByLabel("Quantity requested", { exact: true }).fill("10");
+  await page.getByLabel("Quantity requested", { exact: true }).fill("0.3");
   await page
     .getByLabel("Purpose", { exact: true })
     .fill("Synthetic order lifecycle test");
@@ -50,7 +50,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   await page
     .getByRole("button", { name: "Record delivery", exact: true })
     .click();
-  await page.getByLabel("Quantity received now", { exact: true }).fill("3");
+  await page.getByLabel("Quantity received now", { exact: true }).fill("0.1");
   await page
     .getByLabel("Delivery notes (optional)", { exact: true })
     .fill("First synthetic package");
@@ -75,7 +75,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   await page
     .getByRole("button", { name: "Record delivery", exact: true })
     .click();
-  await page.getByLabel("Quantity received now", { exact: true }).fill("7");
+  await page.getByLabel("Quantity received now", { exact: true }).fill("0.2");
   await page
     .getByRole("button", { name: "Save delivery", exact: true })
     .click();
@@ -94,7 +94,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     )
   ).json();
   const item = rows.items[0];
-  expect(item.receivedQuantity).toBe(10);
+  expect(item.receivedQuantity).toBe(0.3);
   expect(item.costPaise).toBe(120025);
   await page.reload();
   await navigate(page, "Chemicals & Orders");

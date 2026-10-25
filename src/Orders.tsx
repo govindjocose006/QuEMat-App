@@ -413,7 +413,9 @@ export function Orders({
           </p>
           {input("Quantity received now", "received", "", "number", true, {
             min: 0.001,
-            max: detail!.quantity - detail!.receivedQuantity,
+            max:
+              Math.round((detail!.quantity - detail!.receivedQuantity) * 1000) /
+              1000,
             step: 0.001,
           })}
           {input("Delivery date (IST)", "receivedOn", date(), "date", true, {
