@@ -394,6 +394,57 @@ try {
   );
   assert.equal((await nativeAssignee.agent.get("/api/health")).status, 200);
   count++;
+  const monitoring = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(monitoring.status, 200);
+  assert.ok(
+    monitoring.body.handovers.some(
+      (row: { id: string }) => row.id === preservedBooking,
+    ),
+  );
+  await db.query("UPDATE instruments SET status='maintenance' WHERE id=$1", [
+    instrument,
+  ]);
+  const changedMonitoring = await nativeAssignee.agent.get("/api/monitoring");
+  assert.equal(
+    changedMonitoring.body.instruments.find(
+      (row: { id: string }) => row.id === instrument,
+    ).status,
+    "maintenance",
+  );
+  await db.query("UPDATE instruments SET status='available' WHERE id=$1", [
+    instrument,
+  ]);
+  count++;
+  await db.query(
+    `INSERT INTO notifications(id,user_id,booking_id,event_key,message,created_at)
+    SELECT gen_random_uuid(),$1,$2,'native-page-'||n,'Synthetic page update '||n,
+      '2026-01-01T00:00:00Z'::timestamptz+(n%3)*interval '0.000001 second' FROM generate_series(1,205) n`,
+    [user, preservedBooking],
+  );
+  const [{ total }] = await db.query<{ total: string }>(
+    "SELECT count(*) AS total FROM notifications WHERE user_id=$1",
+    [user],
+  );
+  const notificationIds = new Set<string>();
+  let notificationCursor: string | null = null;
+  do {
+    const page = await nativeAssignee.agent.get(
+      "/api/notifications/page?limit=100" +
+        (notificationCursor ? `&before=${notificationCursor}` : ""),
+    );
+    assert.equal(page.status, 200);
+    for (const n of page.body.items) {
+      assert.ok(!notificationIds.has(n.id));
+      notificationIds.add(n.id);
+    }
+    notificationCursor = page.body.nextCursor;
+  } while (notificationCursor);
+  assert.equal(notificationIds.size, Number(total));
+  assert.ok(
+    (await nativeAssignee.agent.get("/api/notifications/summary")).body
+      .unreadCount >= 205,
+  );
+  count++;
   const nativeMeeting = await nativeAssignee.write("/meetings", {
     title: "Native synthetic private meeting",
     kind: "individual",

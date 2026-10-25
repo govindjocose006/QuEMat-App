@@ -114,6 +114,7 @@ export function WeeklyDetail({
         .then((r) => {
           setReport(r);
           setRevision(r.latestRevision);
+          setError("");
         })
         .catch((e) => setError(messageOf(e))),
     [id],

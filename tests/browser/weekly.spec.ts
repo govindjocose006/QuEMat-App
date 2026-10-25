@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {
@@ -47,9 +48,7 @@ async function accessible(page: Page) {
   ).toBe(true);
 }
 async function openWeekly(page: Page) {
-  await page
-    .getByRole("button", { name: "Weekly Progress", exact: true })
-    .click();
+  await navigate(page, "Weekly Progress");
   await expect(
     page.getByRole("heading", { name: "My report", exact: true }),
   ).toBeVisible();
@@ -211,9 +210,7 @@ test("assigned mentor review, follow-ups, notifications, filters and printable m
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await login(page, "member", device);
-  await page
-    .getByRole("button", { name: "Notifications", exact: true })
-    .click();
+  await navigate(page, "Notifications");
   await page
     .locator("article")
     .filter({ hasText: "followup" })

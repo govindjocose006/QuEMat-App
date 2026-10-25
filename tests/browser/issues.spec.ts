@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 test.setTimeout(90000);
@@ -44,9 +45,7 @@ async function accessible(page: Page) {
   ).toBe(true);
 }
 async function openIssues(page: Page) {
-  await page
-    .getByRole("button", { name: "Issues & Requests", exact: true })
-    .click();
+  await navigate(page, "Issues & Requests");
   await expect(
     page.getByRole("button", { name: "New issue/request", exact: true }),
   ).toBeEnabled();
@@ -232,9 +231,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await accessible(page);
   await logout(page);
   await login(page, "member", d);
-  await page
-    .getByRole("button", { name: "Notifications", exact: true })
-    .click();
+  await navigate(page, "Notifications");
   const notification = page
     .locator("article")
     .filter({ hasText: title })

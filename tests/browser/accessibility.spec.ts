@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -25,7 +26,7 @@ test("core screens meet automated WCAG checks", async ({ page }) => {
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
   await checkAccessibility(page);
-  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await navigate(page, "Instruments");
   await page.getByRole("button", { name: "Add instrument" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await checkAccessibility(page);

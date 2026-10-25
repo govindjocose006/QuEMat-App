@@ -24,6 +24,11 @@ const bookingSelect = `SELECT b.id,b.instrument_id AS "instrumentId",i.name AS "
  b.allocation_reference AS "allocationReference",b.actual_start AS "actualStart",b.actual_end AS "actualEnd",b.unloaded,b.completion_summary AS "completionSummary",
  b.data_link AS "dataLink",b.handover_notes AS "handoverNotes",b.overrun_until AS "overrunUntil",b.version,b.updated_at AS "updatedAt"
  FROM bookings b JOIN instruments i ON i.id=b.instrument_id JOIN users u ON u.id=b.booked_by LEFT JOIN users o ON o.id=b.operator_id`;
+// Share visibility rules across the legacy list, paginated inbox, badge and reads.
+const notificationVisible = `n.user_id=$1
+ AND (n.meeting_id IS NULL OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')) OR EXISTS(SELECT 1 FROM meeting_attendees a WHERE a.meeting_id=n.meeting_id AND a.user_id=$1))
+ AND (n.notice_id IS NULL OR EXISTS(SELECT 1 FROM notices x WHERE x.id=n.notice_id AND x.status='published') OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')))`;
+const notificationSelect = `SELECT n.id,n.booking_id AS "bookingId",n.weekly_report_id AS "weeklyReportId",n.issue_id AS "issueId",n.meeting_id AS "meetingId",n.notice_id AS "noticeId",n.message,n.created_at AS "createdAt",n.read_at AS "readAt" FROM notifications n`;
 // pg and PGlite both serialize timestamptz to ISO through JSON.
 export async function readBooking(tx: SQL, id: string) {
   return (await tx.query<Booking>(bookingSelect + " WHERE b.id=$1", [id]))[0];
@@ -94,6 +99,32 @@ export function installScheduling(
       ),
     ),
   );
+  app.get("/api/monitoring", approved, async (_req, res) => {
+    const snapshot = await db.transaction(async (tx) => {
+      await tx.exec(
+        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+      const now = Date.now();
+      return {
+        instruments: await instruments(tx),
+        bookings: await tx.query<Booking>(
+          bookingSelect +
+            ` WHERE (b.reserved_start<$2 AND b.reserved_end>$1) OR b.status='in_progress' OR b.actual_end+make_interval(mins=>b.cleanup_minutes)>now() ORDER BY b.starts_at,b.id`,
+          [
+            new Date(now - 86400000).toISOString(),
+            new Date(now + 90 * 86400000).toISOString(),
+          ],
+        ),
+        // Last actual handover per instrument, even when it predates the calendar window.
+        handovers: await tx.query<Booking>(
+          bookingSelect +
+            ` WHERE b.id IN (SELECT DISTINCT ON (instrument_id) id FROM bookings WHERE kind='booking' AND status IN ('completed','interrupted') AND actual_end IS NOT NULL ORDER BY instrument_id,actual_end DESC,id DESC)`,
+        ),
+        refreshedAt: new Date().toISOString(),
+      };
+    });
+    res.json(snapshot);
+  });
   app.get("/api/samples", approved, async (_req, res) =>
     res.json(await db.query(sampleSelect + " ORDER BY s.created_at DESC")),
   );
@@ -547,18 +578,65 @@ export function installScheduling(
     });
     res.json(await readBooking(db, id));
   });
+  async function unreadCount(tx: SQL, userId: string) {
+    const [row] = await tx.query<{ count: string }>(
+      `SELECT count(*) FROM notifications n WHERE ${notificationVisible} AND n.read_at IS NULL`,
+      [userId],
+    );
+    return Number(row.count);
+  }
+  app.get("/api/notifications/summary", approved, async (_req, res) => {
+    res.json({ unreadCount: await unreadCount(db, current(res).id) });
+  });
+  app.get("/api/notifications/page", approved, async (req, res) => {
+    const input = z
+      .object({
+        before: z.string().uuid().optional(),
+        unread: z.enum(["true", "false"]).default("false"),
+        limit: z.coerce.number().int().min(1).max(100).default(50),
+      })
+      .strict()
+      .parse(req.query);
+    const userId = current(res).id;
+    const page = await db.transaction(async (tx) => {
+      await tx.exec(
+        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+      // Use the stored timestamp directly: converting microseconds to JS dates can skip rows.
+      const rows = await tx.query<
+        import("../shared/scheduling.js").Notification
+      >(
+        notificationSelect +
+          ` WHERE ${notificationVisible}${input.unread === "true" ? " AND n.read_at IS NULL" : ""}
+        ${input.before ? " AND (n.created_at,n.id)<(SELECT c.created_at,c.id FROM notifications c WHERE c.id=$2 AND c.user_id=$1)" : ""}
+        ORDER BY n.created_at DESC,n.id DESC LIMIT $${input.before ? 3 : 2}`,
+        input.before
+          ? [userId, input.before, input.limit + 1]
+          : [userId, input.limit + 1],
+      );
+      const items = rows.slice(0, input.limit);
+      return {
+        items,
+        nextCursor: rows.length > input.limit ? items.at(-1)!.id : null,
+        unreadCount: await unreadCount(tx, userId),
+      };
+    });
+    res.json(page);
+  });
+  // Keep the original array response for older clients; the current UI uses /page.
   app.get("/api/notifications", approved, async (_req, res) =>
     res.json(
       await db.query(
-        `SELECT id,booking_id AS "bookingId",weekly_report_id AS "weeklyReportId",issue_id AS "issueId",meeting_id AS "meetingId",notice_id AS "noticeId",message,created_at AS "createdAt",read_at AS "readAt" FROM notifications WHERE user_id=$1 AND (meeting_id IS NULL OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')) OR EXISTS(SELECT 1 FROM meeting_attendees a WHERE a.meeting_id=notifications.meeting_id AND a.user_id=$1)) AND (notice_id IS NULL OR EXISTS(SELECT 1 FROM notices n WHERE n.id=notifications.notice_id AND n.status='published') OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator'))) ORDER BY created_at DESC LIMIT 200`,
+        notificationSelect +
+          ` WHERE ${notificationVisible} ORDER BY n.created_at DESC,n.id DESC LIMIT 200`,
         [current(res).id],
       ),
     ),
   );
   app.post("/api/notifications/:id/read", approved, async (req, res) => {
     const changed = await db.query(
-      "UPDATE notifications SET read_at=COALESCE(read_at,now()) WHERE id=$1 AND user_id=$2 RETURNING id",
-      [String(req.params.id), current(res).id],
+      `UPDATE notifications n SET read_at=COALESCE(n.read_at,now()) WHERE ${notificationVisible} AND n.id=$2 RETURNING n.id`,
+      [current(res).id, String(req.params.id)],
     );
     if (!changed.length) fail(404, "Notification not found.");
     res.json({ ok: true });

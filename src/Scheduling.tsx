@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { Instrument, Member } from "../shared/schema.js";
 import type {
   Sample,
   Booking,
   Operator,
   Availability,
-  Notification,
+  NotificationPage,
+  MonitoringSnapshot,
 } from "../shared/scheduling.js";
 import {
   managesOperations,
@@ -182,7 +189,10 @@ export function Samples({ user }: { user: Member }) {
   const reload = useCallback(
     () =>
       api<Sample[]>("/samples")
-        .then(setItems)
+        .then((data) => {
+          setItems(data);
+          setError("");
+        })
         .catch((e) => setError(messageOf(e))),
     [],
   );
@@ -209,6 +219,11 @@ export function Samples({ user }: { user: Member }) {
       </div>
       <ErrorNotice message={error} />
       <div className="schedule-controls">
+        {error && (
+          <button className="secondary" onClick={() => void reload()}>
+            Retry samples
+          </button>
+        )}
         <label>
           Search samples
           <input
@@ -266,7 +281,10 @@ export function Samples({ user }: { user: Member }) {
                 className="secondary"
                 onClick={() =>
                   void api<Booking[]>(`/samples/${s.id}/bookings`)
-                    .then(setHistory)
+                    .then((data) => {
+                      setHistory(data);
+                      setError("");
+                    })
                     .catch((e) => setError(messageOf(e)))
                 }
               >
@@ -535,6 +553,7 @@ function BookingForm({
       .then(([s, o]) => {
         setSamples(s);
         setOperators(o);
+        setError("");
       })
       .catch((e) => setError(messageOf(e)));
   }, []);
@@ -1294,52 +1313,86 @@ export function Schedule({
   );
 }
 export function LiveUsage({
-  items,
   user,
   onCalendar,
+  onInstruments,
 }: {
-  items: Instrument[];
   user: Member;
   onCalendar: () => void;
+  onInstruments: (items: Instrument[]) => void;
 }) {
-  const [bookings, setBookings] = useState<Booking[]>([]),
+  const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null),
     [error, setError] = useState(""),
-    [updated, setUpdated] = useState("");
+    [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let stopped = false;
-    const load = () =>
-      api<Booking[]>(
-        "/bookings" + rangeQuery(addDays(day(), -1), addDays(day(), 90)),
-      )
-        .then((b) => {
-          if (!stopped) {
-            setBookings(b);
-            setUpdated(new Date().toISOString());
-            setError("");
-          }
-        })
-        .catch((e) => {
-          if (!stopped) setError(messageOf(e));
-        });
+    let inFlight = false;
+    const load = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const data = await api<MonitoringSnapshot>("/monitoring");
+        if (!stopped) {
+          setSnapshot(data);
+          onInstruments(data.instruments);
+          setError("");
+        }
+      } catch (e) {
+        if (!stopped) setError(messageOf(e));
+      } finally {
+        inFlight = false;
+      }
+    };
+    const whenVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
     void load();
-    const t = setInterval(() => void load(), 30000);
+    const t = setInterval(whenVisible, 30000);
+    window.addEventListener("focus", whenVisible);
+    document.addEventListener("visibilitychange", whenVisible);
     return () => {
       stopped = true;
       clearInterval(t);
+      window.removeEventListener("focus", whenVisible);
+      document.removeEventListener("visibilitychange", whenVisible);
     };
-  }, []);
+  }, [onInstruments, refresh]);
+  const {
+    instruments: items,
+    bookings,
+    handovers,
+    refreshedAt: updated,
+  } = snapshot ?? {
+    instruments: [],
+    bookings: [],
+    handovers: [],
+    refreshedAt: "",
+  };
+  const sampleLabels = (b: Booking) =>
+    b.sampleSnapshots.map((s) => `${s.code} · ${s.compound}`).join(", ");
   const now = Date.now();
   if (!updated)
     return (
       <section>
         <ErrorNotice message={error} />
         <p role="status">Loading confirmed usage and reservations…</p>
+        {error && (
+          <button
+            className="secondary"
+            onClick={() => setRefresh((r) => r + 1)}
+          >
+            Retry monitoring
+          </button>
+        )}
       </section>
     );
   return (
     <section>
-      <div className="section-title">
+      <div className="section-title monitoring-title">
         <h2>Usage & next reservations</h2>
+        <button className="secondary" onClick={() => setRefresh((r) => r + 1)}>
+          Refresh monitoring
+        </button>
         <button className="secondary" onClick={onCalendar}>
           Open calendar
         </button>
@@ -1347,7 +1400,7 @@ export function LiveUsage({
       <ErrorNotice message={error} />
       <p className="field-hint">
         Manual check-in confirms actual usage. Scheduled time alone does not.{" "}
-        {updated && `Refreshed ${formatDate(updated)}.`}
+        {updated && `Last successful refresh ${formatDate(updated)}.`}
       </p>
       <div className="sample-grid">
         {items
@@ -1364,6 +1417,7 @@ export function LiveUsage({
               next = list.find(
                 (b) => active(b) && new Date(b.startsAt).getTime() > now,
               ),
+              lastHandover = handovers.find((b) => b.instrumentId === i.id),
               cooldown = list.find(
                 (b) =>
                   b.actualEnd &&
@@ -1373,6 +1427,9 @@ export function LiveUsage({
             return (
               <article className="panel" key={i.id}>
                 <h3>{i.name}</h3>
+                <p>
+                  Instrument status: <Status value={i.status} />
+                </p>
                 <strong>
                   {running
                     ? "Confirmed in use"
@@ -1389,10 +1446,7 @@ export function LiveUsage({
                 {running && (
                   <>
                     <p>
-                      {running.operatorName} ·{" "}
-                      {running.sampleSnapshots
-                        .map((s) => s.compound)
-                        .join(", ")}
+                      {running.operatorName} · {sampleLabels(running)}
                     </p>
                     <p>
                       {running.measurementType} · checked in{" "}
@@ -1406,15 +1460,17 @@ export function LiveUsage({
                       </p>
                     )}
                     <p>Usage updated {formatDate(running.updatedAt)}</p>
-                    <p>{running.handoverNotes}</p>
+                    {running.handoverNotes && (
+                      <p className="preserve-lines">
+                        Current run handover: {running.handoverNotes}
+                      </p>
+                    )}
                   </>
                 )}
                 {scheduled && !running && (
                   <p>
                     {scheduled.operatorName} · {scheduled.measurementType} ·{" "}
-                    {scheduled.sampleSnapshots
-                      .map((s) => s.compound)
-                      .join(", ")}
+                    {sampleLabels(scheduled)}
                   </p>
                 )}
                 <p>
@@ -1423,6 +1479,35 @@ export function LiveUsage({
                     ? `${formatDate(next.startsAt)} · ${next.operatorName} · ${next.measurementType} · ${next.status}`
                     : "No booking in the next 90 days"}
                 </p>
+                {next && next.sampleSnapshots.length > 0 && (
+                  <p>Next samples: {sampleLabels(next)}</p>
+                )}
+                <div className="last-handover">
+                  <h4>Last handover</h4>
+                  {lastHandover ? (
+                    <>
+                      <p>
+                        {lastHandover.operatorName} ·{" "}
+                        {formatDate(lastHandover.actualEnd!)} ·{" "}
+                        {lastHandover.status}
+                      </p>
+                      <p>Samples: {sampleLabels(lastHandover)}</p>
+                      <p className="preserve-lines">
+                        {lastHandover.handoverNotes ||
+                          "No handover notes recorded."}
+                      </p>
+                      {lastHandover.category === "Furnace" && (
+                        <p>
+                          {lastHandover.unloaded
+                            ? "Unloading confirmed"
+                            : "Unloading not confirmed"}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p>No completed handover recorded.</p>
+                  )}
+                </div>
                 <details>
                   <summary>Instrument details</summary>
                   <p>{i.bookingRules || "No additional rules recorded."}</p>
@@ -1461,27 +1546,57 @@ export function Notifications({
   onNotice,
   onIssue,
   onWeekly,
+  onRead,
 }: {
   onMeeting: (id: string) => void;
   onNotice: (id: string) => void;
   onWeekly: (id: string) => void;
   onIssue: (id: string) => void;
+  onRead: () => void;
 }) {
-  const [items, setItems] = useState<Notification[]>([]),
+  const [data, setData] = useState<NotificationPage | null>(null),
+    [cursor, setCursor] = useState<string | null>(null),
+    [trail, setTrail] = useState<(string | null)[]>([]),
+    [unreadOnly, setUnreadOnly] = useState(false),
+    [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [booking, setBooking] = useState<Booking | null>(null);
-  const reload = useCallback(
-    () =>
-      api<Notification[]>("/notifications")
-        .then(setItems)
-        .catch((e) => setError(messageOf(e))),
-    [],
-  );
+  const generation = useRef(0);
+  const reload = useCallback(async () => {
+    const request = ++generation.current;
+    setLoading(true);
+    const query = new URLSearchParams({
+      limit: "50",
+      unread: String(unreadOnly),
+    });
+    if (cursor) query.set("before", cursor);
+    try {
+      const page = await api<NotificationPage>(`/notifications/page?${query}`);
+      if (request === generation.current) {
+        setData(page);
+        setError("");
+      }
+    } catch (e) {
+      if (request === generation.current) setError(messageOf(e));
+    } finally {
+      if (request === generation.current) setLoading(false);
+    }
+  }, [cursor, unreadOnly]);
   useEffect(() => {
+    setData(null);
     void reload();
-    const t = setInterval(() => void reload(), 30000);
-    return () => clearInterval(t);
+    const visible = () => {
+      if (document.visibilityState === "visible") void reload();
+    };
+    const t = setInterval(visible, 30000);
+    window.addEventListener("focus", visible);
+    return () => {
+      generation.current++;
+      clearInterval(t);
+      window.removeEventListener("focus", visible);
+    };
   }, [reload]);
+  const items = data?.items ?? [];
   return (
     <section>
       <h2>In-app notifications</h2>
@@ -1489,8 +1604,37 @@ export function Notifications({
         Persistent booking, weekly progress, issue/request, meeting and notice
         updates. Refreshed every 30 seconds while open.
       </p>
+      <div className="action-row">
+        <label>
+          Notification view
+          <select
+            value={unreadOnly ? "unread" : "all"}
+            onChange={(e) => {
+              setLoading(true);
+              setData(null);
+              setUnreadOnly(e.target.value === "unread");
+              setCursor(null);
+              setTrail([]);
+            }}
+          >
+            <option value="all">All updates</option>
+            <option value="unread">Unread only</option>
+          </select>
+        </label>
+        <button className="secondary" onClick={() => void reload()}>
+          Refresh inbox
+        </button>
+        {data && <p>{data.unreadCount} unread updates</p>}
+      </div>
       <ErrorNotice message={error} />
-      {!items.length && <p>No notifications yet.</p>}
+      {loading && <p role="status">Loading notifications…</p>}
+      {!loading && data && !items.length && (
+        <p>
+          {unreadOnly
+            ? "No unread notifications on this page."
+            : "No notifications on this page."}
+        </p>
+      )}
       {items.map((n) => (
         <article className="panel" key={n.id}>
           <p>
@@ -1529,7 +1673,10 @@ export function Notifications({
                 className="secondary"
                 onClick={() =>
                   void api<Booking>(`/bookings/${n.bookingId}`)
-                    .then(setBooking)
+                    .then((data) => {
+                      setBooking(data);
+                      setError("");
+                    })
                     .catch((e) => setError(messageOf(e)))
                 }
               >
@@ -1541,7 +1688,10 @@ export function Notifications({
                 className="secondary"
                 onClick={() =>
                   void api(`/notifications/${n.id}/read`, "POST", {})
-                    .then(reload)
+                    .then(() => {
+                      onRead();
+                      return reload();
+                    })
                     .catch((e) => setError(messageOf(e)))
                 }
               >
@@ -1551,6 +1701,36 @@ export function Notifications({
           </div>
         </article>
       ))}
+      <div
+        className="action-row notification-pagination"
+        aria-label="Notification pages"
+      >
+        <button
+          className="secondary"
+          disabled={loading || !trail.length}
+          onClick={() => {
+            setLoading(true);
+            setData(null);
+            setCursor(trail.at(-1)!);
+            setTrail((h) => h.slice(0, -1));
+          }}
+        >
+          Newer notifications
+        </button>
+        <span>Page {trail.length + 1}</span>
+        <button
+          className="secondary"
+          disabled={loading || !data?.nextCursor}
+          onClick={() => {
+            setLoading(true);
+            setData(null);
+            setTrail((h) => [...h, cursor]);
+            setCursor(data!.nextCursor);
+          }}
+        >
+          Older notifications
+        </button>
+      </div>
       {booking && (
         <Modal title="Booking notification" onClose={() => setBooking(null)}>
           <div className="dialog-body">

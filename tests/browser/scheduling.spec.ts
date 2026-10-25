@@ -1,3 +1,4 @@
+import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { istInput } from "../../shared/scheduling-ui.js";
@@ -55,14 +56,14 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Samples", exact: true }).click();
+  await navigate(page, "Samples");
   await page.getByRole("button", { name: "New sample", exact: true }).click();
   await page.getByLabel("Compound / formula").fill(`FeSe-${info.project.name}`);
   await page.getByLabel("Batch", { exact: true }).fill("Browser batch");
   await page.getByLabel("Storage location").fill("Test cabinet");
   await page.getByRole("button", { name: "Save sample", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: "Calendar", exact: true }).click();
+  await navigate(page, "Calendar");
   await page
     .getByRole("button", { name: "Book instrument", exact: true })
     .click();
@@ -126,9 +127,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     path: info.outputPath("phase2-calendar.png"),
     fullPage: true,
   });
-  await page
-    .getByRole("button", { name: "Notifications", exact: true })
-    .click();
+  await navigate(page, "Notifications");
   await expect(
     page.getByText(new RegExp(resource.name + ": complete")),
   ).toBeVisible();
@@ -147,7 +146,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await write(page, "/samples", {
     compound: `FeSe-${info.project.name}-control`,
   });
-  await page.getByRole("button", { name: "Samples", exact: true }).click();
+  await navigate(page, "Samples");
   const status = page.getByRole("combobox", { name: "Sample status" });
   const search = page.getByRole("textbox", { name: "Search samples" });
   const sampleCard = (compound: string) =>
@@ -205,7 +204,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await expect(target).toBeVisible();
   await expect(control).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: "Samples", exact: true }).click();
+  await navigate(page, "Samples");
   await expect(status).toHaveValue("active");
   await expect(target).toBeVisible();
 });
@@ -230,7 +229,7 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Calendar", exact: true }).click();
+  await navigate(page, "Calendar");
   await page
     .getByRole("button", { name: "Book instrument", exact: true })
     .click();

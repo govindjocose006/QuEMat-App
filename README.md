@@ -4,15 +4,17 @@ Private laboratory coordination for the QuEMat group at IISER Thiruvananthapuram
 supervised by Dr Deepshikha Jaiswal Nagar.
 [Group website](https://sites.google.com/iisertvm.ac.in/quemat).
 
-**Phase 1 and Phase 2 are deployed** at https://quemat-app.vercel.app. Phase 1 provides
+**Phases 1, 2, 3A, 3B and 3C are deployed** at https://quemat-app.vercel.app. Phase 1 provides
 accounts, approval-gated onboarding, membership administration, and an editable
 register of the 15 supplied instruments. Phase 2 provides
 shared samples, calendars, conflict-protected bookings, actual usage and notifications.
 See [Phase 2 workflows and isolated validation](docs/phase-2.md). The app uses TypeScript,
 React, Express, and PostgreSQL, with **Vercel + Neon** as the deployment target.
-**Phase 3A: Weekly Progress** is implemented on `feature/phase-3a-weekly-progress`
-for review and isolated preview only. See [the workflow and preview guide](docs/phase-3a.md).
-Production remains Phase 2; Phase 3B/3C and later phases are not implemented.
+Phase 3 adds [weekly progress](docs/phase-3a.md), [issues and requests](docs/phase-3b.md),
+and [meetings and notices](docs/phase-3c.md). Phase 3C was released through
+[PR #6](https://github.com/govindjocose006/QuEMat-App/pull/6) on 2026-10-25 after
+guarded migration 005 and preservation verification. Optional issue-status reasons
+and distinct navigation icons are included. Phase 4 has not started.
 
 - [Deploy to Vercel and Neon](docs/deployment.md)
 - [Reusable cloud environment setup](docs/cloud-environment.md)
@@ -76,10 +78,10 @@ seeding, and administrator bootstrap as explicit operator steps; builds and
 function cold starts do not mutate the schema or create accounts. See the
 [deployment guide](docs/deployment.md) for exact steps and preview isolation.
 
-Phases 1 and 2 are deployed at https://quemat-app.vercel.app. Phase 3A requires
-`003_weekly_progress.sql` in the isolated preview database before its health check
-can pass. Phase 3A production release requires the [guarded fresh-backup and
-migration procedure](docs/phase-3a-release.md) before merge/deployment.
+The released database contains migrations 001–005. Production health checks the
+005 ledger through Neon. Preserve the completed release's private backup and receipt;
+do not rerun 005 or earlier release commands for application-only updates. Preview
+data/configuration remain isolated from production. See [deployment](docs/deployment.md).
 
 ## Built local server
 
@@ -117,11 +119,12 @@ workflows, keyboard focus, and automated accessibility checks. CI is configured 
 1. **Implemented:** foundation, accounts, approval, instrument register.
 2. **Deployed:** samples, database-protected reservations, measurement details, check-in
    and completion.
-3. **3A implemented for review:** weekly reports, revisions, scoped review, follow-ups
-   and meeting summaries. Issues, announcements and meeting scheduling remain deferred.
-4. Chemical orders and incoming external samples.
-5. Facility calls and proposals.
-6. Server-scheduled reminders, PWA installation, and release verification.
+3. **Deployed:** weekly reports/revisions/scoped reviews; issues/requests with history;
+   private meetings, owned actions, announcements and explicit read acknowledgements.
+4. **Next, after monitoring audit fixes:** chemical requests and order tracking.
+5. Incoming external samples and their measurement workflow.
+6. Facility calls and proposals. Background reminders and PWA work remain separate
+   later additions; the current app does not deliver email/push reminders while closed.
 
 Defaults: **Asia/Kolkata** and **INR**. Never commit credentials, lab records,
 contact data, database exports, or private attachments.
