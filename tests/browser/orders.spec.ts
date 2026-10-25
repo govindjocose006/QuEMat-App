@@ -110,6 +110,36 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   await expect(
     page.getByRole("heading", { name: "Retained history", exact: true }),
   ).toBeVisible();
+  // Reopening the same selection must fetch again without hiding its details.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const refreshed = page.waitForResponse(
+      (r) => r.url().endsWith(`/api/orders/${item.id}`) && r.status() === 200,
+    );
+    await page
+      .getByRole("button", { name: "Open " + item.code, exact: true })
+      .click();
+    await refreshed;
+    await expect(
+      page.getByRole("heading", { name: "Retained history", exact: true }),
+    ).toBeVisible();
+  }
+  await page
+    .getByRole("button", { name: "Close order details", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Retained history", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Open " + item.code, exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Retained history", exact: true }),
+  ).toBeVisible();
+  const reopened = await (
+    await page.request.get(`/api/orders/${item.id}`)
+  ).json();
+  expect(reopened.deliveries).toHaveLength(2);
+  expect(reopened.costPaise).toBe(120025);
   expect(
     (
       await new AxeBuilder({ page })

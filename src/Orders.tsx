@@ -110,10 +110,16 @@ export function Orders({
     };
   }, [mode, detail?.orderedBy, user.id]);
   const open = (r: ChemicalOrder) => {
-    setId(r.id);
-    setDetail(null);
     setMode(null);
     setNotice("");
+    if (r.id === id) {
+      // The ID-dependent effect will not run again for the same selection.
+      // Keep the last successful detail visible while refreshing it explicitly.
+      void reload();
+    } else {
+      setDetail(null);
+      setId(r.id);
+    }
   };
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -500,6 +506,18 @@ export function Orders({
       {form}
       {detail && mode !== "new" && (
         <article className="panel">
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() => {
+              setMode(null);
+              setDetail(null);
+              setId(null);
+              setNotice("");
+            }}
+          >
+            Close order details
+          </button>
           <h3>
             {detail.code} · {detail.chemical}
           </h3>
