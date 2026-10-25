@@ -33,7 +33,7 @@ republishing infrastructure inventories or operational history.
 - Notices with publishing/pinning/expiry and explicit revision-specific reading.
 - Persistent notifications, dashboard integration and distinct navigation icons.
 
-## Monitoring audit remediation — implemented for review
+## Monitoring audit remediation — released
 
 The six supplied findings are addressed by application/API/UI changes:
 instrument state and bookings refresh in one read-only snapshot; the latest actual
@@ -42,20 +42,20 @@ visibility-scoped unread counts; phones use prominent Inbox access and More;
 successful refreshes clear stale errors; release status pages reflect deployed 3C.
 
 No migration, fixtures, password resets, paid services or new infrastructure are
-needed. Production is not changed by preparing this branch. See
+needed. PR #7 merged and released as `4697ba8` on 2026-10-25 after user-confirmed
+preview acceptance and explicit release authorization. See
 [monitoring audit details](monitoring-audit.md).
 
-Local build and application/release type checks pass. The targeted scheduling and
-meeting suites pass all 29 tests. The complete local suite passes 177 of 178 tests;
-one unrelated environment-loader case is blocked by this workspace's IPC permissions.
-Hosted CI must pass the full suite, native PostgreSQL queries, desktop/phone
-workflows and existing Windows release checks. Final exact-commit results and
-any limitations are recorded in the audit-fix PR, not assumed here.
+The reviewed head `55a1060` passed 179 isolated tests, 23 native PostgreSQL checks,
+30 desktop/phone browser checks, build/type checks, Windows checks and a clean
+dependency audit. This includes the Vercel `path` query-metadata correction found
+during private preview testing. The production deployment is ready; final live and
+post-merge CI results are recorded in PR #7. Private production acceptance remains
+separate from the user-confirmed preview checks.
 
 ## Next phase
 
-Finish audit-fix review, isolated preview acceptance and the application release
-before starting Phase 4 (chemicals and orders). Incoming external samples, facility
+Phase 4 (chemicals and orders) is next and has not started. Incoming external samples, facility
 calls/proposals, background reminders and PWA work remain future stages.
 The current app does not deliver background email/push reminders.
 

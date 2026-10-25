@@ -5,6 +5,11 @@ They require **no database migration, fixtures, password resets, additional clou
 resources or paid services**. Phase 4 remains out of scope. Production release
 uses the existing application review/deployment process; do not rerun 005.
 
+Released through PR #7 on 2026-10-25 after user-confirmed preview acceptance.
+The reviewed head includes compatibility with Vercel routing query metadata.
+Final deployment/CI evidence is recorded in PR #7; private production acceptance
+is separate from preview acceptance.
+
 ## Instrument freshness and handover
 
 `GET /api/monitoring` requires approved membership. A read-only repeatable-read

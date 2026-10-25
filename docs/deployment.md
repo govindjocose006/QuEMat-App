@@ -11,9 +11,10 @@ PR #6 records reviewed-head/main CI and live health, matching client assets and
 anonymous-access denial. The isolated preview remains separate.
 
 Private authenticated production acceptance is distinct from those checks and
-the accepted preview workflows. Phase 4 has not started. Monitoring audit fixes
-are application-only changes requiring review, validation and the normal app
-deployment; preparing a branch does not itself change production.
+the accepted preview workflows. Monitoring audit fixes released through PR #7 on
+2026-10-25 after preview acceptance; no migration or configuration changes were
+needed for the production release. Final checks are recorded in PR #7.
+Phase 4 has not started.
 
 ## Architecture and environment separation
 
