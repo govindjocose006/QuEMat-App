@@ -52,6 +52,8 @@ async function accessible(page: Page) {
 test("open dashboard refreshes instrument state with bookings, handovers and sample IDs, then recovers from an outage", async ({
   page,
 }, info) => {
+  // Install before page scripts create their polling timers (also survives reload).
+  await page.clock.install();
   await login(page);
   const instruments = await (await page.request.get("/api/instruments")).json();
   const resource = await write(page, "/instruments", {
@@ -97,25 +99,27 @@ test("open dashboard refreshes instrument state with bookings, handovers and sam
     endsAt: new Date(now + 90000000).toISOString(),
   });
   await page.reload();
-  const card = page
-    .locator("article.panel")
-    .filter({
-      has: page.getByRole("heading", { name: resource.name, exact: true }),
-    });
+  const card = page.locator("article.panel").filter({
+    has: page.getByRole("heading", { name: resource.name, exact: true }),
+  });
   await expect(card).toContainText("Last handover");
   await expect(card).toContainText(
     "Inspect the holder before mounting the next sample",
   );
   await expect(card).toContainText(`Next samples: ${sample.code}`);
   await expect(card).toContainText("No confirmed usage");
-  await page.clock.install();
   await write(
     page,
     `/instruments/${resource.id}`,
     { ...resource, status: "maintenance" },
     "PUT",
   );
+  const polled = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/monitoring") && response.status() === 200,
+  );
   await page.clock.fastForward(31000);
+  await polled;
   await expect(card).toContainText("maintenance");
   await expect(card).not.toContainText("No confirmed usage");
   let unavailable = true;
@@ -213,11 +217,9 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
       page.getByText(`Page ${n + 2}`, { exact: true }),
     ).toBeVisible();
   }
-  const oldest = page
-    .locator("article.panel")
-    .filter({
-      has: page.getByText("Synthetic inbox update 1", { exact: true }),
-    });
+  const oldest = page.locator("article.panel").filter({
+    has: page.getByText("Synthetic inbox update 1", { exact: true }),
+  });
   await expect(oldest).toBeVisible();
   await oldest.getByRole("button", { name: "Mark read", exact: true }).click();
   await expect(oldest).toContainText("Read");
@@ -225,7 +227,7 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
     "204 unread",
   );
   await page
-    .getByLabel("Notification view", { exact: true })
+    .getByRole("combobox", { name: "Notification view", exact: true })
     .selectOption("unread");
   await expect(page.getByText("Page 1", { exact: true })).toBeVisible();
   await expect(
