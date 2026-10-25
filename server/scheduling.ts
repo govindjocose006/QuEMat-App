@@ -594,6 +594,9 @@ export function installScheduling(
         before: z.string().uuid().optional(),
         unread: z.enum(["true", "false"]).default("false"),
         limit: z.coerce.number().int().min(1).max(100).default(50),
+        // Vercel's /api/:path* rewrite adds routing metadata to the query.
+        // Accept only this known transport field; never use it as a filter.
+        path: z.union([z.string(), z.array(z.string())]).optional(),
       })
       .strict()
       .parse(req.query);

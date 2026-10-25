@@ -183,7 +183,7 @@ it("retrieves more than 200 notifications without duplicates or lost timestamp t
   let cursor: string | null = null;
   do {
     const page = await c.agent.get(
-      "/api/notifications/page?limit=50&unread=true" +
+      "/api/notifications/page?path=notifications%2Fpage&limit=50&unread=true" +
         (cursor ? `&before=${cursor}` : ""),
     );
     expect(page.status, page.body.error).toBe(200);
@@ -210,6 +210,26 @@ it("retrieves more than 200 notifications without duplicates or lost timestamp t
       (n: { id: string }) => n.id === first,
     ).readAt,
   ).toBeTruthy();
+});
+it("accepts Vercel routing metadata without changing notification visibility or filter validation", async () => {
+  const c = await client("member@example.test");
+  await create(c);
+  const baseline = await c.agent.get("/api/notifications/page?unread=true");
+  expect(baseline.status).toBe(200);
+  for (const path of ["path=notifications%2Fpage", "path=notifications&path=page"]) {
+    const page = await c.agent.get(`/api/notifications/page?unread=true&${path}`);
+    expect(page.status, page.body.error).toBe(200);
+    expect(page.body).toEqual(baseline.body);
+  }
+  const other = await client("other@example.test");
+  const scoped = await other.agent.get("/api/notifications/page?path=notifications%2Fpage");
+  expect(scoped.status).toBe(200);
+  expect(scoped.body.items).toEqual([]);
+  for (const query of ["limit=0", "before=bad", "unread=maybe", "extra=1"]) {
+    const result = await c.agent.get(`/api/notifications/page?path=notifications%2Fpage&${query}`);
+    expect(result.status).toBe(400);
+  }
+  expect((await request(app).get("/api/notifications/page?path=notifications%2Fpage")).status).toBe(401);
 });
 it("keeps notification cursors stable when new updates arrive and validates page inputs", async () => {
   const c = await client("member@example.test");
