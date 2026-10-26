@@ -737,7 +737,11 @@ export function Issues({
       </div>
       <ErrorNotice message={error} />
       {error && (
-        <button className="secondary" onClick={() => void reload()}>
+        <button
+          className="secondary"
+          disabled={loading}
+          onClick={() => void reload()}
+        >
           Retry issues
         </button>
       )}
@@ -845,15 +849,17 @@ export function Issues({
         </label>
       </div>
       {loading && <p role="status">Loading issues…</p>}
-      <p>
-        {total} matching item{total === 1 ? "" : "s"}
-      </p>
+      {!loading && !error && (
+        <p>
+          {total} matching item{total === 1 ? "" : "s"}
+        </p>
+      )}
       <div className="issue-grid">
         {items.map((i) => (
           <IssueCard key={i.id} item={i} onOpen={setSelected} />
         ))}
       </div>
-      {!loading && !items.length && (
+      {!loading && !error && !items.length && (
         <p role="status">No issues match this view.</p>
       )}
       {total > 50 && (

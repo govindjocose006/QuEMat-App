@@ -47,7 +47,7 @@ export function Orders({
     [detail, setDetail] = useState<OrderDetail | null>(null),
     [mode, setMode] = useState<Mode>(null),
     [error, setError] = useState(""),
-    [loading, setLoading] = useState(false),
+    [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [orderedBy, setOrderedBy] = useState(user.id),
@@ -670,7 +670,7 @@ export function Orders({
           />
         </label>
       </div>
-      {!loading && !items.length && <p>No requests in this view.</p>}
+      {!loading && !error && !items.length && <p>No requests in this view.</p>}
       {items.map((r) => (
         <article className="panel" key={r.id}>
           <h3>

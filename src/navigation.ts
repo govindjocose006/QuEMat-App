@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { mayLeaveWorkspace } from "./unsaved.js";
 
 export const pageLabels = {
   overview: "Overview",
@@ -31,14 +33,59 @@ export function useWorkspaceNavigation(administrator: boolean) {
   const [page, selectPage] = useState<Page>(() =>
     sectionFromHash(window.location.hash, administrator),
   );
+  const currentPage = useRef(page);
+  const position = useRef<number>(window.history.state?.quematPosition ?? 0);
+  const restoring = useRef(false);
   useEffect(() => {
+    window.history.replaceState(
+      { ...window.history.state, quematPosition: position.current },
+      "",
+    );
     const restore = () => {
-      // The accessible skip link changes the fragment without changing sections.
-      if (window.location.hash === "#main-content") return;
+      let nextPosition = window.history.state?.quematPosition;
+      if (!Number.isInteger(nextPosition)) {
+        // A native fragment/skip-link navigation creates a new history entry.
+        nextPosition = position.current + 1;
+        window.history.replaceState(
+          { ...window.history.state, quematPosition: nextPosition },
+          "",
+        );
+      }
+      if (restoring.current) {
+        if (nextPosition === position.current) restoring.current = false;
+        return;
+      }
+      // Skip links move focus inside the current section, not between sections.
+      if (window.location.hash === "#main-content") {
+        position.current = nextPosition;
+        return;
+      }
       const section = sectionFromHash(window.location.hash, administrator);
+      if (section !== currentPage.current && !mayLeaveWorkspace()) {
+        if (
+          typeof nextPosition === "number" &&
+          nextPosition !== position.current
+        ) {
+          restoring.current = true;
+          window.history.go(position.current - nextPosition);
+        } else {
+          window.history.replaceState(
+            { ...window.history.state, quematPosition: position.current },
+            "",
+            `#${currentPage.current}`,
+          );
+        }
+        return;
+      }
+      position.current =
+        typeof nextPosition === "number" ? nextPosition : position.current + 1;
+      currentPage.current = section;
       selectPage(section);
-      if (window.location.hash !== `#${section}`)
-        window.history.replaceState(null, "", `#${section}`);
+      window.history.replaceState(
+        { ...window.history.state, quematPosition: position.current },
+        "",
+        `#${section}`,
+      );
     };
     restore();
     window.addEventListener("popstate", restore);
@@ -57,8 +104,17 @@ export function useWorkspaceNavigation(administrator: boolean) {
   const setPage = useCallback(
     (next: Page) => {
       const section = sectionFromHash(`#${next}`, administrator);
-      if (window.location.hash !== `#${section}`)
-        window.history.pushState(null, "", `#${section}`);
+      if (restoring.current) return;
+      if (section !== currentPage.current && !mayLeaveWorkspace()) return;
+      if (window.location.hash !== `#${section}`) {
+        position.current++;
+        window.history.pushState(
+          { quematPosition: position.current },
+          "",
+          `#${section}`,
+        );
+      }
+      currentPage.current = section;
       selectPage(section);
     },
     [administrator],

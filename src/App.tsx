@@ -20,6 +20,7 @@ import {
 } from "./components.js";
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
+import { mayLeaveWorkspace } from "./unsaved.js";
 import { Orders, OrdersOverview } from "./Orders.js";
 import { Issues, IssuesOverview } from "./Issues.js";
 import { Meetings, MeetingsOverview } from "./Meetings.js";
@@ -362,7 +363,12 @@ function Workspace({
             <span>Inbox</span>
             {badge}
           </button>
-          <button className="workspace-logout secondary" onClick={onLogout}>
+          <button
+            className="workspace-logout secondary"
+            onClick={() => {
+              if (mayLeaveWorkspace()) onLogout();
+            }}
+          >
             Sign out
           </button>
         </header>

@@ -1011,25 +1011,38 @@ export function Schedule({
           .toISOString()
           .slice(0, 7) + "-01"
       : addDays(start, view === "day" ? 1 : 7);
+  const calendarGeneration = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [loadedRange, setLoadedRange] = useState("");
+  const range = `${start}/${end}`;
   const reload = useCallback(async () => {
+    const request = ++calendarGeneration.current;
+    setLoading(true);
     try {
       const [b, w] = await Promise.all([
         api<Booking[]>("/bookings" + rangeQuery(start, end)),
         api<Availability[]>("/availability"),
       ]);
+      if (request !== calendarGeneration.current) return;
       setBookings(b);
       setWindows(w);
+      setLoadedRange(`${start}/${end}`);
       setError("");
     } catch (e) {
-      setError(messageOf(e));
+      if (request === calendarGeneration.current) setError(messageOf(e));
+    } finally {
+      if (request === calendarGeneration.current) setLoading(false);
     }
   }, [start, end]);
   useEffect(() => {
     void reload();
     const t = setInterval(() => void reload(), 30000);
-    return () => clearInterval(t);
+    return () => {
+      calendarGeneration.current++;
+      clearInterval(t);
+    };
   }, [reload]);
-  const filtered = bookings.filter(
+  const filtered = (loadedRange === range ? bookings : []).filter(
     (b) =>
       (!instrument || b.instrumentId === instrument) &&
       (!mine || b.bookedBy === user.id || b.operatorId === user.id),
@@ -1107,7 +1120,11 @@ export function Schedule({
           />
           My bookings
         </label>
-        <button className="secondary" onClick={() => void reload()}>
+        <button
+          className="secondary"
+          disabled={loading}
+          onClick={() => void reload()}
+        >
           Refresh schedule
         </button>
       </div>
@@ -1143,6 +1160,13 @@ export function Schedule({
         maintenance block overlapping reservations. Phone layouts use a daily
         agenda.
       </p>
+      {loading && <p role="status">Loading schedule…</p>}
+      {error && (
+        <p role="status">
+          The schedule could not be refreshed. Use Refresh schedule to retry;
+          displayed records may be outdated.
+        </p>
+      )}
       <div className={`calendar calendar-${view}`}>
         {days.map((d) => (
           <section className="calendar-day" key={d}>
@@ -1182,12 +1206,16 @@ export function Schedule({
                   </span>
                 </button>
               ))}
-            {!filtered.some(
-              (b) =>
-                day(b.startsAt) <= d &&
-                day(new Date(new Date(b.endsAt).getTime() - 1).toISOString()) >=
-                  d,
-            ) && <p>No reservations</p>}
+            {!loading &&
+              !error &&
+              loadedRange === range &&
+              !filtered.some(
+                (b) =>
+                  day(b.startsAt) <= d &&
+                  day(
+                    new Date(new Date(b.endsAt).getTime() - 1).toISOString(),
+                  ) >= d,
+              ) && <p>No reservations</p>}
           </section>
         ))}
       </div>
