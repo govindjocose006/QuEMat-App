@@ -25,6 +25,7 @@ import { Orders, OrdersOverview } from "./Orders.js";
 import { Issues, IssuesOverview } from "./Issues.js";
 import { Meetings, MeetingsOverview } from "./Meetings.js";
 import { Weekly, WeeklyOverview } from "./Weekly.js";
+import { QuickGuide, WelcomeTips, useWelcomeTips } from "./QuickGuide.js";
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -143,6 +144,7 @@ function Workspace({
     user.appRole === "administrator",
   );
   const [moreOpen, setMoreOpen] = useState(false);
+  const welcomeTips = useWelcomeTips(user.id);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const unreadGeneration = useRef(0);
   const refreshUnread = useCallback(async () => {
@@ -238,6 +240,7 @@ function Workspace({
         "members",
         "audit",
         "settings",
+        "guide",
       ]
     : [
         "overview",
@@ -250,6 +253,7 @@ function Workspace({
         "notifications",
         "instruments",
         "settings",
+        "guide",
       ];
   const active = items?.filter((i) => !i.archived) ?? [];
   const primaryPages: Page[] = ["overview", "calendar", "notifications"];
@@ -406,6 +410,18 @@ function Workspace({
                 </div>
                 <span className="phase-label">Lab operations</span>
               </div>
+              {welcomeTips.visible && (
+                <WelcomeTips
+                  user={user}
+                  navigate={navigate}
+                  hide={() => {
+                    welcomeTips.change(false);
+                    document
+                      .getElementById("main-content")
+                      ?.focus({ preventScroll: true });
+                  }}
+                />
+              )}
               <div className="stats">
                 <div>
                   <span>REGISTERED INSTRUMENTS</span>
@@ -533,6 +549,16 @@ function Workspace({
           {page === "members" && admin && <Members onChanged={refresh} />}
           {page === "audit" && admin && <AuditLog />}
           {page === "settings" && <Account user={user} onSession={onSession} />}
+          {page === "guide" && (
+            <QuickGuide
+              user={user}
+              navigate={navigate}
+              showWelcome={() => {
+                welcomeTips.change(true);
+                navigate("overview");
+              }}
+            />
+          )}
           <footer className="workspace-footer">
             <span>QuEMat · IISER Thiruvananthapuram</span>
             <span>Private laboratory workspace</span>

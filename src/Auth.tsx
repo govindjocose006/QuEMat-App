@@ -3,6 +3,7 @@ import type { Member, Session } from "../shared/schema.js";
 import { academicRoles } from "../shared/options.js";
 import { api } from "./api.js";
 import { Brand, ErrorNotice, Icon, messageOf } from "./components.js";
+import { MembershipSteps } from "./QuickGuide.js";
 
 export function Auth({ onSession }: { onSession: (session: Session) => void }) {
   const [register, setRegister] = useState(false);
@@ -62,6 +63,7 @@ export function Auth({ onSession }: { onSession: (session: Session) => void }) {
             <Icon name="lock" /> Private lab workspace
           </span>
           <h2>{register ? "Join QuEMat Lab Hub" : "Welcome back"}</h2>
+          {register && <MembershipSteps step={1} />}
           <p>
             {register
               ? "Create an account, introduce yourself, and request membership approval."
@@ -220,6 +222,7 @@ export function Onboarding({
         </button>
       </header>
       <main className="onboarding-card">
+        <MembershipSteps step={editing ? 2 : 3} />
         <p className="eyebrow">
           MEMBERSHIP · {editing ? "YOUR PROFILE" : "UNDER REVIEW"}
         </p>
@@ -286,6 +289,11 @@ export function Onboarding({
           </form>
         ) : (
           <>
+            <p className="guide-note">
+              Next: ask a lab administrator to review your request, then use
+              Check approval status below. After approval, Overview will show
+              starting points and a Quick Guide.
+            </p>
             <div className="review-summary">
               <Icon name="lock" />
               <div>

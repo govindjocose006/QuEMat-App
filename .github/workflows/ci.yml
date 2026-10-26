@@ -40,6 +40,7 @@ jobs:
             test-results/**/*inbox-pagination.png
             test-results/**/*phone-more-navigation.png
             test-results/**/*chemical-order.png
+            test-results/**/*onboarding-*.png
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/upload-artifact@v4

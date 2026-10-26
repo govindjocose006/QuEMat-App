@@ -486,6 +486,36 @@ select {
   color: #526872;
   margin-top: 30px;
 }
+.membership-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.membership-steps li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+.membership-steps li > span:first-child {
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  min-width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+}
+.membership-steps li[aria-current="step"] {
+  color: #12494a;
+  border-color: #12494a;
+  font-weight: 700;
+}
 .onboarding-page {
   max-width: 1100px;
   margin: 0 auto;
@@ -2053,6 +2083,145 @@ fieldset > label:last-child {
 
 .orders-page {
   overflow-wrap: anywhere;
+}
+
+.welcome-tips {
+  padding: 24px;
+  margin: 0 0 24px;
+  border: 1px solid #b8d1cf;
+  border-radius: 12px;
+  background: #f2f8f6;
+}
+.guide-heading,
+.guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.guide-heading h2,
+.guide-footer h2 {
+  margin: 0;
+}
+.welcome-tips > p,
+.guide-footer p,
+.guide-footer > span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.guide-heading .eyebrow {
+  margin: 0 0 6px;
+}
+.guide-tasks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.guide-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  padding: 18px;
+  border: 1px solid #bfd1d4;
+  border-radius: 8px;
+  background: white;
+  color: #193e46;
+  white-space: normal;
+  min-width: 0;
+  line-height: 1.5;
+}
+.guide-task:hover {
+  background: #eaf3f1;
+  border-color: #527f7b;
+}
+.guide-task svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.guide-task > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+}
+.guide-task strong,
+.guide-task > span > span {
+  display: block;
+}
+.guide-task strong {
+  font-size: 14px;
+}
+.guide-task > span > span {
+  font-size: 12px;
+  margin-top: 6px;
+  color: #526872;
+}
+.guide-footer button,
+.guide-heading button {
+  min-height: 44px;
+}
+.quick-guide {
+  display: grid;
+  gap: 20px;
+  overflow-wrap: anywhere;
+}
+.guide-topics details {
+  border-top: 1px solid var(--border);
+  padding: 0;
+}
+.guide-topics summary {
+  cursor: pointer;
+  min-height: 48px;
+  padding: 16px 0;
+  color: #193e46;
+  font-weight: 650;
+  font-size: 15px;
+}
+.guide-topics summary:focus-visible {
+  outline: 3px solid #34867d;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.guide-topics details > :last-child {
+  margin-bottom: 22px;
+}
+.guide-topics p,
+.guide-topics li,
+.guide-note {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #405c65;
+}
+.guide-topics ol {
+  padding-left: 22px;
+}
+.guide-topics li + li {
+  margin-top: 8px;
+}
+.guide-note {
+  padding: 12px 16px;
+  border-left: 3px solid #527f7b;
+  background: #f2f8f6;
+}
+@media (max-width: 1100px) {
+  .guide-tasks {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .welcome-tips {
+    padding: 18px;
+  }
+  .membership-steps {
+    gap: 6px;
+    font-size: 11px;
+  }
+  .membership-steps li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 .orders-page .filters {
   display: grid;

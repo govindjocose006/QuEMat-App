@@ -16,6 +16,12 @@ export function Brand({ small = false }: { small?: boolean }) {
   );
 }
 const iconPaths = {
+  guide: (
+    <>
+      <path d="M12 6c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v15" />
+      <path d="M6 9h3M15 9h3M6 13h3M15 13h3" />
+    </>
+  ),
   calendar: (
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />

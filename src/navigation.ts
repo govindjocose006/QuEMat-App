@@ -15,6 +15,7 @@ export const pageLabels = {
   members: "Members & access",
   audit: "Audit history",
   settings: "My account",
+  guide: "Quick Guide",
 };
 export type Page = keyof typeof pageLabels;
 
