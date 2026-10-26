@@ -737,7 +737,11 @@ export function Issues({
       </div>
       <ErrorNotice message={error} />
       {error && (
-        <button className="secondary" onClick={() => void reload()}>
+        <button
+          className="secondary"
+          disabled={loading}
+          onClick={() => void reload()}
+        >
           Retry issues
         </button>
       )}
@@ -845,15 +849,6 @@ export function Issues({
         </label>
       </div>
       {loading && <p role="status">Loading issues…</p>}
-      {error && (
-        <button
-          className="secondary"
-          disabled={loading}
-          onClick={() => void reload()}
-        >
-          Retry issues
-        </button>
-      )}
       {!loading && !error && (
         <p>
           {total} matching item{total === 1 ? "" : "s"}
