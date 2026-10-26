@@ -34,13 +34,26 @@ export async function api<T>(
       "Unable to reach the server. Check your connection and try again; no change has been confirmed.",
     );
   }
-  const result = await response
-    .json()
-    .catch(() => ({ error: "The server returned an unexpected response." }));
-  if (!response.ok) {
-    if (response.status === 401 && !path.startsWith("/auth/"))
-      window.dispatchEvent(new Event("session-expired"));
-    throw new ApiError(result.error ?? "Request failed.", response.status);
+  if (response.status === 401 && !path.startsWith("/auth/"))
+    window.dispatchEvent(new Event("session-expired"));
+  let result: unknown;
+  try {
+    result = await response.json();
+  } catch {
+    throw new ApiError(
+      "The server returned an unexpected response. Try loading again; no change has been confirmed.",
+      response.status,
+    );
   }
-  return result;
+  if (!response.ok) {
+    const message =
+      result &&
+      typeof result === "object" &&
+      "error" in result &&
+      typeof result.error === "string"
+        ? result.error
+        : "Request failed.";
+    throw new ApiError(message, response.status);
+  }
+  return result as T;
 }

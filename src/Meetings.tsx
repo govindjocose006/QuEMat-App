@@ -1005,7 +1005,7 @@ export function Meetings({
     >(null),
     [creating, setCreating] = useState<"meeting" | "notice" | null>(null);
   const [error, setError] = useState(""),
-    [loading, setLoading] = useState(false);
+    [loading, setLoading] = useState(true);
   const staff = meetingManager(user.appRole);
   const reload = useCallback(async () => {
     setLoading(true);
@@ -1097,7 +1097,9 @@ export function Meetings({
             <option value="all">All authorized meetings</option>
           </select>
         </label>
-        {!meetings.length && !loading && <p>No meetings in this view.</p>}
+        {!meetings.length && !loading && !error && (
+          <p>No meetings in this view.</p>
+        )}
         <div className="collaboration-grid">
           {meetings.map((m) => (
             <MeetingCard key={m.id} item={m} open={(s) => void open(s)} />
@@ -1144,7 +1146,9 @@ export function Meetings({
             <option value="all">All accessible notices</option>
           </select>
         </label>
-        {!notices.length && !loading && <p>No notices in this view.</p>}
+        {!notices.length && !loading && !error && (
+          <p>No notices in this view.</p>
+        )}
         <div className="collaboration-grid">
           {notices.map((n) => (
             <NoticeCard key={n.id} item={n} open={(s) => void open(s)} />

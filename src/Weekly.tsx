@@ -20,6 +20,7 @@ import {
   type WeeklySample,
 } from "../shared/weekly.js";
 import { api } from "./api.js";
+import { beforeWorkspaceLeave, mayLeaveWorkspace } from "./unsaved.js";
 import { ErrorNotice, Modal, formatDate, messageOf } from "./components.js";
 
 function Content({ content: c }: { content: ReportContent }) {
@@ -324,6 +325,7 @@ function ReportEditor({
       samples: WeeklySample[];
     }>({ bookings: [], samples: [] }),
     [loaded, setLoaded] = useState(false),
+    [loadAttempt, setLoadAttempt] = useState(0),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [dirty, setDirty] = useState(false),
@@ -337,6 +339,7 @@ function ReportEditor({
   useEffect(() => {
     let live = true;
     setLoaded(false);
+    setError("");
     Promise.all([
       api<WeeklyReport | null>(`/weekly/mine?week=${week}`),
       api<typeof sources>(`/weekly/sources?week=${week}`),
@@ -347,6 +350,7 @@ function ReportEditor({
         setDraft(r?.draft ?? { ...emptyReport, project: user.project });
         setSources(s);
         setDirty(false);
+        setError("");
         setLoaded(true);
       })
       .catch((e) => {
@@ -355,7 +359,7 @@ function ReportEditor({
     return () => {
       live = false;
     };
-  }, [week, user.project]);
+  }, [week, loadAttempt]);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -363,9 +367,23 @@ function ReportEditor({
         e.returnValue = "";
       }
     };
+    const guard = (event: Event) => {
+      if (
+        busy ||
+        (dirty &&
+          !window.confirm(
+            "Leave this report and discard unsaved changes? Choose Cancel to stay and save your draft.",
+          ))
+      )
+        event.preventDefault();
+    };
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+    window.addEventListener(beforeWorkspaceLeave, guard);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      window.removeEventListener(beforeWorkspaceLeave, guard);
+    };
+  }, [dirty, busy]);
   function change<K extends keyof ReportInput>(key: K, value: ReportInput[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
     setDirty(true);
@@ -434,7 +452,16 @@ function ReportEditor({
     return (
       <>
         <ErrorNotice message={error} />
-        {!error && <p role="status">Loading your report…</p>}
+        {error ? (
+          <button
+            className="secondary"
+            onClick={() => setLoadAttempt((n) => n + 1)}
+          >
+            Retry loading report
+          </button>
+        ) : (
+          <p role="status">Loading your report…</p>
+        )}
       </>
     );
   return (
@@ -867,10 +894,7 @@ export function Weekly({
   function selectWeek(value: string) {
     if (!value) return;
     const normalized = weekStart(value + "T12:00:00+05:30");
-    if (
-      normalized !== week &&
-      window.confirm("Change week? Save any unsaved draft first.")
-    ) {
+    if (normalized !== week && mayLeaveWorkspace()) {
       setWeek(normalized);
       setGeneration((g) => g + 1);
     }
@@ -901,7 +925,9 @@ export function Weekly({
           {canOpenReview(user.appRole) && (
             <button
               className={tab === "review" ? "primary" : "secondary"}
-              onClick={() => setTab("review")}
+              onClick={() => {
+                if (mayLeaveWorkspace()) setTab("review");
+              }}
             >
               Review weekly reports
             </button>
