@@ -110,7 +110,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   ).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Lab overview", exact: true }),
+    page.getByRole("heading", { name: "Instruments", exact: true }),
   ).toBeVisible();
   await navigate(page, "My account");
   await page.getByLabel("Current password", { exact: true }).fill(password);
