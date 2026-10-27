@@ -33,6 +33,9 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   const email = `${info.project.name}-${Date.now()}@example.test`;
   const fullName = `${info.project.name} Test Intern`;
   await page.getByRole("button", { name: "Request access" }).click();
+  await expect(
+    page.locator('.membership-steps [aria-current="step"]'),
+  ).toHaveText("1Create account");
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByLabel("Confirm password", { exact: true }).fill(password);
@@ -41,6 +44,9 @@ test("private access, onboarding, approval, member restrictions, and logout", as
     page.getByRole("heading", { name: "Introduce yourself" }),
   ).toBeVisible();
   await page.getByLabel("Full name", { exact: true }).fill(fullName);
+  await expect(
+    page.locator('.membership-steps [aria-current="step"]'),
+  ).toHaveText("2Your details");
   await page
     .getByRole("combobox", { name: "Academic role", exact: true })
     .selectOption("Intern");
@@ -57,6 +63,21 @@ test("private access, onboarding, approval, member restrictions, and logout", as
     page.getByText("Mentor assignment pending administrator review."),
   ).toBeVisible();
   expect((await page.request.get("/api/instruments")).status()).toBe(403);
+  await expect(
+    page.locator('.membership-steps [aria-current="step"]'),
+  ).toHaveText("3Approval");
+  await page.goto("/#guide");
+  await expect(
+    page.getByRole("heading", {
+      name: "Your request is with the administrator",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Quick Guide", exact: true }),
+  ).toHaveCount(0);
+  // Return to the ordinary entry point before approval; bookmarks intentionally
+  // retain their section once an approved member enters the workspace.
+  await page.goto("/");
   const adminContext = await browser.newContext({
     baseURL: "http://127.0.0.1:3199",
     viewport: page.viewportSize()!,
