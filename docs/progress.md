@@ -1,3 +1,7 @@
+## 28 October 2026 — Supervisor privacy and focused notifications
+
+Prepared from released main `9ae2097`. Restrict cross-author weekly report access to the application supervisor, including old notification links and counts. Add a version-checked escalation action for assigned issue handlers, and send supervisors escalation lifecycle alerts instead of routine work updates. Stop automatic supervisor broadcasts for unrelated bookings, orders and meetings; retain monitoring and direct participation alerts. No schema migration or production data change. Validation and release status are recorded in the PR.
+
 # QuEMat Lab Hub progress
 
 ## Workspace UI refresh — preview preparation, 2026-10-27

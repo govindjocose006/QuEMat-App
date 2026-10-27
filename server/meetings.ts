@@ -207,7 +207,7 @@ export function installMeetings(
   async function managers(tx: SQL) {
     return (
       await tx.query<{ id: string }>(
-        "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role IN ('supervisor','administrator')",
+        "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role='administrator'",
       )
     ).map((p) => p.id);
   }

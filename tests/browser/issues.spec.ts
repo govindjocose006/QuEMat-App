@@ -163,6 +163,24 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
     .getByRole("button", { name: new RegExp(`ISS-.*${title}`) })
     .first()
     .click();
+  await page
+    .getByRole("button", { name: "Clear supervisor attention", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "Request supervisor attention",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Request supervisor attention", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "Clear supervisor attention",
+      exact: true,
+    }),
+  ).toBeVisible();
   await transition(page, "acknowledged");
   await expect(page.getByRole("dialog")).toContainText("No reason provided.");
   await expect(page.getByRole("dialog")).toContainText(`Weekly ${d} mentor`);

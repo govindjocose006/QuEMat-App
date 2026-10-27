@@ -216,20 +216,35 @@ it("accepts Vercel routing metadata without changing notification visibility or 
   await create(c);
   const baseline = await c.agent.get("/api/notifications/page?unread=true");
   expect(baseline.status).toBe(200);
-  for (const path of ["path=notifications%2Fpage", "path=notifications&path=page"]) {
-    const page = await c.agent.get(`/api/notifications/page?unread=true&${path}`);
+  for (const path of [
+    "path=notifications%2Fpage",
+    "path=notifications&path=page",
+  ]) {
+    const page = await c.agent.get(
+      `/api/notifications/page?unread=true&${path}`,
+    );
     expect(page.status, page.body.error).toBe(200);
     expect(page.body).toEqual(baseline.body);
   }
   const other = await client("other@example.test");
-  const scoped = await other.agent.get("/api/notifications/page?path=notifications%2Fpage");
+  const scoped = await other.agent.get(
+    "/api/notifications/page?path=notifications%2Fpage",
+  );
   expect(scoped.status).toBe(200);
   expect(scoped.body.items).toEqual([]);
   for (const query of ["limit=0", "before=bad", "unread=maybe", "extra=1"]) {
-    const result = await c.agent.get(`/api/notifications/page?path=notifications%2Fpage&${query}`);
+    const result = await c.agent.get(
+      `/api/notifications/page?path=notifications%2Fpage&${query}`,
+    );
     expect(result.status).toBe(400);
   }
-  expect((await request(app).get("/api/notifications/page?path=notifications%2Fpage")).status).toBe(401);
+  expect(
+    (
+      await request(app).get(
+        "/api/notifications/page?path=notifications%2Fpage",
+      )
+    ).status,
+  ).toBe(401);
 });
 it("keeps notification cursors stable when new updates arrive and validates page inputs", async () => {
   const c = await client("member@example.test");
@@ -771,4 +786,35 @@ it("includes actual cleanup outside the requested calendar dates", async () => {
     .query({ from: time(20000), to: time(21000) })
     .expect(200);
   expect(result.body.map((row: Booking) => row.id)).toContain(b.id);
+});
+
+it("keeps booking approval work out of supervisor broadcasts while retaining monitoring and participant alerts", async () => {
+  await db.query("UPDATE users SET app_role='supervisor' WHERE id=$1", [
+    otherId,
+  ]);
+  await db.query("UPDATE instruments SET coordinator_approval=1 WHERE id=$1", [
+    instrumentId,
+  ]);
+  const c = await client("member@example.test"),
+    s = await client("other@example.test"),
+    a = await client();
+  const b = await create(c);
+  expect(b.status).toBe("requested");
+  expect((await s.agent.get(`/api/bookings/${b.id}`)).status).toBe(200);
+  expect((await s.agent.get("/api/notifications")).body).toHaveLength(0);
+  expect(
+    (await a.agent.get("/api/notifications")).body.some(
+      (n: { bookingId: string }) => n.bookingId === b.id,
+    ),
+  ).toBe(true);
+  const involved = await create(c, {
+    startsAt: time(180),
+    endsAt: time(240),
+    participantIds: [otherId],
+  });
+  expect(
+    (await s.agent.get("/api/notifications")).body.some(
+      (n: { bookingId: string }) => n.bookingId === involved.id,
+    ),
+  ).toBe(true);
 });

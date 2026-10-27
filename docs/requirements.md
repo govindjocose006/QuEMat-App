@@ -222,7 +222,7 @@ Each member submits:
 
 Let users select linked bookings and tasks to include, then review the summary before submitting.
 
-Support drafts, submission, supervisor/mentor comments, and follow-up actions. Keep submission timestamps and revision history.
+Support private drafts and submitted reports visible only to the author and the application supervisor. Mentors, other members and administrators cannot read other people’s reports, discussions, review summaries or notification links. The supervisor provides comments and follow-up actions. Keep submission timestamps and revision history.
 
 Provide supervisor views by person, project, and week, with submitted/missing indicators and a printable weekly meeting summary.
 
@@ -412,3 +412,12 @@ At each phase:
 - Explain what works, what was tested, and what remains dependent on configuration.
 
 Do not claim live deployment, background notifications, automated call monitoring, or production readiness unless those functions were actually configured and verified.
+
+## Supervisor privacy and notification policy — 28 October 2026
+
+The lab has one supervisor. Her existing application role grants lab-wide monitoring; this does not automatically subscribe her to routine work. Academic titles do not grant application permissions.
+
+- Weekly reports: authors see their own draft/history; only the supervisor can read everyone’s submitted reports, discussions and printable summaries. Drafts remain private. This also applies to administrators’ own submissions. No routine submission alerts are broadcast; the supervisor checks the review queue when needed. Feedback/review alerts go to the author. Existing report notifications must be filtered using current access permissions.
+- Issues: assign routine work to a responsible senior PhD member/postdoc. Reporter, assignee and lab managers can request or clear supervisor attention. Supervisors receive escalation, cleared escalation, resolution and reopening alerts, rather than every edit, acknowledgement or comment. All issues remain visible when the supervisor opens the app. Escalation does not itself acknowledge an issue.
+- Routine booking approval, order and unrelated meeting broadcasts go to administrators rather than supervisors. A supervisor still receives relevant notifications when directly involved as a booking participant, order requester/handler or meeting attendee. Published lab notices remain visible/notified to the lab.
+- This changes application access and notification routing, not academic assignments, database schema, existing records or accounts. No extra paid service or background reminder job.

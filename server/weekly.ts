@@ -49,16 +49,8 @@ export function installWeekly(
       fail(403, "Active approved membership is required.");
     return u;
   }
-  async function reviewer(tx: SQL, u: Member, ownerId: string) {
-    if (u.id === ownerId) return false;
-    if (reviewsAll(u.appRole)) return true;
-    if (u.appRole !== "mentor") return false;
-    return !!(
-      await tx.query("SELECT id FROM users WHERE id=$1 AND mentor_id=$2", [
-        ownerId,
-        u.id,
-      ])
-    ).length;
+  async function reviewer(_tx: SQL, u: Member, ownerId: string) {
+    return u.id !== ownerId && reviewsAll(u.appRole);
   }
   async function row(tx: SQL, id: string) {
     const r = (await tx.query<Row>(select + " WHERE r.id=$1", [id]))[0];
@@ -138,7 +130,7 @@ export function installWeekly(
   }
   async function notify(tx: SQL, r: Row, u: Member, event: string) {
     const people = await tx.query<{ id: string }>(
-      `SELECT id FROM users WHERE status='approved' AND onboarded=1 AND (id=$1 OR app_role IN ('administrator','supervisor') OR (app_role='mentor' AND id=(SELECT mentor_id FROM users WHERE id=$1)))`,
+      `SELECT id FROM users WHERE status='approved' AND onboarded=1 AND id=$1`,
       [r.ownerId],
     );
     for (const { id } of people)
@@ -164,7 +156,7 @@ export function installWeekly(
     if (!canOpenReview(u.appRole))
       fail(
         403,
-        "Supervisor, administrator or assigned mentor permission is required.",
+        "Only the supervisor can review other members’ weekly reports.",
       );
     const [, end] = weekBounds(week);
     const people = await tx.query<{
