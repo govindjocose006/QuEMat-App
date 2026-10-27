@@ -76,12 +76,14 @@ function startingTasks(role: Member["appRole"]): Task[] {
 function TaskLinks({
   user,
   navigate,
+  compact = false,
 }: {
   user: Member;
   navigate: (page: Page) => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="guide-tasks">
+    <div className={compact ? "welcome-shortcuts" : "guide-tasks"}>
       {startingTasks(user.appRole).map((task) => (
         <button
           key={task.page}
@@ -91,7 +93,7 @@ function TaskLinks({
           <Icon name={task.page} />
           <span>
             <strong>{task.title}</strong>
-            <span>{task.description}</span>
+            {!compact && <span>{task.description}</span>}
           </span>
           <span aria-hidden="true">→</span>
         </button>
@@ -134,25 +136,18 @@ export function WelcomeTips({
 }) {
   return (
     <section className="welcome-tips" aria-labelledby="welcome-tips-title">
-      <div className="guide-heading">
-        <div>
-          <p className="eyebrow">NEW TO THE WORKSPACE?</p>
-          <h2 id="welcome-tips-title">Start here</h2>
-        </div>
-        <button className="text-button" onClick={hide}>
+      <div className="welcome-intro">
+        <Icon name="guide" />
+        <h2 id="welcome-tips-title">Start here</h2>
+        <span>Choose your next task.</span>
+        <button className="text-button" onClick={() => navigate("guide")}>
+          Open Quick Guide
+        </button>
+        <button className="text-button welcome-hide" onClick={hide}>
           Hide welcome tips
         </button>
       </div>
-      <p>
-        Pick the task you need today. You do not need to set up every section.
-      </p>
-      <TaskLinks user={user} navigate={navigate} />
-      <div className="guide-footer">
-        <button className="secondary" onClick={() => navigate("guide")}>
-          Open Quick Guide
-        </button>
-        <span>Find it again in the menu, under More on your phone.</span>
-      </div>
+      <TaskLinks user={user} navigate={navigate} compact />
     </section>
   );
 }

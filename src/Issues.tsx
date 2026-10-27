@@ -954,50 +954,64 @@ export function IssuesOverview({
       {!summary && !error && <p role="status">Loading attention items…</p>}
       {summary && (
         <div className="issue-attention-grid">
+          {summary.counts.urgent === 0 &&
+            summary.counts.assigned === 0 &&
+            (!issueManager(user.appRole) ||
+              summary.counts.supervisor === 0) && (
+              <p className="quiet-summary">
+                No urgent or assigned issues
+                {issueManager(user.appRole)
+                  ? ", or requests for supervisor attention"
+                  : ""}
+                .
+              </p>
+            )}
           {(
             [
               "urgent",
               "assigned",
               ...(issueManager(user.appRole) ? (["supervisor"] as const) : []),
             ] as const
-          ).map((key) => (
-            <section key={key}>
-              <h3>
-                {key === "urgent"
-                  ? "Urgent unresolved"
-                  : key === "assigned"
-                    ? "Assigned to me"
-                    : "Supervisor attention requested"}{" "}
-                ({summary.counts[key]})
-              </h3>
-              {summary[key].length ? (
-                <ul>
-                  {summary[key].map((i) => (
-                    <li key={i.id}>
-                      <button
-                        className="text-button"
-                        onClick={() => onOpen(i.id)}
-                      >
-                        {i.code} · {i.title}
-                      </button>{" "}
-                      · {issueStatusLabels[i.status]}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No items.</p>
-              )}
-              {key === "supervisor" && (
-                <p>Requested attention is separate from acknowledgement.</p>
-              )}
-              {summary.counts[key] > 5 && (
-                <p>
-                  Showing 5 most recently updated; use Issues &amp; Requests for
-                  all items.
-                </p>
-              )}
-            </section>
-          ))}
+          )
+            .filter((key) => summary.counts[key] > 0)
+            .map((key) => (
+              <section key={key}>
+                <h3>
+                  {key === "urgent"
+                    ? "Urgent unresolved"
+                    : key === "assigned"
+                      ? "Assigned to me"
+                      : "Supervisor attention requested"}{" "}
+                  ({summary.counts[key]})
+                </h3>
+                {summary[key].length ? (
+                  <ul>
+                    {summary[key].map((i) => (
+                      <li key={i.id}>
+                        <button
+                          className="text-button"
+                          onClick={() => onOpen(i.id)}
+                        >
+                          {i.code} · {i.title}
+                        </button>{" "}
+                        · {issueStatusLabels[i.status]}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No items.</p>
+                )}
+                {key === "supervisor" && (
+                  <p>Requested attention is separate from acknowledgement.</p>
+                )}
+                {summary.counts[key] > 5 && (
+                  <p>
+                    Showing 5 most recently updated; use Issues &amp; Requests
+                    for all items.
+                  </p>
+                )}
+              </section>
+            ))}
         </div>
       )}
     </section>
