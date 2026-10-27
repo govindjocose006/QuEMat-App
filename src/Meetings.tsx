@@ -1268,28 +1268,34 @@ export function MeetingsOverview({ open }: { open: (s: Selection) => void }) {
         <p>Loading meeting summary…</p>
       ) : (
         <>
+          {!data.meetings.length &&
+            !data.notices.length &&
+            !data.actions.length && (
+              <p className="quiet-summary">
+                No upcoming meetings, pinned notices or open meeting actions in
+                your view.
+              </p>
+            )}
           <div className="collaboration-columns">
-            <div>
-              <h3>Upcoming meetings</h3>
-              {!data.meetings.length && (
-                <p>No upcoming meetings in your scope.</p>
-              )}
-              {data.meetings.map((m) => (
-                <MeetingCard key={m.id} item={m} open={open} />
-              ))}
-            </div>
-            <div>
-              <h3>Pinned notices</h3>
-              {!data.notices.length && <p>No current pinned notices.</p>}
-              {data.notices.map((n) => (
-                <NoticeCard key={n.id} item={n} open={open} />
-              ))}
-            </div>
+            {data.meetings.length > 0 && (
+              <div>
+                <h3>Upcoming meetings</h3>
+                {data.meetings.map((m) => (
+                  <MeetingCard key={m.id} item={m} open={open} />
+                ))}
+              </div>
+            )}
+            {data.notices.length > 0 && (
+              <div>
+                <h3>Pinned notices</h3>
+                {data.notices.map((n) => (
+                  <NoticeCard key={n.id} item={n} open={open} />
+                ))}
+              </div>
+            )}
           </div>
-          <h3>My meeting actions</h3>
-          {!data.actions.length ? (
-            <p>No open meeting actions assigned to you.</p>
-          ) : (
+          {data.actions.length > 0 && <h3>My meeting actions</h3>}
+          {data.actions.length > 0 && (
             <ul>
               {data.actions.map((a) => (
                 <li key={a.id}>

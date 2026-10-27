@@ -22,6 +22,7 @@ import {
 import { api } from "./api.js";
 import {
   ErrorNotice,
+  Icon,
   Modal,
   Status,
   formatDate,
@@ -1355,6 +1356,7 @@ export function LiveUsage({
   onCalendar: () => void;
   onInstruments: (items: Instrument[]) => void;
 }) {
+  const [category, setCategory] = useState("all");
   const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null),
     [error, setError] = useState(""),
     [refresh, setRefresh] = useState(0);
@@ -1420,129 +1422,189 @@ export function LiveUsage({
         )}
       </section>
     );
+  const priority = items.filter((i) => i.priority && !i.archived);
+  const categories = [...new Set(priority.map((i) => i.category))];
+  // A category removed by an administrator must not leave a misleading empty list.
+  const selectedCategory = categories.includes(category) ? category : "all";
+  const upcoming = bookings.filter(
+    (b) =>
+      active(b) &&
+      (b.operatorId === user.id || b.bookedBy === user.id) &&
+      new Date(b.endsAt).getTime() > now,
+  );
   return (
-    <section>
+    <section className="monitoring-section" aria-label="Instrument activity">
       <div className="section-title monitoring-title">
-        <h2>Usage & next reservations</h2>
-        <button className="secondary" onClick={() => setRefresh((r) => r + 1)}>
-          Refresh monitoring
+        <div>
+          <p className="eyebrow">IN THE LAB</p>
+          <h2>Usage & next reservations</h2>
+        </div>
+        <button className="primary" onClick={onCalendar}>
+          <Icon name="calendar" /> Open calendar
         </button>
-        <button className="secondary" onClick={onCalendar}>
-          Open calendar
+      </div>
+      <div className="monitoring-toolbar">
+        <p className="field-hint">Actual usage requires check-in.</p>
+        <button
+          className="text-button"
+          onClick={() => setRefresh((r) => r + 1)}
+        >
+          Refresh monitoring
         </button>
       </div>
       <ErrorNotice message={error} />
-      <p className="field-hint">
-        Manual check-in confirms actual usage. Scheduled time alone does not.{" "}
-        {updated && `Last successful refresh ${formatDate(updated)}.`}
+      <p className="monitoring-updated">
+        Last successful refresh {formatDate(updated)} · IST
       </p>
-      <div className="sample-grid">
-        {items
-          .filter((i) => i.priority && !i.archived)
+      <div
+        className="instrument-filters"
+        role="group"
+        aria-label="Instrument category"
+      >
+        {["all", ...categories].map((value) => (
+          <button
+            key={value}
+            aria-pressed={selectedCategory === value}
+            onClick={() => setCategory(value)}
+          >
+            {value === "all" ? "All priority" : value}
+          </button>
+        ))}
+      </div>
+      <div className="usage-list">
+        {priority
+          .filter(
+            (i) =>
+              selectedCategory === "all" || i.category === selectedCategory,
+          )
           .map((i) => {
-            const list = bookings.filter((b) => b.instrumentId === i.id),
-              running = list.find((b) => b.status === "in_progress"),
-              scheduled = list.find(
-                (b) =>
-                  b.status === "confirmed" &&
-                  new Date(b.startsAt).getTime() <= now &&
-                  new Date(b.endsAt).getTime() > now,
-              ),
-              next = list.find(
-                (b) => active(b) && new Date(b.startsAt).getTime() > now,
-              ),
-              lastHandover = handovers.find((b) => b.instrumentId === i.id),
-              cooldown = list.find(
-                (b) =>
-                  b.actualEnd &&
-                  new Date(b.actualEnd).getTime() + b.cleanupMinutes * 60000 >
-                    now,
-              );
+            const list = bookings.filter((b) => b.instrumentId === i.id);
+            const running = list.find((b) => b.status === "in_progress");
+            const scheduled = list.find(
+              (b) =>
+                b.status === "confirmed" &&
+                new Date(b.startsAt).getTime() <= now &&
+                new Date(b.endsAt).getTime() > now,
+            );
+            const next = list.find(
+              (b) => active(b) && new Date(b.startsAt).getTime() > now,
+            );
+            const lastHandover = handovers.find((b) => b.instrumentId === i.id);
+            const cooldown = list.find(
+              (b) =>
+                b.actualEnd &&
+                new Date(b.actualEnd).getTime() + b.cleanupMinutes * 60000 >
+                  now,
+            );
             return (
-              <article className="panel" key={i.id}>
-                <h3>{i.name}</h3>
-                <p>
-                  Instrument status: <Status value={i.status} />
-                </p>
-                <strong>
-                  {running
-                    ? "Confirmed in use"
-                    : cooldown
-                      ? "Cleanup buffer active"
-                      : scheduled
-                        ? scheduled.kind === "maintenance"
-                          ? "Scheduled maintenance"
-                          : "Scheduled now · not checked in"
-                        : i.status !== "available"
-                          ? i.status
-                          : "No confirmed usage"}
-                </strong>
-                {running && (
-                  <>
-                    <p>
-                      {running.operatorName} · {sampleLabels(running)}
-                    </p>
-                    <p>
-                      {running.measurementType} · checked in{" "}
-                      {formatDate(running.actualStart!)}
-                    </p>
-                    {new Date(running.endsAt).getTime() < now && (
-                      <p className="notice error">
-                        Overdue — awaiting completion
-                        {running.category === "Furnace" ? " and unloading" : ""}
-                        . Next booking may be affected.
-                      </p>
-                    )}
-                    <p>Usage updated {formatDate(running.updatedAt)}</p>
-                    {running.handoverNotes && (
-                      <p className="preserve-lines">
-                        Current run handover: {running.handoverNotes}
-                      </p>
-                    )}
-                  </>
-                )}
-                {scheduled && !running && (
-                  <p>
-                    {scheduled.operatorName} · {scheduled.measurementType} ·{" "}
-                    {sampleLabels(scheduled)}
-                  </p>
-                )}
-                <p>
-                  <strong>Next:</strong>{" "}
-                  {next
-                    ? `${formatDate(next.startsAt)} · ${next.operatorName} · ${next.measurementType} · ${next.status}`
-                    : "No booking in the next 90 days"}
-                </p>
-                {next && next.sampleSnapshots.length > 0 && (
-                  <p>Next samples: {sampleLabels(next)}</p>
-                )}
-                <div className="last-handover">
-                  <h4>Last handover</h4>
-                  {lastHandover ? (
+              <article
+                className={`panel usage-card${running ? " usage-running" : ""}`}
+                key={i.id}
+              >
+                <div className="usage-identity">
+                  <p className="category">{i.category}</p>
+                  <h3>{i.name}</h3>
+                  <span aria-label="Instrument status">
+                    <Status value={i.status} />
+                  </span>
+                </div>
+                <div className="usage-current">
+                  <span className="usage-label">CURRENT</span>
+                  <strong>
+                    {running
+                      ? "Confirmed in use"
+                      : cooldown
+                        ? "Cleanup buffer active"
+                        : scheduled
+                          ? scheduled.kind === "maintenance"
+                            ? "Scheduled maintenance"
+                            : "Scheduled now · not checked in"
+                          : i.status !== "available"
+                            ? i.status.replaceAll("_", " ")
+                            : "No confirmed usage"}
+                  </strong>
+                  {running && (
                     <>
                       <p>
-                        {lastHandover.operatorName} ·{" "}
-                        {formatDate(lastHandover.actualEnd!)} ·{" "}
-                        {lastHandover.status}
+                        {running.operatorName} · {sampleLabels(running)}
                       </p>
-                      <p>Samples: {sampleLabels(lastHandover)}</p>
-                      <p className="preserve-lines">
-                        {lastHandover.handoverNotes ||
-                          "No handover notes recorded."}
+                      <p>
+                        {running.measurementType} · checked in{" "}
+                        {formatDate(running.actualStart!)}
                       </p>
-                      {lastHandover.category === "Furnace" && (
-                        <p>
-                          {lastHandover.unloaded
-                            ? "Unloading confirmed"
-                            : "Unloading not confirmed"}
+                      <p>Scheduled until {formatDate(running.endsAt)}</p>
+                      {new Date(running.endsAt).getTime() < now && (
+                        <p className="notice error">
+                          Overdue — awaiting completion
+                          {running.category === "Furnace"
+                            ? " and unloading"
+                            : ""}
+                          . Next booking may be affected.
+                        </p>
+                      )}
+                      <p className="field-hint">
+                        Usage updated {formatDate(running.updatedAt)}
+                      </p>
+                      {running.handoverNotes && (
+                        <p className="preserve-lines">
+                          Current run handover: {running.handoverNotes}
                         </p>
                       )}
                     </>
-                  ) : (
-                    <p>No completed handover recorded.</p>
+                  )}
+                  {scheduled && !running && (
+                    <>
+                      <p>
+                        {scheduled.operatorName} · {scheduled.measurementType} ·{" "}
+                        {sampleLabels(scheduled)}
+                      </p>
+                      <p>
+                        {formatDate(scheduled.startsAt)} –{" "}
+                        {formatDate(scheduled.endsAt)}
+                      </p>
+                    </>
                   )}
                 </div>
-                <details>
+                <div className="usage-next">
+                  <span className="usage-label">NEXT RESERVATION</span>
+                  {next ? (
+                    <>
+                      <strong>{formatDate(next.startsAt)}</strong>
+                      <p>
+                        {next.operatorName} · {next.measurementType} ·{" "}
+                        {next.status.replaceAll("_", " ")}
+                      </p>
+                      {next.sampleSnapshots.length > 0 && (
+                        <p>Next samples: {sampleLabels(next)}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p>No booking in the next 90 days</p>
+                  )}
+                </div>
+                {lastHandover && (
+                  <div className="last-handover">
+                    <h4>Last handover</h4>
+                    <p>
+                      {lastHandover.operatorName} ·{" "}
+                      {formatDate(lastHandover.actualEnd!)} ·{" "}
+                      {lastHandover.status}
+                    </p>
+                    <p>Samples: {sampleLabels(lastHandover)}</p>
+                    <p className="preserve-lines">
+                      {lastHandover.handoverNotes ||
+                        "No handover notes recorded."}
+                    </p>
+                    {lastHandover.category === "Furnace" && (
+                      <p>
+                        {lastHandover.unloaded
+                          ? "Unloading confirmed"
+                          : "Unloading not confirmed"}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <details className="usage-details">
                   <summary>Instrument details</summary>
                   <p>{i.bookingRules || "No additional rules recorded."}</p>
                   <p>
@@ -1550,28 +1612,36 @@ export function LiveUsage({
                   </p>
                   <p>Training: {i.trainedUsers.join(", ") || "Not recorded"}</p>
                   <p>{i.trainingPolicy}</p>
+                  {!lastHandover && <p>No completed handover recorded.</p>}
                 </details>
               </article>
             );
           })}
+        {!priority.length && (
+          <p className="panel">
+            No priority instruments configured. Use Instruments to view the full
+            register.
+          </p>
+        )}
       </div>
-      <div className="panel">
-        <h3>My upcoming measurements</h3>
-        {bookings
-          .filter(
-            (b) =>
-              active(b) &&
-              (b.operatorId === user.id || b.bookedBy === user.id) &&
-              new Date(b.endsAt).getTime() > now,
-          )
-          .slice(0, 10)
-          .map((b) => (
-            <p key={b.id}>
-              {b.instrumentName} · {b.measurementType} ·{" "}
-              {formatDate(b.startsAt)} · {b.status.replaceAll("_", " ")}
-            </p>
-          ))}
-      </div>
+      <section className="panel upcoming-panel">
+        <h2>My upcoming measurements</h2>
+        {!upcoming.length && (
+          <p>
+            No upcoming reservations for you. Open the calendar to plan a
+            measurement.
+          </p>
+        )}
+        {upcoming.slice(0, 10).map((b) => (
+          <p key={b.id}>
+            {b.instrumentName} · {b.measurementType} · {formatDate(b.startsAt)}{" "}
+            · {b.status.replaceAll("_", " ")}
+          </p>
+        ))}
+        {upcoming.length > 10 && (
+          <p>Showing 10 upcoming measurements. Open the calendar to see all.</p>
+        )}
+      </section>
     </section>
   );
 }

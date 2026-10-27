@@ -226,35 +226,24 @@ function Workspace({
   useEffect(() => {
     if (!admin && (page === "members" || page === "audit")) setPage("overview");
   }, [admin, page]);
-  const pages: Page[] = admin
-    ? [
-        "overview",
-        "calendar",
-        "samples",
-        "weekly",
-        "orders",
-        "issues",
-        "meetings",
-        "notifications",
-        "instruments",
-        "members",
-        "audit",
-        "settings",
+  const navigationGroups: { label: string; pages: Page[] }[] = [
+    {
+      label: "Lab work",
+      pages: ["overview", "calendar", "samples", "instruments"],
+    },
+    {
+      label: "Coordination",
+      pages: ["weekly", "issues", "orders", "meetings", "notifications"],
+    },
+    {
+      label: "Workspace",
+      pages: [
         "guide",
-      ]
-    : [
-        "overview",
-        "calendar",
-        "samples",
-        "weekly",
-        "orders",
-        "issues",
-        "meetings",
-        "notifications",
-        "instruments",
         "settings",
-        "guide",
-      ];
+        ...(admin ? (["members", "audit"] as Page[]) : []),
+      ],
+    },
+  ];
   const active = items?.filter((i) => !i.archived) ?? [];
   const primaryPages: Page[] = ["overview", "calendar", "notifications"];
   const badge =
@@ -293,9 +282,13 @@ function Workspace({
       </a>
       <aside className="sidebar">
         <Brand small />
-        <div className="workspace-label">LAB WORKSPACE</div>
         <nav className="desktop-navigation" aria-label="Main navigation">
-          {pages.map(navButton)}
+          {navigationGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <p className="workspace-label">{group.label}</p>
+              {group.pages.map(navButton)}
+            </div>
+          ))}
         </nav>
         <nav className="mobile-navigation" aria-label="Main navigation">
           <div className="mobile-primary">
@@ -304,6 +297,7 @@ function Workspace({
               className={`nav-item more-toggle${!primaryPages.includes(page) ? " selected" : ""}`}
               aria-expanded={moreOpen}
               aria-controls="mobile-more-navigation"
+              data-more-toggle="true"
               onClick={() => setMoreOpen((v) => !v)}
             >
               <span aria-hidden="true">⋯</span>
@@ -314,8 +308,37 @@ function Workspace({
             className="mobile-more-panel"
             id="mobile-more-navigation"
             hidden={!moreOpen}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setMoreOpen(false);
+                document
+                  .querySelector<HTMLButtonElement>("[data-more-toggle]")
+                  ?.focus();
+              }
+            }}
           >
-            {pages.filter((p) => !primaryPages.includes(p)).map(navButton)}
+            <div className="mobile-more-heading">
+              <strong>Explore workspace</strong>
+              <button
+                className="text-button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  document
+                    .querySelector<HTMLButtonElement>("[data-more-toggle]")
+                    ?.focus();
+                }}
+              >
+                Close menu
+              </button>
+            </div>
+            {navigationGroups.map((group) => (
+              <div className="nav-group" key={group.label}>
+                <p className="workspace-label">{group.label}</p>
+                {group.pages
+                  .filter((p) => !primaryPages.includes(p))
+                  .map(navButton)}
+              </div>
+            ))}
           </div>
         </nav>
         <div className="sidebar-bottom">
@@ -342,7 +365,8 @@ function Workspace({
       <div className="workspace">
         <header className="topbar">
           <span>
-            Workspace <span className="breadcrumb">/</span> {pageLabels[page]}
+            <strong>QuEMat</strong>
+            <span className="topbar-context"> / Lab workspace</span>
           </span>
           <span className="private-label">
             <Icon name="lock" /> Members only
@@ -379,8 +403,13 @@ function Workspace({
         <main id="main-content" tabIndex={-1}>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">QUEMAT LAB HUB</p>
               <h1>{page === "overview" ? "Lab overview" : pageLabels[page]}</h1>
+              {page === "overview" && (
+                <p className="page-description">
+                  Welcome, {user.fullName.split(" ")[0]}. Here’s what’s
+                  happening in the lab.
+                </p>
+              )}
             </div>
             <div className="today">
               {new Intl.DateTimeFormat("en-IN", {
@@ -403,13 +432,6 @@ function Workspace({
           )}
           {page === "overview" && (
             <>
-              <div className="welcome-line">
-                <div>
-                  <h2>Welcome, {user.fullName.split(" ")[0]}.</h2>
-                  <p>Your laboratory’s people and instruments, in one place.</p>
-                </div>
-                <span className="phase-label">Lab operations</span>
-              </div>
               {welcomeTips.visible && (
                 <WelcomeTips
                   user={user}
@@ -422,13 +444,12 @@ function Workspace({
                   }}
                 />
               )}
-              <div className="stats">
+              <div className="overview-totals" aria-label="Instrument summary">
                 <div>
                   <span>REGISTERED INSTRUMENTS</span>
                   <strong>
                     {items ? active.length.toString().padStart(2, "0") : "—"}
                   </strong>
-                  <small>Shared lab resources</small>
                 </div>
                 <div>
                   <span>PRIORITY RESOURCES</span>
@@ -440,7 +461,6 @@ function Workspace({
                           .padStart(2, "0")
                       : "—"}
                   </strong>
-                  <small>Magnetometry, furnaces & thin films</small>
                 </div>
                 <div>
                   <span>REQUIRING ATTENTION</span>
@@ -452,39 +472,42 @@ function Workspace({
                           .padStart(2, "0")
                       : "—"}
                   </strong>
-                  <small>Maintenance or out of service</small>
                 </div>
               </div>
-              <LiveUsage
-                user={user}
-                onCalendar={() => setPage("calendar")}
-                onInstruments={acceptInstruments}
-              />
-              <OrdersOverview
-                open={() => {
-                  setOrderId(null);
-                  setPage("orders");
-                }}
-              />
-              <IssuesOverview
-                user={user}
-                onOpen={(id) => {
-                  setIssueId(id);
-                  setPage("issues");
-                }}
-              />
-              <MeetingsOverview
-                open={(selection) => {
-                  setCollaboration(selection);
-                  setPage("meetings");
-                }}
-              />
-              <WeeklyOverview
-                onOpen={() => {
-                  setWeeklyId(null);
-                  setPage("weekly");
-                }}
-              />
+              <div className="overview-layout">
+                <LiveUsage
+                  user={user}
+                  onCalendar={() => setPage("calendar")}
+                  onInstruments={acceptInstruments}
+                />
+                <div className="overview-rail" aria-label="Lab follow-ups">
+                  <IssuesOverview
+                    user={user}
+                    onOpen={(id) => {
+                      setIssueId(id);
+                      setPage("issues");
+                    }}
+                  />
+                  <MeetingsOverview
+                    open={(selection) => {
+                      setCollaboration(selection);
+                      setPage("meetings");
+                    }}
+                  />
+                  <WeeklyOverview
+                    onOpen={() => {
+                      setWeeklyId(null);
+                      setPage("weekly");
+                    }}
+                  />
+                  <OrdersOverview
+                    open={() => {
+                      setOrderId(null);
+                      setPage("orders");
+                    }}
+                  />
+                </div>
+              </div>
             </>
           )}
           {page === "instruments" &&

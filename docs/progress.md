@@ -1,5 +1,16 @@
 # QuEMat Lab Hub progress
 
+## Workspace UI refresh — preview preparation, 2026-10-27
+
+The released application now includes Phase 4 and PRs #11–12 at main `1e59bc9`.
+The older phase-status sections below are historical and are not the current release inventory.
+
+The `feat/workspace-clarity` branch reorganizes the existing interface: grouped
+navigation, compact welcome tips and instrument rows, separate follow-up summaries,
+and persistent phone navigation. No database, permission or infrastructure changes.
+See [workspace refresh](workspace-refresh.md) and its PR for validation and screenshots.
+The redesign is for preview review; it has not been merged or released to production.
+
 ## Current released baseline — 2026-10-25 (Asia/Kolkata)
 
 Phases 1, 2, 3A, 3B and 3C are released. Phase 3C was merged through
