@@ -735,3 +735,19 @@ it("rejects database-unsupported report text as a validation error", async () =>
         .status,
     ).toBe(400);
 });
+
+it("rejects invalid Unicode in report data-link URLs before database writes", async () => {
+  const c = await client();
+  for (const url of [
+    "https://example.test/\u0000",
+    "https://example.test/\ud800",
+  ])
+    expect(
+      (
+        await c.write("/weekly/reports", {
+          week,
+          content: full({ dataLinks: [{ label: "data", url }] }),
+        })
+      ).status,
+    ).toBe(400);
+});

@@ -41,15 +41,13 @@ export const weekSchema = z.iso
       new Date(v + "T00:00:00Z").getUTCDay() === 1,
     "Select a Monday week start (2000–2100).",
   );
+const validUnicode = (value: string) => !/[\u0000\uD800-\uDFFF]/u.test(value);
 const text = (n: number) =>
   z
     .string()
     .trim()
     .max(n)
-    .refine(
-      (value) => !/[\u0000\uD800-\uDFFF]/u.test(value),
-      "Use valid Unicode text without null characters.",
-    );
+    .refine(validUnicode, "Use valid Unicode text without null characters.");
 export const reportSchema = z.object({
   project: text(500).default(""),
   workCompleted: text(6000).default(""),
@@ -67,6 +65,10 @@ export const reportSchema = z.object({
         url: z
           .url()
           .max(1000)
+          .refine(
+            validUnicode,
+            "Use a valid Unicode URL without null characters.",
+          )
           .refine((v) => {
             const u = new URL(v);
             return (
