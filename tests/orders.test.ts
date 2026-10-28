@@ -429,7 +429,11 @@ it("keeps routine orders visible to the supervisor without broadcasting every up
       (n: { orderId: string }) => n.orderId === o.id,
     ),
   ).toBe(true);
-  await s.write(`/orders/${o.id}/record`, order(o.version));
+  const recorded = await s.write(
+    `/orders/${o.id}/record`,
+    order(o.version, { orderedBy: ids.supervisor }),
+  );
+  expect(recorded.status, recorded.body.error).toBe(200);
   expect(
     (await s.get("/notifications")).body.some(
       (n: { orderId: string }) => n.orderId === o.id,

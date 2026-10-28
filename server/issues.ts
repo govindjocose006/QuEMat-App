@@ -144,14 +144,13 @@ export function installIssues(
     );
     const supervisorEvent =
       (r.supervisorAttention &&
-        !before?.supervisorAttention &&
-        verb !== "comment added") ||
+        (before ? !before.supervisorAttention : key === "1:created")) ||
       (!!before?.supervisorAttention && !r.supervisorAttention) ||
       (r.supervisorAttention &&
         !!before &&
         before.status !== r.status &&
         (r.status === "resolved" || before.status === "resolved"));
-    if (supervisorEvent)
+    if (r.supervisorAttention || before?.supervisorAttention)
       for (const p of await tx.query<{ id: string }>(
         "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role IN ('supervisor','administrator')",
       ))
