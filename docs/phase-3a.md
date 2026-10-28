@@ -67,8 +67,11 @@ Reviewers comment, assign follow-ups to the report author (optional due date), a
 mark a specific revision reviewed. Authors can reply. The author or current
 reviewer can complete/reopen follow-ups; the state-change history is retained.
 Comments and review acknowledgements remain attached to their original revision.
-A new submission needs a new review. In-app notifications persist for submissions,
-comments, reviews and follow-up changes. There are no background reminders.
+A new submission needs a new review. The author receives notifications for the
+supervisor's feedback, review and follow-up changes. Routine submissions and author
+replies do not notify the supervisor; she can check the review queue when needed.
+Existing notification history is retained and filtered by current report access.
+There are no background reminders.
 
 The dashboard shows the current week, the user's report state/open follow-ups and,
 for reviewers, scoped submitted/missing/awaiting-review counts. **Print meeting
