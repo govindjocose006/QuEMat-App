@@ -1,21 +1,18 @@
-## 28 October 2026 — Supervisor privacy and focused notifications
-
-Prepared from released main `9ae2097`. Restrict cross-author weekly report access to the application supervisor, including old notification links and counts. Add a version-checked escalation action for assigned issue handlers, and send supervisors escalation lifecycle alerts instead of routine work updates. Stop automatic supervisor broadcasts for unrelated bookings, orders and meetings; retain monitoring and direct participation alerts. No schema migration or production data change. Validation and release status are recorded in the PR.
-
 # QuEMat Lab Hub progress
 
-## Workspace UI refresh — preview preparation, 2026-10-27
+## Current production — 28 October 2026 (Asia/Kolkata)
 
-The released application now includes Phase 4 and PRs #11–12 at main `1e59bc9`.
-The older phase-status sections below are historical and are not the current release inventory.
+Released main is `64da372`, including Phases 1–4 and PRs #11–14. The database has migrations 001–006. [PR #14](https://github.com/govindjocose006/QuEMat-App/pull/14) records the deployment and validation.
 
-The `feat/workspace-clarity` branch reorganizes the existing interface: grouped
-navigation, compact welcome tips and instrument rows, separate follow-up summaries,
-and persistent phone navigation. No database, permission or infrastructure changes.
-See [workspace refresh](workspace-refresh.md) and its PR for validation and screenshots.
-The redesign is for preview review; it has not been merged or released to production.
+The workspace redesign (PR #13) is live: grouped navigation, compact welcome tips and instrument rows, separate follow-up summaries and persistent phone navigation.
 
-## Current released baseline — 2026-10-25 (Asia/Kolkata)
+Supervisor privacy and focused notifications (PR #14) are live: only authors and the supervisor can read submitted weekly reports; drafts stay author-only. Assigned issue handlers can escalate to the supervisor, who receives escalation milestones while retaining full monitoring access.
+
+The audit recovery fixes are being prepared separately; they are not part of this production baseline.
+
+All dated release sections below are historical snapshots.
+
+## Historical released baseline — 2026-10-25 (Asia/Kolkata)
 
 Phases 1, 2, 3A, 3B and 3C are released. Phase 3C was merged through
 [PR #6](https://github.com/govindjocose006/QuEMat-App/pull/6).
@@ -34,7 +31,7 @@ merged feature PRs. Detailed historical preparation notes remain in Git history;
 this summary replaces their outdated pending-release descriptions without
 republishing infrastructure inventories or operational history.
 
-## Completed features
+## Features at the 25 October baseline
 
 - Authentication, approved membership and administrator-controlled permissions.
 - Fifteen configured instruments; secondary training information and retained history.

@@ -225,3 +225,78 @@ test("malformed sample response shows a recoverable error instead of crashing", 
     page.getByRole("heading", { name: "Shared sample register" }),
   ).toBeVisible();
 });
+
+test("sign-in recovers when the anonymous session cookie has expired", async ({
+  page,
+  context,
+}, info) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Email", { exact: true })
+    .fill(`browser-weekly-member-${info.project.name}@example.test`);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("Browser-tests-only-passphrase!");
+  // Reproduce browser expiry while preserving the open form and its old CSRF token.
+  await context.clearCookies();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toBeVisible();
+});
+
+for (const filter of ["person", "project"] as const)
+  test(`failed ${filter} review filter hides stale results and retries the current selection`, async ({
+    page,
+  }, info) => {
+    await login(page, info.project.name, "weekly", "supervisor");
+    await page
+      .getByRole("button", { name: "Review weekly reports", exact: true })
+      .click();
+    await expect(page.locator(".weekly-summary").first()).toBeVisible();
+    let failNext = true;
+    await page.route("**/api/weekly/review?*", (route) => {
+      if (new URL(route.request().url()).searchParams.has(filter) && failNext) {
+        failNext = false;
+        return route.fulfill({
+          status: 503,
+          json: { error: "Synthetic filtered review outage" },
+        });
+      }
+      return route.continue();
+    });
+    if (filter === "person")
+      await page
+        .getByLabel("Filter by person")
+        .selectOption({ label: `Weekly ${info.project.name} member` });
+    else
+      await page
+        .getByLabel("Filter by project")
+        .fill(`Weekly ${info.project.name}`);
+    await expect(page.getByRole("alert")).toContainText(
+      "Synthetic filtered review outage",
+    );
+    await expect(page.locator(".weekly-print")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Print weekly meeting summary" }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Retry loading review" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.locator(".weekly-summary").first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Print weekly meeting summary" }),
+    ).toBeEnabled();
+    if (filter === "person") {
+      await expect(page.locator(".weekly-summary")).toHaveCount(1);
+      await expect(page.locator(".weekly-summary h3")).toContainText(
+        `Weekly ${info.project.name} member`,
+      );
+    } else {
+      await expect(page.getByLabel("Filter by project")).toHaveValue(
+        `Weekly ${info.project.name}`,
+      );
+    }
+  });

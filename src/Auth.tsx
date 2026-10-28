@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Member, Session } from "../shared/schema.js";
 import { academicRoles } from "../shared/options.js";
-import { api } from "./api.js";
+import { api, authenticate } from "./api.js";
 import { Brand, ErrorNotice, Icon, messageOf } from "./components.js";
 import { MembershipSteps } from "./QuickGuide.js";
 
@@ -19,7 +19,7 @@ export function Auth({ onSession }: { onSession: (session: Session) => void }) {
       if (register && password !== form.get("confirm"))
         throw new Error("The passwords do not match.");
       onSession(
-        await api<Session>(`/auth/${register ? "register" : "login"}`, "POST", {
+        await authenticate(register ? "register" : "login", {
           email: String(form.get("email")).trim(),
           password,
         }),

@@ -12,6 +12,7 @@ import {
 } from "../server/db.js";
 import { bootstrapAdmin } from "../server/auth.js";
 import {
+  reportSchema,
   emptyReport,
   weekStart,
   weekBounds,
@@ -668,4 +669,69 @@ it("supervisor can monitor reports from every application role without submissio
     rows.filter((x: { status: string }) => x.status === "submitted"),
   ).toHaveLength(4);
   expect((await s.get("/notifications")).body).toHaveLength(0);
+});
+
+for (const symbol of ["α", '"', "🧪"])
+  it(
+    "saves and submits valid reports with large UTF-8 or JSON-escaped content " +
+      JSON.stringify(symbol),
+    async () => {
+      const content = full(
+        Object.fromEntries(
+          [
+            "workCompleted",
+            "experiments",
+            "results",
+            "blockers",
+            "nextPlan",
+            "helpNeeded",
+          ].map((k) => [k, symbol.repeat(6000 / symbol.length)]),
+        ),
+      );
+      expect(reportSchema.safeParse(content).success).toBe(true);
+      expect(
+        Buffer.byteLength(JSON.stringify({ week, content })),
+      ).toBeGreaterThan(65536);
+      const c = await client();
+      const r = await draft(c, content);
+      const updated = await c.write(
+        `/weekly/reports/${r.id}`,
+        { version: r.version, content },
+        "put",
+      );
+      expect(updated.status).toBe(200);
+      const submitted = await submit(c, updated.body);
+      expect(submitted.revisions[0].content.results).toBe(content.results);
+    },
+  );
+it("keeps bounded payload limits on report and unrelated endpoints", async () => {
+  const c = await client();
+  expect(
+    (
+      await c.write("/weekly/reports", {
+        week,
+        content: full({ results: "x".repeat(513 * 1024) }),
+      })
+    ).status,
+  ).toBe(413);
+  expect(
+    (await c.write("/issues", { description: "x".repeat(65 * 1024) })).status,
+  ).toBe(413);
+  expect(
+    (
+      await c.write("/weekly/reports", {
+        week,
+        content: full({ results: "x".repeat(6001) }),
+      })
+    ).status,
+  ).toBe(400);
+});
+
+it("rejects database-unsupported report text as a validation error", async () => {
+  const c = await client();
+  for (const results of ["null\u0000character", "unpaired\ud800surrogate"])
+    expect(
+      (await c.write("/weekly/reports", { week, content: full({ results }) }))
+        .status,
+    ).toBe(400);
 });
