@@ -43,15 +43,16 @@ linked data. File uploads await separately configured private storage.
 | Application permission | Access |
 | --- | --- |
 | Approved member | Own drafts, submissions, history and discussion; own follow-ups |
-| Approved mentor | Own reports plus submitted reports of currently assigned mentees |
-| Approved supervisor or administrator | Submitted reports across the lab |
+| Approved mentor or administrator | Own reports only |
+| Approved supervisor | Submitted reports across the lab; own drafts |
 | Pending, inactive or incomplete onboarding | No weekly workspace access |
 
 An academic **Supervisor** role grants no review permission. Administrators assign
-application permissions using the existing audited membership controls. Mentor
-review requires both the application `mentor` permission and current mentor
-assignment. A changed assignment immediately changes access. Nobody reviews their
-own report. Reviewers cannot inspect other people's draft content.
+application permissions using the existing audited membership controls. As of the
+28 October 2026 privacy policy, mentor assignment does not grant report access.
+Only the supervisor reviews other authors. Nobody reviews their own report, and
+reviewers cannot inspect other people’s draft content. Earlier release-validation
+notes below describe the historical policy, which this policy supersedes.
 
 Filter **Review weekly reports** by week, person and project. The missing roster
 includes currently approved/onboarded members and mentors whose accounts existed
@@ -66,8 +67,11 @@ Reviewers comment, assign follow-ups to the report author (optional due date), a
 mark a specific revision reviewed. Authors can reply. The author or current
 reviewer can complete/reopen follow-ups; the state-change history is retained.
 Comments and review acknowledgements remain attached to their original revision.
-A new submission needs a new review. In-app notifications persist for submissions,
-comments, reviews and follow-up changes. There are no background reminders.
+A new submission needs a new review. The author receives notifications for the
+supervisor's feedback, review and follow-up changes. Routine submissions and author
+replies do not notify the supervisor; she can check the review queue when needed.
+Existing notification history is retained and filtered by current report access.
+There are no background reminders.
 
 The dashboard shows the current week, the user's report state/open follow-ups and,
 for reviewers, scoped submitted/missing/awaiting-review counts. **Print meeting

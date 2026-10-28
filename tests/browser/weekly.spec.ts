@@ -152,7 +152,7 @@ test("weekly drafts, selected records, review-before-submit and revision history
     summary: "Synthetic browser check complete",
   });
 });
-test("assigned mentor review, follow-ups, notifications, filters and printable meeting summary", async ({
+test("private reports, supervisor review, follow-ups, notifications and printable summary", async ({
   page,
 }, info) => {
   const device = info.project.name,
@@ -178,6 +178,18 @@ test("assigned mentor review, follow-ups, notifications, filters and printable m
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await login(page, "mentor", device);
   await openWeekly(page);
+  await expect(
+    page.getByRole("button", { name: "Review weekly reports", exact: true }),
+  ).toHaveCount(0);
+  expect((await page.request.get(`/api/weekly/reports/${r.id}`)).status()).toBe(
+    404,
+  );
+  expect(
+    (await page.request.get(`/api/weekly/review?week=${week}`)).status(),
+  ).toBe(403);
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await login(page, "supervisor", device);
+  await openWeekly(page);
   page.once("dialog", (d) => d.accept());
   await page.getByLabel("Week beginning (Monday)").fill(week);
   await page
@@ -186,6 +198,9 @@ test("assigned mentor review, follow-ups, notifications, filters and printable m
   await expect(
     page.getByRole("heading", { name: "Weekly meeting summary", exact: true }),
   ).toBeVisible();
+  await page
+    .getByLabel("Filter by person")
+    .selectOption({ label: `Weekly ${device} member` });
   await expect(page.locator(".weekly-summary")).toHaveCount(1);
   await page
     .getByRole("button", {

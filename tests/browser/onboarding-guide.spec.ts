@@ -122,7 +122,7 @@ test("member can learn, hide and reopen tips without affecting another account",
 });
 
 for (const scenario of [
-  { role: "mentor", title: "Update and review progress", target: "weekly" },
+  { role: "mentor", title: "Write a weekly update", target: "weekly" },
   { role: "supervisor", title: "Review weekly updates", target: "weekly" },
   { role: "administrator", title: "Welcome a new member", target: "members" },
 ]) {

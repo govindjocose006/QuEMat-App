@@ -425,7 +425,7 @@ function Detail({
   useEffect(() => {
     void reload();
   }, [reload]);
-  async function act(e: FormEvent, kind: "status" | "comment") {
+  async function act(e: FormEvent, kind: "status" | "comment" | "attention") {
     e.preventDefault();
     if (!item) return;
     setBusy(true);
@@ -434,29 +434,38 @@ function Detail({
     try {
       setItem(
         await api<IssueDetail>(
-          `/issues/${id}/${kind === "status" ? "status" : "comments"}`,
+          `/issues/${id}/${kind === "comment" ? "comments" : kind}`,
           "POST",
           kind === "status"
             ? { version: item.version, status: next, reason }
-            : {
-                body,
-                dataLinks:
-                  linkUrl || linkLabel
-                    ? [{ label: linkLabel, url: linkUrl }]
-                    : [],
-              },
+            : kind === "attention"
+              ? {
+                  version: item.version,
+                  supervisorAttention: !item.supervisorAttention,
+                }
+              : {
+                  body,
+                  dataLinks:
+                    linkUrl || linkLabel
+                      ? [{ label: linkLabel, url: linkUrl }]
+                      : [],
+                },
         ),
       );
       if (kind === "status") {
         setReason("");
         setNext("");
-      } else {
+      } else if (kind === "comment") {
         setBody("");
         setLinkLabel("");
         setLinkUrl("");
       }
       setNotice(
-        kind === "status" ? "Status and history saved." : "Comment saved.",
+        kind === "status"
+          ? "Status and history saved."
+          : kind === "attention"
+            ? "Supervisor attention updated."
+            : "Comment saved.",
       );
       onChanged();
     } catch (e) {
@@ -520,6 +529,20 @@ function Detail({
               Decision record only; no automatic ordering or payment. Record any
               decision explicitly in a comment or status reason.
             </p>
+          )}
+          {canDiscussIssue(user, item) && (
+            <form onSubmit={(e) => void act(e, "attention")}>
+              <p>
+                Let the assigned member handle routine work. Request supervisor
+                attention when her input or decision is needed. She can still
+                view every issue.
+              </p>
+              <button className="secondary" disabled={busy}>
+                {item.supervisorAttention
+                  ? "Clear supervisor attention"
+                  : "Request supervisor attention"}
+              </button>
+            </form>
           )}
           {canEditIssue(user, item) && (
             <button className="secondary" onClick={() => onEdit(item)}>

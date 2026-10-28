@@ -63,9 +63,9 @@ function startingTasks(role: Member["appRole"]): Task[] {
     return [
       {
         page: "weekly",
-        title: "Update and review progress",
+        title: "Write a weekly update",
         description:
-          "Submit your own update; use Review weekly reports for your assigned students.",
+          "Submit your own private update for the supervisor to review.",
       },
       bookingTask,
       issueTask,
@@ -161,7 +161,7 @@ export function QuickGuide({
   navigate: (page: Page) => void;
   showWelcome: () => void;
 }) {
-  const reviewer = user.appRole !== "member";
+  const reviewer = user.appRole === "supervisor";
   const manager =
     user.appRole === "administrator" || user.appRole === "supervisor";
   const student =
@@ -244,13 +244,13 @@ export function QuickGuide({
           {reviewer ? (
             <p>
               Use Review weekly reports to read submissions and add feedback.
-              Mentors review their assigned students; supervisors and
-              administrators have the wider review view.
+              Only the supervisor can review other members’ reports. Routine
+              submissions appear here without sending you an inbox alert.
             </p>
           ) : (
             <p>
-              Your submitted report is available to supervisors, administrators
-              and your assigned mentor with review permission.
+              Your submitted report is visible only to you and the supervisor.
+              Other members, mentors and administrators cannot read it.
             </p>
           )}
           <button className="secondary" onClick={() => navigate("weekly")}>
@@ -266,8 +266,10 @@ export function QuickGuide({
               appropriate.
             </li>
             <li>
-              Request supervisor attention when needed. This flags the issue; it
-              does not mark it acknowledged or resolved.
+              Assign routine work to the responsible senior member. The reporter
+              or assignee can request supervisor attention when her input is
+              needed. This sends an escalation alert; routine comments do not.
+              It does not mark the issue acknowledged or resolved.
             </li>
             <li>
               Acknowledged means someone has explicitly taken notice. In

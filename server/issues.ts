@@ -142,6 +142,14 @@ export function installIssues(
         (x): x is string => !!x,
       ),
     );
+    const supervisorEvent =
+      (r.supervisorAttention &&
+        (before ? !before.supervisorAttention : key === "1:created")) ||
+      (!!before?.supervisorAttention && !r.supervisorAttention) ||
+      (r.supervisorAttention &&
+        !!before &&
+        before.status !== r.status &&
+        (r.status === "resolved" || before.status === "resolved"));
     if (r.supervisorAttention || before?.supervisorAttention)
       for (const p of await tx.query<{ id: string }>(
         "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role IN ('supervisor','administrator')",
@@ -157,13 +165,14 @@ export function installIssues(
     for (const id of ids)
       if (id !== u.id)
         await tx.query(
-          "INSERT INTO notifications(id,user_id,issue_id,event_key,message) SELECT $1,$2,$3,$4,$5 WHERE EXISTS(SELECT 1 FROM users WHERE id=$2 AND status='approved' AND onboarded=1) ON CONFLICT(user_id,event_key) DO NOTHING",
+          "INSERT INTO notifications(id,user_id,issue_id,event_key,message) SELECT $1,$2,$3,$4,$5 WHERE EXISTS(SELECT 1 FROM users WHERE id=$2 AND status='approved' AND onboarded=1 AND (app_role<>'supervisor' OR $6::boolean)) ON CONFLICT(user_id,event_key) DO NOTHING",
           [
             randomUUID(),
             id,
             r.id,
             `issue:${r.id}:${key}`,
             `${r.code}: ${verb}. ${r.title}.${attention}`,
+            supervisorEvent,
           ],
         );
   }
@@ -337,6 +346,38 @@ export function installIssues(
     });
     res.json(await detail(db, id));
   });
+  app.post("/api/issues/:id/attention", approved, async (req, res) => {
+    const input = z
+      .object({
+        version: z.number().int().positive(),
+        supervisorAttention: z.boolean(),
+      })
+      .strict()
+      .parse(req.body);
+    const id = String(req.params.id);
+    await db.write(async (tx) => {
+      const u = await actor(tx, res),
+        before = await row(tx, id);
+      if (!canDiscussIssue(u, before))
+        fail(
+          403,
+          "Only the reporter, assignee or a lab manager can request supervisor attention.",
+        );
+      version(before, input.version);
+      if (before.supervisorAttention === input.supervisorAttention) return;
+      await tx.query(
+        "UPDATE issues SET supervisor_attention=$1,version=version+1,updated_at=now() WHERE id=$2",
+        [input.supervisorAttention, id],
+      );
+      const after = await row(tx, id);
+      const reason = input.supervisorAttention
+        ? "Supervisor attention requested."
+        : "Supervisor attention request cleared.";
+      await event(tx, u, after, "updated", reason, before);
+      await notify(tx, u, after, reason, `${after.version}:attention`, before);
+    });
+    res.json(await detail(db, id));
+  });
   app.post("/api/issues/:id/status", approved, async (req, res) => {
     const input = issueAction.parse(req.body),
       id = String(req.params.id);
@@ -361,6 +402,7 @@ export function installIssues(
         after,
         `status: ${input.status.replaceAll("_", " ")}`,
         `${after.version}:status`,
+        before,
       );
     });
     res.json(await detail(db, id));

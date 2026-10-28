@@ -26,6 +26,7 @@ const bookingSelect = `SELECT b.id,b.instrument_id AS "instrumentId",i.name AS "
  FROM bookings b JOIN instruments i ON i.id=b.instrument_id JOIN users u ON u.id=b.booked_by LEFT JOIN users o ON o.id=b.operator_id`;
 // Share visibility rules across the legacy list, paginated inbox, badge and reads.
 const notificationVisible = `n.user_id=$1
+ AND (n.weekly_report_id IS NULL OR EXISTS(SELECT 1 FROM weekly_reports r JOIN users p ON p.id=$1 WHERE r.id=n.weekly_report_id AND (r.owner_id=$1 OR (p.app_role='supervisor' AND r.latest_revision>0))))
  AND (n.meeting_id IS NULL OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')) OR EXISTS(SELECT 1 FROM meeting_attendees a WHERE a.meeting_id=n.meeting_id AND a.user_id=$1))
  AND (n.notice_id IS NULL OR EXISTS(SELECT 1 FROM notices x WHERE x.id=n.notice_id AND x.status='published') OR EXISTS(SELECT 1 FROM users p WHERE p.id=$1 AND p.app_role IN ('supervisor','administrator')))`;
 const notificationSelect = `SELECT n.id,n.booking_id AS "bookingId",n.weekly_report_id AS "weeklyReportId",n.order_id AS "orderId",n.issue_id AS "issueId",n.meeting_id AS "meetingId",n.notice_id AS "noticeId",n.message,n.created_at AS "createdAt",n.read_at AS "readAt" FROM notifications n`;
@@ -77,7 +78,7 @@ export function installScheduling(
     );
     if (b.status === "requested")
       for (const u of await tx.query<{ id: string }>(
-        "SELECT id FROM users WHERE status='approved' AND app_role IN ('administrator','supervisor')",
+        "SELECT id FROM users WHERE status='approved' AND app_role='administrator'",
       ))
         ids.add(u.id);
     for (const id of ids)

@@ -416,3 +416,27 @@ it("adds 006 to a populated 001–005 database preserving original records and r
     await legacy.close();
   }
 }, 20000);
+
+it("keeps routine orders visible to the supervisor without broadcasting every update", async () => {
+  const c = await client(),
+    s = await client("supervisor"),
+    a = await client("admin");
+  const o = await make(c);
+  expect((await s.get(`/orders/${o.id}`)).status).toBe(200);
+  expect((await s.get("/notifications")).body).toHaveLength(0);
+  expect(
+    (await a.get("/notifications")).body.some(
+      (n: { orderId: string }) => n.orderId === o.id,
+    ),
+  ).toBe(true);
+  const recorded = await s.write(
+    `/orders/${o.id}/record`,
+    order(o.version, { orderedBy: ids.supervisor }),
+  );
+  expect(recorded.status, recorded.body.error).toBe(200);
+  expect(
+    (await s.get("/notifications")).body.some(
+      (n: { orderId: string }) => n.orderId === o.id,
+    ),
+  ).toBe(true);
+});

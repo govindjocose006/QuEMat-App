@@ -214,7 +214,7 @@ it("allows incomplete drafts but requires all sections and review digest for sub
 it("rejects cross-owner edits, academic-role escalation, pending access and unrelated mentors", async () => {
   const c = await client(),
     r = await submit(c, await draft(c));
-  for (const key of ["other", "academic"]) {
+  for (const key of ["other", "academic", "mentor", "admin"]) {
     const x = await client(key);
     expect((await x.get(`/weekly/reports/${r.id}`)).status).toBe(404);
     expect((await x.get(`/weekly/review?week=${week}`)).status).toBe(403);
@@ -234,7 +234,7 @@ it("rejects cross-owner edits, academic-role escalation, pending access and unre
   const pending = await client("pending");
   expect((await pending.get(`/weekly/mine?week=${week}`)).status).toBe(403);
   const mentor = await client("mentor");
-  expect((await mentor.get(`/weekly/reports/${r.id}`)).status).toBe(200);
+  expect((await mentor.get(`/weekly/reports/${r.id}`)).status).toBe(404);
   const other = await client("other"),
     otherReport = await submit(other, await draft(other));
   expect((await mentor.get(`/weekly/reports/${otherReport.id}`)).status).toBe(
@@ -249,7 +249,7 @@ it("rejects cross-owner edits, academic-role escalation, pending access and unre
 });
 it("filters submitted/missing eligible members without exposing draft content or inactive missing members", async () => {
   const c = await client(),
-    a = await client("admin"),
+    a = await client("supervisor"),
     m = await client("mentor");
   await draft(c, full({ project: "Private draft project" }));
   let rows = (await a.get(`/weekly/review?week=${week}`)).body;
@@ -272,11 +272,7 @@ it("filters submitted/missing eligible members without exposing draft content or
   ).body;
   expect(rows).toHaveLength(1);
   expect(rows[0].status).toBe("submitted");
-  expect(
-    (await m.get(`/weekly/review?week=${week}`)).body.map(
-      (p: { id: string }) => p.id,
-    ),
-  ).toEqual([ids.member]);
+  expect((await m.get(`/weekly/review?week=${week}`)).status).toBe(403);
   await db.query("UPDATE users SET status='inactive' WHERE id=$1", [
     ids.member,
   ]);
@@ -294,7 +290,7 @@ it("supports revision-bound review, comments, replies and follow-up history with
   expect(
     (await c.write(`/weekly/reports/${r.id}/review`, { revision: 1 })).status,
   ).toBe(403);
-  let response = await m.write(`/weekly/reports/${r.id}/comments`, {
+  let response = await s.write(`/weekly/reports/${r.id}/comments`, {
     revision: 1,
     kind: "followup",
     body: "Check calibration",
@@ -619,3 +615,57 @@ it("adds Phase 3A without altering existing Phase 1/2 records or booking constra
     await legacy.close();
   }
 }, 20000);
+
+it("keeps old report notifications private across lists, badges and read actions, including role changes", async () => {
+  const c = await client(),
+    s = await client("supervisor");
+  const r = await submit(c, await draft(c));
+  expect((await s.get("/notifications")).body).toHaveLength(0);
+  for (const key of ["admin", "mentor", "other", "supervisor"]) {
+    const id = randomUUID();
+    await db.query(
+      "INSERT INTO notifications(id,user_id,weekly_report_id,event_key,message) VALUES($1,$2,$3,$4,'Historical private report notification')",
+      [id, ids[key], r.id, `legacy:${key}`],
+    );
+    const x = await client(key);
+    if (key === "supervisor") {
+      expect((await x.get("/notifications/page")).body.items).toHaveLength(1);
+      await db.query("UPDATE users SET app_role='mentor' WHERE id=$1", [
+        ids[key],
+      ]);
+    }
+    expect((await x.get("/notifications")).body).toHaveLength(0);
+    expect(
+      (await x.get("/notifications/page?unread=true")).body.items,
+    ).toHaveLength(0);
+    expect((await x.get("/notifications/summary")).body.unreadCount).toBe(0);
+    expect((await x.write(`/notifications/${id}/read`)).status).toBe(404);
+    expect((await x.get("/weekly/summary")).body.review).toBeNull();
+    expect((await x.get(`/weekly/reports/${r.id}`)).status).toBe(404);
+    expect(
+      (
+        await x.write(`/weekly/reports/${r.id}/comments`, {
+          revision: 1,
+          kind: "comment",
+          body: "Not permitted",
+        })
+      ).status,
+    ).toBe(404);
+  }
+});
+
+it("supervisor can monitor reports from every application role without submission alerts", async () => {
+  const s = await client("supervisor");
+  for (const key of ["member", "mentor", "admin", "other"]) {
+    const c = await client(key),
+      r = await submit(c, await draft(c));
+    expect((await s.get(`/weekly/reports/${r.id}`)).status).toBe(200);
+    expect((await c.get(`/weekly/reports/${r.id}`)).status).toBe(200);
+    expect((await c.get("/weekly/summary")).body.review).toBeNull();
+  }
+  const rows = (await s.get(`/weekly/review?week=${week}`)).body;
+  expect(
+    rows.filter((x: { status: string }) => x.status === "submitted"),
+  ).toHaveLength(4);
+  expect((await s.get("/notifications")).body).toHaveLength(0);
+});

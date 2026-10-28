@@ -11,13 +11,15 @@ Registration and profile screens show three stages: Create account, Your details
 Overview shows an optional Start here card. Its three suggestions use **application permissions**, never an academic title alone:
 
 - Member: register a sample, plan a measurement, write weekly progress.
-- Mentor: update/review progress, plan a measurement, report or follow up on an issue.
+- Mentor: write an own weekly update, plan a measurement, report or follow up on an assigned issue.
 - Supervisor: review progress, follow up on issues, arrange meetings/notices.
 - Administrator: review membership, plan a measurement, arrange meetings/notices.
 
 Quick Guide remains in desktop navigation and the phone's More menu. It supports the existing safe `#guide` bookmark and Back/Forward navigation. Opening it respects unsaved weekly-report warnings.
 
 Expandable topics cover samples/bookings/actual usage, weekly drafts and revisions, issue acknowledgement, meetings/notices/inbox, chemical requests and archived samples/account details. Shortcuts open existing sections; they never create records or submit forms. Interns and master's students get mentor-assignment guidance. Administrator-only membership instructions follow application permissions.
+
+The 28 October 2026 policy restricts submitted reports to their author and the supervisor. Mentors and administrators cannot review other people’s reports. The guide explains this and the assigned handler’s supervisor-escalation action.
 
 ## Preference and privacy
 

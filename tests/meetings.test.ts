@@ -765,3 +765,17 @@ it("preserves all populated pre-005 rows and notification sources across additiv
     await isolated.close();
   }
 }, 20000);
+
+it("lets the supervisor monitor every meeting but only notifies her when included", async () => {
+  const a = await client("admin"),
+    s = await client("supervisor");
+  const m = await meeting(a);
+  expect((await s.get(`/meetings/${m.id}`)).status).toBe(200);
+  expect((await s.get("/notifications")).body).toHaveLength(0);
+  const invited = await meeting(a, { attendeeIds: [ids.supervisor] });
+  expect(
+    (await s.get("/notifications")).body.some(
+      (n: { meetingId: string }) => n.meetingId === invited.id,
+    ),
+  ).toBe(true);
+});

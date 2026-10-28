@@ -80,7 +80,7 @@ export function installOrders(
       ),
     );
     for (const p of await tx.query<{ id: string }>(
-      "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role IN ('supervisor','administrator')",
+      "SELECT id FROM users WHERE status='approved' AND onboarded=1 AND app_role='administrator'",
     ))
       people.add(p.id);
     for (const id of people)

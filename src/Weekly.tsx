@@ -466,6 +466,10 @@ function ReportEditor({
     );
   return (
     <section className="panel weekly-editor">
+      <p>
+        Your draft is private. After submission, only you and the supervisor can
+        read your report.
+      </p>
       <h2>My report</h2>
       <p>{weekLabel(week)}</p>
       <p>
@@ -760,11 +764,10 @@ function Review({ user, week }: { user: Member; week: string }) {
       <div className="no-print">
         <h2>Review reports</h2>
         <p>
-          {user.appRole === "mentor"
-            ? "Your assigned mentees only."
-            : "Lab-wide submitted reports and eligible members."}{" "}
-          Draft text is private. “Missing” means not yet submitted, including
-          the current week; no deadline or background reminder is configured.
+          Lab-wide submitted reports, visible only to the supervisor and each
+          report’s author. Routine submissions do not send inbox alerts. Draft
+          text is private. “Missing” means not yet submitted, including the
+          current week; no deadline or background reminder is configured.
         </p>
         <div className="form-grid">
           <label>

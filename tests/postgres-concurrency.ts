@@ -320,7 +320,7 @@ try {
     /notification_source/,
   );
   // The retained weekly fixture includes an application supervisor. Directed
-  // issue events notify that reviewer too, independently of assignment.
+  // escalation notifies that reviewer; routine acknowledgement/comments do not.
   const issueNotices = await db.query<{ user_id: string; event_key: string }>(
     "SELECT user_id,event_key FROM notifications WHERE issue_id=$1",
     [issue.body.id],
@@ -336,7 +336,7 @@ try {
     [
       [user, 2], // Reported and discussed by the reporter; no own-action notification.
       [reporter, 1], // Explicit acknowledgement by the assignee.
-      [weeklyFixture.reviewer, 3], // Attention requested: creation, acknowledgement and comment.
+      [weeklyFixture.reviewer, 1], // Only the initial escalation needs supervisor notification.
     ].sort(),
   );
   assert.equal(

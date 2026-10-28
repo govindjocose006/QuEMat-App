@@ -657,3 +657,78 @@ it("applies 004 additively over populated 003 and preserves earlier notification
     await isolated.close();
   }
 }, 20000);
+
+it("delegates routine work and sends the supervisor escalation milestones instead of every update", async () => {
+  const c = await client(),
+    a = await client("assignee"),
+    s = await client("supervisor"),
+    other = await client("mentor");
+  let r = await create(c, { supervisorAttention: false, priority: "normal" });
+  const count = async () => (await s.get("/notifications")).body.length;
+  expect(await count()).toBe(0);
+  expect((await s.get(`/issues/${r.id}`)).status).toBe(200);
+  expect(
+    (await s.get("/issues?view=all")).body.items.some(
+      (x: { id: string }) => x.id === r.id,
+    ),
+  ).toBe(true);
+  expect(
+    (
+      await other.write(`/issues/${r.id}/attention`, {
+        version: r.version,
+        supervisorAttention: true,
+      })
+    ).status,
+  ).toBe(403);
+  const escalated = await a.write(`/issues/${r.id}/attention`, {
+    version: r.version,
+    supervisorAttention: true,
+  });
+  expect(escalated.status).toBe(200);
+  r = escalated.body;
+  expect(r.supervisorAttention).toBe(true);
+  expect(await count()).toBe(1);
+  expect(
+    (
+      await a.write(`/issues/${r.id}/attention`, {
+        version: r.version,
+        supervisorAttention: true,
+      })
+    ).status,
+  ).toBe(200);
+  expect(await count()).toBe(1);
+  expect(
+    (
+      await a.write(`/issues/${r.id}/attention`, {
+        version: 1,
+        supervisorAttention: false,
+      })
+    ).status,
+  ).toBe(409);
+  await a.write(`/issues/${r.id}/comments`, { body: "Routine work update" });
+  r = await status(a, r, "acknowledged");
+  r = await status(a, r, "in_progress");
+  expect(await count()).toBe(1);
+  const edited = await edit(c, r, {
+    description: "Updated routine work details",
+  });
+  expect(edited.status).toBe(200);
+  r = edited.body;
+  expect(await count()).toBe(1);
+  r = await status(a, r, "resolved");
+  expect(await count()).toBe(2);
+  r = await status(a, r, "open");
+  expect(await count()).toBe(3);
+  const cleared = await a.write(`/issues/${r.id}/attention`, {
+    version: r.version,
+    supervisorAttention: false,
+  });
+  expect(cleared.status).toBe(200);
+  r = cleared.body;
+  expect(await count()).toBe(4);
+  await a.write(`/issues/${r.id}/comments`, {
+    body: "Handled by the assigned member",
+  });
+  expect(await count()).toBe(4);
+  expect(r.events.at(-1)?.reason).toContain("cleared");
+});

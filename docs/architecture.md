@@ -81,11 +81,11 @@ is unspecified, so administrative privilege does not invent an academic title.
 | Membership and privileges                | No                | No                                | Manage with reason/audit |
 | Full membership email list and audit     | No                | No                                | Read                     |
 | Own weekly reports                      | No                | Draft/submit/revise                | Draft/submit/revise       |
-| Weekly review                            | No                | App supervisor: all; app mentor: assigned mentees | All submitted reports |
+| Weekly review                            | No                | App supervisor: all submitted; member/mentor: own only | Own reports only |
 
-Academic “Supervisor” cannot self-grant supervisor permission. Mentor/supervisor
-application roles enable the scoped weekly-review workflows, and are not treated
-as administrators. Academic role selection never grants application permission.
+Academic “Supervisor” cannot self-grant supervisor permission. Only the supervisor
+application role permits cross-author weekly review. Mentors and administrators
+can read only their own reports. Academic role selection never grants application permission.
 
 Interns and Master's students choose approved PhD/Postdoc mentors or record a
 pending assignment. Applicants see only eligible names/IDs/academic roles, not
@@ -141,14 +141,16 @@ reference exactly one booking or weekly report; existing booking notifications
 remain valid. It does not rewrite foundation/scheduling records.
 
 `server/weekly.ts` uses existing approval, session, CSRF and audit controls. Writes
-re-read membership and mentor assignment after acquiring the shared write lock;
+re-read membership after acquiring the shared write lock;
 optimistic versions reject stale edits. A database unique constraint enforces one
 report per person/Monday. Submitted snapshots retain selected factual source
 content and UTC timestamps. Before submission, the client reviews a server
 snapshot and submits its digest; changed source records require a fresh review.
 
-Only the owner reads draft content. App supervisors/administrators review
-submitted reports; an approved app mentor reviews currently assigned mentees.
+Only the owner reads draft content. Only the application supervisor can review
+other people’s submitted reports. Administrators and mentors have no cross-author
+report access. Existing inbox links and unread counts follow the current report
+access rules. Routine submissions do not broadcast supervisor notifications.
 Academic Supervisor with ordinary member permission cannot review others. No
 self-review is allowed. Append-only triggers retain submissions, reviews, comments
 and follow-up history; a database owner retains physical database control.

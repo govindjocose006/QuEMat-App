@@ -162,7 +162,5 @@ export type WeeklyRoster = {
   submittedAt: string | null;
   comments: WeeklyComment[];
 };
-export const reviewsAll = (role: string) =>
-  ["administrator", "supervisor"].includes(role);
-export const canOpenReview = (role: string) =>
-  reviewsAll(role) || role === "mentor";
+export const reviewsAll = (role: string) => role === "supervisor";
+export const canOpenReview = (role: string) => reviewsAll(role);
