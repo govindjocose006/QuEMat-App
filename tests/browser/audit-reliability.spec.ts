@@ -1,10 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 import { navigate } from "./navigation.js";
-async function login(page: Page, device: string, section = "samples") {
+async function login(
+  page: Page,
+  device: string,
+  section = "samples",
+  role = "mentor",
+) {
   await page.goto("/#" + section);
   await page
     .getByLabel("Email", { exact: true })
-    .fill(`browser-weekly-mentor-${device}@example.test`);
+    .fill(`browser-weekly-${role}-${device}@example.test`);
   await page
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
@@ -22,7 +27,7 @@ async function dismissNext(page: Page, action: () => Promise<unknown>) {
 test("unsaved weekly text survives cancelled section, history, review and sign-out navigation", async ({
   page,
 }, info) => {
-  await login(page, info.project.name);
+  await login(page, info.project.name, "samples", "supervisor");
   await navigate(page, "Weekly Progress");
   const work = page.getByLabel("Work completed", { exact: true });
   await work.fill("Synthetic audit unsaved text");
