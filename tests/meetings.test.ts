@@ -25,12 +25,13 @@ async function client(key = "member") {
     get: (path: string) => agent.get("/api" + path),
     write: async (
       path: string,
-      data: object = {},
+      data: object | string = {},
       method: "post" | "put" = "post",
     ) => {
       const r = await agent[method]("/api" + path)
         .set("Origin", origin)
         .set("X-CSRF-Token", csrf)
+        .set("Content-Type", "application/json")
         .send(data);
       if (r.body.csrfToken) csrf = r.body.csrfToken;
       return r;
@@ -778,4 +779,164 @@ it("lets the supervisor monitor every meeting but only notifies her when include
       (n: { meetingId: string }) => n.meetingId === invited.id,
     ),
   ).toBe(true);
+});
+
+it("preserves long Unicode notices and meeting notes through create and update", async () => {
+  const c = await client("supervisor");
+  const dataLinks = Array.from({ length: 10 }, () => ({
+    label: "測".repeat(150),
+    url: "https://example.test/" + "測".repeat(970),
+  }));
+  const body = "測".repeat(12000);
+  expect(
+    Buffer.byteLength(JSON.stringify({ body, dataLinks })),
+  ).toBeGreaterThan(65536);
+  let n = await notice(c, { body, dataLinks });
+  expect(n.body).toBe(body);
+  expect(n.dataLinks).toEqual(dataLinks);
+  const escaped = JSON.stringify({
+    title: "Escaped notice",
+    body,
+    dataLinks,
+  }).replaceAll("測", "\\u6e2c");
+  expect(Buffer.byteLength(escaped)).toBeGreaterThan(65536);
+  const escapedSave = await c.write("/notices", escaped);
+  expect(escapedSave.status, escapedSave.body.error).toBe(201);
+  expect(escapedSave.body.body).toBe(body);
+  expect(escapedSave.body.dataLinks).toEqual(dataLinks);
+  const edited = await c.write(
+    `/notices/${n.id}`,
+    noticeEdit(n, { body: "🧪".repeat(6000) }),
+    "put",
+  );
+  expect(edited.status, edited.body.error).toBe(200);
+  n = await publish(c, edited.body);
+  const read = await (await client()).get(`/notices/${n.id}`);
+  expect(read.body.body).toBe("🧪".repeat(6000));
+  expect(read.body.dataLinks).toEqual(dataLinks);
+  let m = await meeting(c, { agenda: "測".repeat(8000), dataLinks });
+  expect(m.agenda).toBe("測".repeat(8000));
+  const changed = await c.write(
+    `/meetings/${m.id}`,
+    update(m, { agenda: "🧪".repeat(4000) }),
+    "put",
+  );
+  expect(changed.status, changed.body.error).toBe(200);
+  m = changed.body;
+  const note = await c.write(`/meetings/${m.id}/notes`, {
+    body: "測".repeat(8000),
+    dataLinks,
+  });
+  expect(note.status, note.body.error).toBe(201);
+  const detail = (await c.get(`/meetings/${m.id}`)).body;
+  expect(detail.agenda).toBe("🧪".repeat(4000));
+  expect(detail.notes[0].body).toBe("測".repeat(8000));
+  expect(detail.notes[0].dataLinks).toEqual(dataLinks);
+});
+
+it("rejects unsupported Unicode in collaboration text and links before persistence", async () => {
+  const c = await client("supervisor"),
+    m = await meeting(c),
+    n = await notice(c);
+  for (const bad of [
+    "null\u0000character",
+    "unpaired\ud800surrogate",
+    "unpaired\udfffsurrogate",
+  ]) {
+    for (const field of ["title", "body"])
+      expect(
+        (
+          await c.write("/notices", {
+            title: "Valid title",
+            body: "Valid body",
+            [field]: bad,
+          })
+        ).status,
+      ).toBe(400);
+    for (const field of ["title", "agenda", "venue"])
+      expect(
+        (await c.write("/meetings", { ...input(), [field]: bad })).status,
+      ).toBe(400);
+    for (const dataLinks of [
+      [{ label: bad, url: "https://example.test" }],
+      [{ label: "Link", url: "https://example.test/" + bad }],
+    ]) {
+      expect(
+        (
+          await c.write("/notices", {
+            title: "Valid title",
+            body: "Valid body",
+            dataLinks,
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await c.write(`/meetings/${m.id}/notes`, {
+            body: "Valid note",
+            dataLinks,
+          })
+        ).status,
+      ).toBe(400);
+    }
+    expect(
+      (
+        await c.write("/meetings", {
+          ...input(),
+          videoUrl: "https://example.test/" + bad,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (await c.write(`/meetings/${m.id}/notes`, { body: bad })).status,
+    ).toBe(400);
+    expect(
+      (
+        await c.write(`/meetings/${m.id}/actions`, {
+          title: bad,
+          ownerId: ids.member,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await c.write(`/meetings/${m.id}/cancel`, {
+          version: m.version,
+          reason: bad,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (await c.write(`/meetings/${m.id}`, update(m, { reason: bad }), "put"))
+        .status,
+    ).toBe(400);
+    expect(
+      (await c.write(`/notices/${n.id}`, noticeEdit(n, { body: bad }), "put"))
+        .status,
+    ).toBe(400);
+  }
+  const unchanged = (await c.get(`/meetings/${m.id}`)).body;
+  expect(unchanged.version).toBe(m.version);
+  expect(unchanged.notes).toEqual([]);
+  expect(unchanged.actions).toEqual([]);
+  expect((await c.get(`/notices/${n.id}`)).body.version).toBe(n.version);
+});
+
+it("keeps collaboration payload and field limits bounded", async () => {
+  const c = await client("supervisor");
+  for (const path of ["/notices", "/meetings", "/meetings/unknown/notes"])
+    expect((await c.write(path, { body: "x".repeat(256 * 1024) })).status).toBe(
+      413,
+    );
+  expect(
+    (await c.write("/notices", { title: "Too long", body: "x".repeat(12001) }))
+      .status,
+  ).toBe(400);
+  expect(
+    (await c.write("/meetings", { ...input(), agenda: "x".repeat(8001) }))
+      .status,
+  ).toBe(400);
+  expect(
+    (await c.write("/issues", { description: "x".repeat(65536) })).status,
+  ).toBe(413);
 });
