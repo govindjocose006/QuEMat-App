@@ -88,7 +88,9 @@ for (const c of cases) {
           page.getByRole("button", { name: "Initial list", exact: true }),
         ).toBeVisible();
         if (stale === "view-success")
-          await page.getByLabel(c.label, { exact: true }).selectOption("all");
+          await page
+            .getByRole("combobox", { name: c.label, exact: true })
+            .selectOption("all");
         else
           await page.getByRole("button", { name: c.more, exact: true }).click();
         await expect.poll(() => started).toBe(true);
@@ -98,7 +100,9 @@ for (const c of cases) {
         await expect(
           page.getByRole("button", { name: "Initial list", exact: true }),
         ).toHaveCount(0);
-        await page.getByLabel(c.label, { exact: true }).selectOption(c.next);
+        await page
+          .getByRole("combobox", { name: c.label, exact: true })
+          .selectOption(c.next);
         await expect(
           page.getByRole("button", { name: "Selected list", exact: true }),
         ).toBeVisible();
@@ -115,9 +119,9 @@ for (const c of cases) {
         await expect(
           page.getByRole("button", { name: c.more, exact: true }),
         ).toHaveCount(0);
-        await expect(page.getByLabel(c.label, { exact: true })).toHaveValue(
-          c.next,
-        );
+        await expect(
+          page.getByRole("combobox", { name: c.label, exact: true }),
+        ).toHaveValue(c.next);
       } finally {
         release();
       }
@@ -149,7 +153,9 @@ for (const c of cases) {
     await expect(
       page.getByRole("button", { name: "Previous selection", exact: true }),
     ).toBeVisible();
-    await page.getByLabel(c.label, { exact: true }).selectOption(c.next);
+    await page
+      .getByRole("combobox", { name: c.label, exact: true })
+      .selectOption(c.next);
     await expect(page.getByRole("alert")).toContainText(
       "Selected view unavailable",
     );
@@ -166,6 +172,8 @@ for (const c of cases) {
       page.getByRole("button", { name: "Recovered selection", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
-    await expect(page.getByLabel(c.label, { exact: true })).toHaveValue(c.next);
+    await expect(
+      page.getByRole("combobox", { name: c.label, exact: true }),
+    ).toHaveValue(c.next);
   });
 }
