@@ -4,6 +4,17 @@ let csrfToken = "";
 export function setSessionToken(session: Session) {
   csrfToken = session.csrfToken;
 }
+// The anonymous session expires while an idle sign-in form remains open.
+// Bootstrap immediately before authentication; never replay credential writes.
+export async function authenticate(
+  mode: "login" | "register",
+  credentials: { email: string; password: string },
+): Promise<Session> {
+  const session = await api<Session>("/session");
+  setSessionToken(session);
+  if (session.user) return session;
+  return api<Session>(`/auth/${mode}`, "POST", credentials);
+}
 export class ApiError extends Error {
   constructor(
     message: string,

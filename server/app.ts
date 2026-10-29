@@ -87,6 +87,10 @@ export function createApp(db: DB, options: Options) {
       referrerPolicy: { policy: "no-referrer" },
     }),
   );
+  // Weekly field limits allow up to ~48k UTF-16 units plus record IDs.
+  // JSON escapes can take six bytes per unit; keep a bounded allowance for
+  // every schema-valid report without raising other endpoints' 64 KiB limit.
+  app.use("/api/weekly/reports", express.json({ limit: "512kb" }));
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
   app.use("/api", (_req, res, next) => {

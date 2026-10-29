@@ -2,19 +2,13 @@
 
 ## Current release
 
-Phases 1, 2, 3A, 3B and 3C are released. Phase 3C was released on
-2026-10-25 (Asia/Kolkata) through
-[PR #6](https://github.com/govindjocose006/QuEMat-App/pull/6).
-The released database contains migrations 001–005. The operator's encrypted backup,
-guarded migration and record-preservation verification passed; no fixtures ran.
-PR #6 records reviewed-head/main CI and live health, matching client assets and
-anonymous-access denial. The isolated preview remains separate.
+Production is released at `64da372` through [PR #14](https://github.com/govindjocose006/QuEMat-App/pull/14), deployed on 28 October 2026 (Asia/Kolkata).
+It includes Phases 1–4, PRs #11–12, the workspace redesign in PR #13, and supervisor-focused notifications and weekly-report privacy in PR #14. The database contains migrations 001–006.
 
-Private authenticated production acceptance is distinct from those checks and
-the accepted preview workflows. Monitoring audit fixes released through PR #7 on
-2026-10-25 after preview acceptance; no migration or configuration changes were
-needed for the production release. Final checks are recorded in PR #7.
-Phase 4 has not started.
+PR #14 records production health/database connectivity, matching deployed assets,
+protected API access checks and reviewed-commit validation. Authenticated production
+acceptance remains a private user check. Historical phase release procedures below
+are records of completed work, not instructions to rerun migrations.
 
 ## Architecture and environment separation
 

@@ -712,6 +712,7 @@ function Review({ user, week }: { user: Member; week: string }) {
   const load = useCallback(async () => {
     const request = ++requestNumber.current;
     setLoading(true);
+    setItems([]);
     setError("");
     try {
       const rows = await api<WeeklyRoster[]>(`/weekly/review?week=${week}`);
@@ -801,6 +802,10 @@ function Review({ user, week }: { user: Member; week: string }) {
       <ErrorNotice message={error} />
       {loading ? (
         <p role="status">Loading review…</p>
+      ) : error ? (
+        <button className="secondary" onClick={() => void load()}>
+          Retry loading review
+        </button>
       ) : (
         <div className="weekly-print">
           <h2>Weekly meeting summary</h2>
