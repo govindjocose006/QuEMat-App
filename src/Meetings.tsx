@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { Member } from "../shared/schema.js";
 import {
   meetingManager,
@@ -1005,11 +1011,18 @@ export function Meetings({
     >(null),
     [creating, setCreating] = useState<"meeting" | "notice" | null>(null);
   const [error, setError] = useState(""),
-    [loading, setLoading] = useState(true);
+    [loading, setLoading] = useState(true),
+    [listError, setListError] = useState("");
+  const listRequest = useRef(0);
   const staff = meetingManager(user.appRole);
   const reload = useCallback(async () => {
+    const request = ++listRequest.current;
     setLoading(true);
-    setError("");
+    setListError("");
+    setMeetings([]);
+    setNotices([]);
+    setMoreMeetings(false);
+    setMoreNotices(false);
     try {
       const [m, n, p] = await Promise.all([
         api<{ items: Meeting[]; hasMore: boolean }>(
@@ -1020,19 +1033,24 @@ export function Meetings({
         ),
         api<Person[]>("/meetings/options"),
       ]);
+      if (request !== listRequest.current) return;
       setMeetings(m.items);
       setMoreMeetings(m.hasMore);
       setNotices(n.items);
       setMoreNotices(n.hasMore);
       setPeople(p);
     } catch (e) {
-      setError(messageOf(e));
+      if (request === listRequest.current) setListError(messageOf(e));
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
   }, [meetingView, noticeView, meetingOffset, noticeOffset]);
   useEffect(() => {
     void reload();
+    return () => {
+      // Invalidate pending work on filter changes and section departure.
+      listRequest.current++;
+    };
   }, [reload]);
   const open = useCallback(async (s: Selection) => {
     setError("");
@@ -1064,14 +1082,19 @@ export function Meetings({
         Notifications are in-app; no email, push or background reminders.
       </p>
       <ErrorNotice message={error} />
-      {error && (
+      <ErrorNotice message={listError} />
+      {listError && (
         <button className="secondary" onClick={() => void reload()}>
           Retry meetings and notices
         </button>
       )}
       {staff && (
         <div className="action-row">
-          <button className="primary" onClick={() => setCreating("meeting")}>
+          <button
+            className="primary"
+            disabled={loading || !!listError}
+            onClick={() => setCreating("meeting")}
+          >
             New meeting
           </button>
           <button className="secondary" onClick={() => setCreating("notice")}>
@@ -1097,26 +1120,30 @@ export function Meetings({
             <option value="all">All authorized meetings</option>
           </select>
         </label>
-        {!meetings.length && !loading && !error && (
+        {!meetings.length && !loading && !listError && (
           <p>No meetings in this view.</p>
         )}
         <div className="collaboration-grid">
-          {meetings.map((m) => (
-            <MeetingCard key={m.id} item={m} open={(s) => void open(s)} />
-          ))}
+          {!loading &&
+            !listError &&
+            meetings.map((m) => (
+              <MeetingCard key={m.id} item={m} open={(s) => void open(s)} />
+            ))}
         </div>
         <div className="action-row">
           {meetingOffset > 0 && (
             <button
               className="secondary"
+              disabled={loading}
               onClick={() => setMeetingOffset((v) => Math.max(0, v - 50))}
             >
               Previous meetings
             </button>
           )}
-          {moreMeetings && (
+          {moreMeetings && !loading && !listError && (
             <button
               className="secondary"
+              disabled={loading}
               onClick={() => setMeetingOffset((v) => v + 50)}
             >
               More meetings
@@ -1146,26 +1173,30 @@ export function Meetings({
             <option value="all">All accessible notices</option>
           </select>
         </label>
-        {!notices.length && !loading && !error && (
+        {!notices.length && !loading && !listError && (
           <p>No notices in this view.</p>
         )}
         <div className="collaboration-grid">
-          {notices.map((n) => (
-            <NoticeCard key={n.id} item={n} open={(s) => void open(s)} />
-          ))}
+          {!loading &&
+            !listError &&
+            notices.map((n) => (
+              <NoticeCard key={n.id} item={n} open={(s) => void open(s)} />
+            ))}
         </div>
         <div className="action-row">
           {noticeOffset > 0 && (
             <button
               className="secondary"
+              disabled={loading}
               onClick={() => setNoticeOffset((v) => Math.max(0, v - 50))}
             >
               Previous notices
             </button>
           )}
-          {moreNotices && (
+          {moreNotices && !loading && !listError && (
             <button
               className="secondary"
+              disabled={loading}
               onClick={() => setNoticeOffset((v) => v + 50)}
             >
               More notices

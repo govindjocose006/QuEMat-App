@@ -2,7 +2,14 @@ import { z } from "zod";
 import type { Member } from "./schema.js";
 import { issueLink } from "./issues.js";
 
-const text = (max: number) => z.string().trim().max(max);
+const validUnicode = (value: string) => !/[\u0000\uD800-\uDFFF]/u.test(value);
+const unicodeMessage = "Use valid Unicode text without null characters.";
+const text = (max: number) =>
+  z.string().trim().max(max).refine(validUnicode, unicodeMessage);
+const collaborationLink = issueLink.extend({
+  label: text(150).min(1),
+  url: issueLink.shape.url.refine(validUnicode, unicodeMessage),
+});
 const instant = z.iso
   .datetime({ offset: true })
   .transform((v) => new Date(v).toISOString());
@@ -23,17 +30,15 @@ export const meetingFields = z.object({
   endsAt: instant,
   agenda: text(8000).default(""),
   venue: text(500).default(""),
-  videoUrl: z.union([z.literal(""), issueLink.shape.url]).default(""),
-  dataLinks: z.array(issueLink).max(10).default([]),
+  videoUrl: z.union([z.literal(""), collaborationLink.shape.url]).default(""),
+  dataLinks: z.array(collaborationLink).max(10).default([]),
 });
 const validTimes = (v: { startsAt: string; endsAt: string }) =>
   new Date(v.endsAt).getTime() > new Date(v.startsAt).getTime();
-export const meetingSchema = meetingFields
-  .strict()
-  .refine(validTimes, {
-    message: "End must be after start.",
-    path: ["endsAt"],
-  });
+export const meetingSchema = meetingFields.strict().refine(validTimes, {
+  message: "End must be after start.",
+  path: ["endsAt"],
+});
 export const meetingUpdate = meetingFields
   .extend({
     version: z.number().int().positive(),
@@ -53,7 +58,7 @@ export const meetingCancel = collaborationVersion
 export const meetingNote = z
   .object({
     body: text(8000).min(1),
-    dataLinks: z.array(issueLink).max(10).default([]),
+    dataLinks: z.array(collaborationLink).max(10).default([]),
   })
   .strict();
 export const meetingAction = z
@@ -72,7 +77,7 @@ export const noticeFields = z.object({
   pinned: z.boolean().default(false),
   expiresAt: instant.nullable().default(null),
   acknowledgementRequired: z.boolean().default(false),
-  dataLinks: z.array(issueLink).max(10).default([]),
+  dataLinks: z.array(collaborationLink).max(10).default([]),
 });
 export const noticeSchema = noticeFields.strict();
 export const noticeUpdate = noticeFields

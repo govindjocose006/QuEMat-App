@@ -91,6 +91,9 @@ export function createApp(db: DB, options: Options) {
   // JSON escapes can take six bytes per unit; keep a bounded allowance for
   // every schema-valid report without raising other endpoints' 64 KiB limit.
   app.use("/api/weekly/reports", express.json({ limit: "512kb" }));
+  // Meeting/notice text and ten links can exceed 64 KiB in UTF-8.
+  // 256 KiB also accommodates six-byte JSON escapes within field limits.
+  app.use(["/api/meetings", "/api/notices"], express.json({ limit: "256kb" }));
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
   app.use("/api", (_req, res, next) => {
