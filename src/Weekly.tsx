@@ -890,12 +890,16 @@ function Review({ user, week }: { user: Member; week: string }) {
 export function Weekly({
   user,
   initialId,
+  initialReview = false,
 }: {
   user: Member;
   initialId?: string | null;
+  initialReview?: boolean;
 }) {
   const [week, setWeek] = useState(weekStart()),
-    [tab, setTab] = useState("mine"),
+    [tab, setTab] = useState(
+      initialReview && canOpenReview(user.appRole) ? "review" : "mine",
+    ),
     [opened, setOpened] = useState(initialId ?? null),
     [generation, setGeneration] = useState(0);
   useEffect(() => setOpened(initialId ?? null), [initialId]);

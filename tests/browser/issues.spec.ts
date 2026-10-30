@@ -297,7 +297,7 @@ test("academic supervisor cannot manage unrelated work; application supervisor c
   await logout(page);
   await login(page, "supervisor", d);
   await expect(
-    page.getByRole("heading", { name: /Supervisor attention requested/ }),
+    page.getByRole("heading", { name: "Needs your attention", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: `${created.code} · ${title}`, exact: true })

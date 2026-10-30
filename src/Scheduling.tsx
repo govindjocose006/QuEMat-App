@@ -1350,49 +1350,17 @@ export function Schedule({
 export function LiveUsage({
   user,
   onCalendar,
-  onInstruments,
+  snapshot,
+  error,
+  reload,
 }: {
   user: Member;
   onCalendar: () => void;
-  onInstruments: (items: Instrument[]) => void;
+  snapshot: MonitoringSnapshot | null;
+  error: string;
+  reload: () => void;
 }) {
   const [category, setCategory] = useState("all");
-  const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null),
-    [error, setError] = useState(""),
-    [refresh, setRefresh] = useState(0);
-  useEffect(() => {
-    let stopped = false;
-    let inFlight = false;
-    const load = async () => {
-      if (inFlight) return;
-      inFlight = true;
-      try {
-        const data = await api<MonitoringSnapshot>("/monitoring");
-        if (!stopped) {
-          setSnapshot(data);
-          onInstruments(data.instruments);
-          setError("");
-        }
-      } catch (e) {
-        if (!stopped) setError(messageOf(e));
-      } finally {
-        inFlight = false;
-      }
-    };
-    const whenVisible = () => {
-      if (document.visibilityState === "visible") void load();
-    };
-    void load();
-    const t = setInterval(whenVisible, 30000);
-    window.addEventListener("focus", whenVisible);
-    document.addEventListener("visibilitychange", whenVisible);
-    return () => {
-      stopped = true;
-      clearInterval(t);
-      window.removeEventListener("focus", whenVisible);
-      document.removeEventListener("visibilitychange", whenVisible);
-    };
-  }, [onInstruments, refresh]);
   const {
     instruments: items,
     bookings,
@@ -1410,13 +1378,17 @@ export function LiveUsage({
   if (!updated)
     return (
       <section>
-        <ErrorNotice message={error} />
-        <p role="status">Loading confirmed usage and reservations…</p>
         {error && (
-          <button
-            className="secondary"
-            onClick={() => setRefresh((r) => r + 1)}
-          >
+          <p className="notice error">
+            {error}
+            {updated ? " Showing the last confirmed monitoring data." : ""}
+          </p>
+        )}
+        {!error && (
+          <p role="status">Loading confirmed usage and reservations…</p>
+        )}
+        {error && (
+          <button className="secondary" onClick={reload}>
             Retry monitoring
           </button>
         )}
@@ -1439,20 +1411,22 @@ export function LiveUsage({
           <p className="eyebrow">IN THE LAB</p>
           <h2>Usage & next reservations</h2>
         </div>
-        <button className="primary" onClick={onCalendar}>
-          <Icon name="calendar" /> Open calendar
+        <button className="secondary" onClick={onCalendar}>
+          <Icon name="calendar" /> View booking calendar
         </button>
       </div>
       <div className="monitoring-toolbar">
         <p className="field-hint">Actual usage requires check-in.</p>
-        <button
-          className="text-button"
-          onClick={() => setRefresh((r) => r + 1)}
-        >
+        <button className="text-button" onClick={reload}>
           Refresh monitoring
         </button>
       </div>
-      <ErrorNotice message={error} />
+      {error && (
+        <p className="notice error">
+          {error}
+          {updated ? " Showing the last confirmed monitoring data." : ""}
+        </p>
+      )}
       <p className="monitoring-updated">
         Last successful refresh {formatDate(updated)} · IST
       </p>
