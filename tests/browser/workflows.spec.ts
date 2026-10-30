@@ -104,6 +104,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   await expect(
     page.getByRole("button", { name: "Members & access", exact: true }),
   ).toHaveCount(0);
+  await page.locator("summary").filter({ hasText: "Lab activity" }).click();
   await expect(
     page.getByRole("heading", { name: "PPMS", exact: true }),
   ).toBeVisible();

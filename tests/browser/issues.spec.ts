@@ -156,9 +156,10 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   ).toBeVisible();
   await logout(page);
   await login(page, "mentor", d);
-  await expect(
-    page.getByRole("heading", { name: /Assigned to me/ }),
-  ).toContainText("(1)");
+  const assigned = page.locator(".focus-card").filter({
+    has: page.getByRole("heading", { name: "Assigned to you", exact: true }),
+  });
+  await expect(assigned.locator(".focus-number")).toContainText("1");
   await page
     .getByRole("button", { name: new RegExp(`ISS-.*${title}`) })
     .first()

@@ -290,6 +290,10 @@ test("successful meeting and sample retries remove earlier connection errors", a
     return route.continue();
   });
   await login(page);
+  await page
+    .locator("summary")
+    .filter({ hasText: "Meetings, notices & action items" })
+    .click();
   await expect(page.getByRole("alert")).toContainText(
     "Synthetic meeting outage",
   );
