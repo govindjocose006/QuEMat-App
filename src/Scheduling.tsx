@@ -22,6 +22,7 @@ import {
 import { api } from "./api.js";
 import {
   ErrorNotice,
+  OptionalFields,
   Icon,
   Modal,
   Status,
@@ -388,8 +389,11 @@ function MeasurementFields({
     furnace = instrument?.category === "Furnace",
     sputter = instrument?.name.toLowerCase().includes("sputter");
   return (
-    <fieldset className="measurement-fields">
+    <fieldset className="measurement-fields workflow-section">
       <legend>
+        <span className="form-step" aria-hidden="true">
+          3
+        </span>
         {furnace
           ? "Furnace process"
           : sputter
@@ -552,18 +556,46 @@ function BookingForm({
       b?.sampleSnapshots.map((s) => s.id) ?? [],
     ),
     [quick, setQuick] = useState(false),
+    [optionsLoading, setOptionsLoading] = useState(true),
+    [optionsFailed, setOptionsFailed] = useState(false),
+    [optionsAttempt, setOptionsAttempt] = useState(0),
+    [sampleSearch, setSampleSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const instrument = items.find((i) => i.id === instrumentId);
   useEffect(() => {
+    let live = true;
+    setOptionsLoading(true);
+    setOptionsFailed(false);
     void Promise.all([api<Sample[]>("/samples"), api<Operator[]>("/operators")])
       .then(([s, o]) => {
+        if (!live) return;
         setSamples(s);
         setOperators(o);
         setError("");
       })
-      .catch((e) => setError(messageOf(e)));
-  }, []);
+      .catch((e) => {
+        if (live) {
+          setOptionsFailed(true);
+          setError(messageOf(e));
+        }
+      })
+      .finally(() => {
+        if (live) setOptionsLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [optionsAttempt]);
+  const availableSamples = samples.filter(
+    (s) => !s.archived || selected.includes(s.id),
+  );
+  const query = sampleSearch.trim().toLocaleLowerCase();
+  const matches = (s: Sample) =>
+    `${s.code} ${s.compound} ${s.project}`.toLocaleLowerCase().includes(query);
+  const shownSamples = availableSamples.filter(
+    (s) => selected.includes(s.id) || matches(s),
+  );
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -625,104 +657,159 @@ function BookingForm({
   return (
     <>
       <div hidden={quick}>
-        <form onSubmit={submit}>
+        <form onSubmit={submit} className="booking-form" aria-busy={busy}>
+          <p className="form-intro">
+            Choose the resource, time and samples, then add the setup details
+            for your instrument.
+          </p>
           <ErrorNotice message={error} />
-          <div className="form-grid">
-            <label>
-              Instrument
-              <select
-                value={instrumentId}
-                onChange={(e) => setInstrumentId(e.target.value)}
-              >
-                {items
-                  .filter((i) => !i.archived)
-                  .map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name}
+          {optionsLoading && (
+            <p role="status">Loading samples and operators…</p>
+          )}
+          {optionsFailed && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setOptionsAttempt((n) => n + 1)}
+            >
+              Retry booking options
+            </button>
+          )}
+          <fieldset className="workflow-section" disabled={busy}>
+            <legend>
+              <span className="form-step" aria-hidden="true">
+                1
+              </span>{" "}
+              Reservation
+            </legend>
+            <p className="field-hint">
+              Instrument, operator, process type and times are required. All
+              times use Asia/Kolkata.
+            </p>
+            <div className="form-grid">
+              <label>
+                Instrument
+                <select
+                  value={instrumentId}
+                  onChange={(e) => setInstrumentId(e.target.value)}
+                >
+                  {items
+                    .filter((i) => !i.archived)
+                    .map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Actual operator
+                <select
+                  name="operatorId"
+                  defaultValue={b?.operatorId ?? user.id}
+                  required
+                >
+                  {operators.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.fullName}
                     </option>
                   ))}
-              </select>
-            </label>
-            <label>
-              Actual operator
-              <select
-                name="operatorId"
-                defaultValue={b?.operatorId ?? user.id}
+                </select>
+              </label>
+              <label>
+                Measurement / process type
+                <input
+                  name="measurementType"
+                  defaultValue={b?.measurementType ?? ""}
+                  list="measurement-options"
+                  required
+                  maxLength={150}
+                />
+                <datalist id="measurement-options">
+                  {[
+                    "Magnetization/VSM",
+                    "Heat capacity",
+                    "Resistivity/transport",
+                    "ADR/magnetocaloric",
+                    "Annealing",
+                    "Deposition",
+                    "Other",
+                  ].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </datalist>
+              </label>
+
+              <Field
+                label="Start (Asia/Kolkata)"
+                name="startsAt"
+                type="datetime-local"
+                value={istInput(b?.startsAt ?? new Date().toISOString())}
                 required
-              >
-                {operators.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.fullName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Measurement / process type
-              <input
-                name="measurementType"
-                defaultValue={b?.measurementType ?? ""}
-                list="measurement-options"
-                required
-                maxLength={150}
               />
-              <datalist id="measurement-options">
-                {[
-                  "Magnetization/VSM",
-                  "Heat capacity",
-                  "Resistivity/transport",
-                  "ADR/magnetocaloric",
-                  "Annealing",
-                  "Deposition",
-                  "Other",
-                ].map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </datalist>
+              <Field
+                label="End including cooling (Asia/Kolkata)"
+                name="endsAt"
+                type="datetime-local"
+                value={istInput(
+                  b?.endsAt ?? new Date(Date.now() + 3600000).toISOString(),
+                )}
+                required
+              />
+            </div>
+          </fieldset>
+          <fieldset className="workflow-section sample-chooser" disabled={busy}>
+            <legend>
+              <span className="form-step" aria-hidden="true">
+                2
+              </span>{" "}
+              Samples (select one or more)
+            </legend>
+            <p className="field-hint">
+              Select at least one sample. Selected samples stay visible while
+              you search.
+            </p>
+            <label>
+              Find a sample
+              <input
+                type="search"
+                value={sampleSearch}
+                onChange={(e) => setSampleSearch(e.target.value)}
+                placeholder="Sample ID, compound or project"
+              />
             </label>
-            <Field
-              label="Project"
-              name="project"
-              value={b?.project ?? user.project}
-            />
-            <Field
-              label="Start (Asia/Kolkata)"
-              name="startsAt"
-              type="datetime-local"
-              value={istInput(b?.startsAt ?? new Date().toISOString())}
-              required
-            />
-            <Field
-              label="End including cooling (Asia/Kolkata)"
-              name="endsAt"
-              type="datetime-local"
-              value={istInput(
-                b?.endsAt ?? new Date(Date.now() + 3600000).toISOString(),
-              )}
-              required
-            />
-            <fieldset className="full choices">
-              <legend>Samples (select one or more)</legend>
-              {samples
-                .filter((s) => !s.archived || selected.includes(s.id))
-                .map((s) => (
-                  <label className="check-row" key={s.id}>
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(s.id)}
-                      onChange={(e) =>
-                        setSelected(
-                          e.target.checked
-                            ? [...selected, s.id]
-                            : selected.filter((id) => id !== s.id),
-                        )
-                      }
-                    />
-                    {s.code} · {s.compound}
-                    {s.archived ? " (archived; choose an active sample)" : ""}
-                  </label>
-                ))}
-              {!samples.length && <p>Create a sample before booking.</p>}
+            <p className="selection-count" aria-live="polite">
+              {selected.length} selected
+            </p>
+            <div className="sample-choices">
+              {shownSamples.map((s) => (
+                <label className="check-row" key={s.id}>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(s.id)}
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [...selected, s.id]
+                          : selected.filter((id) => id !== s.id),
+                      )
+                    }
+                  />
+                  {s.code} · {s.compound}
+                  {s.archived ? " (archived; choose an active sample)" : ""}
+                </label>
+              ))}
+            </div>
+            {samples.length > 0 && !availableSamples.some(matches) && (
+              <p>
+                No samples match your search. Any selected samples are still
+                listed above.
+              </p>
+            )}
+            {!optionsLoading && !optionsFailed && !samples.length && (
+              <p>Create a sample before booking.</p>
+            )}
+            <div className="action-row">
               <button
                 type="button"
                 className="secondary"
@@ -730,9 +817,28 @@ function BookingForm({
               >
                 Quick create sample
               </button>
-            </fieldset>
-            <details className="full">
-              <summary>Additional participants</summary>
+              {sampleSearch && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setSampleSearch("")}
+                >
+                  Clear sample search
+                </button>
+              )}
+            </div>
+          </fieldset>
+          <OptionalFields
+            title="Project & participants (optional)"
+            initialOpen={!!b?.participants.length}
+          >
+            <Field
+              label="Project"
+              name="project"
+              value={b?.project ?? user.project}
+            />
+            <fieldset className="choices">
+              <legend>Additional participants</legend>
               {operators.map((o) => (
                 <label className="check-row" key={o.id}>
                   <input
@@ -744,8 +850,8 @@ function BookingForm({
                   {o.fullName}
                 </label>
               ))}
-            </details>
-          </div>
+            </fieldset>
+          </OptionalFields>
           <p className="field-hint">
             Buffers: {instrument?.setupMinutes ?? 0} minutes setup /{" "}
             {instrument?.cleanupMinutes ?? 0} minutes cleanup.{" "}
@@ -760,9 +866,19 @@ function BookingForm({
             </p>
           )}
           <MeasurementFields key={instrumentId} instrument={instrument} b={b} />
-          <button className="primary" disabled={busy}>
-            {busy ? "Saving…" : b ? "Save changes" : "Reserve booking"}
-          </button>
+          <div className="workflow-actions booking-actions">
+            <p className="field-hint">
+              {b
+                ? "Save your changes to this reservation."
+                : "Reserve a planned slot. Check in when actual use starts."}
+            </p>
+            <button
+              className="primary"
+              disabled={busy || optionsLoading || optionsFailed}
+            >
+              {busy ? "Saving…" : b ? "Save changes" : "Reserve booking"}
+            </button>
+          </div>
         </form>
       </div>
       {quick && (

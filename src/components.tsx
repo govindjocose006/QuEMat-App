@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export function Brand({ small = false }: { small?: boolean }) {
   return (
@@ -114,6 +114,37 @@ export function Icon({ name }: { name: keyof typeof iconPaths }) {
     >
       {iconPaths[name]}
     </svg>
+  );
+}
+export function OptionalFields({
+  title,
+  initialOpen = false,
+  children,
+}: {
+  title: string;
+  initialOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(initialOpen);
+  return (
+    <details
+      className="optional-fields"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onInvalidCapture={(event) => {
+        // Reveal invalid fields before native validation tries to focus them.
+        event.currentTarget.open = true;
+        setOpen(true);
+      }}
+    >
+      <summary>
+        {title}
+        <span aria-hidden="true">
+          <Icon name="arrow" />
+        </span>
+      </summary>
+      <div className="optional-fields-body">{children}</div>
+    </details>
   );
 }
 export function ErrorNotice({ message }: { message: string }) {

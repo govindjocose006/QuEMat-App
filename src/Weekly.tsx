@@ -21,7 +21,14 @@ import {
 } from "../shared/weekly.js";
 import { api } from "./api.js";
 import { beforeWorkspaceLeave, mayLeaveWorkspace } from "./unsaved.js";
-import { ErrorNotice, Modal, formatDate, messageOf } from "./components.js";
+import {
+  ErrorNotice,
+  Icon,
+  Modal,
+  OptionalFields,
+  formatDate,
+  messageOf,
+} from "./components.js";
 
 function Content({ content: c }: { content: ReportContent }) {
   return (
@@ -448,6 +455,9 @@ function ReportEditor({
       setBusy(false);
     }
   }
+  const completedSections = Object.keys(reportFields).filter((key) =>
+    draft[key as keyof typeof reportFields].trim(),
+  ).length;
   if (!loaded)
     return (
       <>
@@ -466,21 +476,32 @@ function ReportEditor({
     );
   return (
     <section className="panel weekly-editor">
-      <p>
-        Your draft is private. After submission, only you and the supervisor can
-        read your report.
+      <div className="report-heading">
+        <div>
+          <h2>My report</h2>
+          <p className="field-hint">{weekLabel(week)}</p>
+        </div>
+        <span className="report-progress">
+          {completedSections} / 6 sections drafted
+        </span>
+      </div>
+      <p className="report-privacy">
+        <Icon name="lock" /> Your draft is private. After submission, only you
+        and the supervisor can read your report.
       </p>
-      <h2>My report</h2>
-      <p>{weekLabel(week)}</p>
-      <p>
-        {report?.latestRevision
-          ? `Submitted revision ${report.latestRevision}${report.hasDraft ? " · Revision draft saved" : ""}`
-          : "Not submitted"}{" "}
-        · {dirty ? "Unsaved changes" : "Saved state"}
-      </p>
-      <p>
-        Save drafts before leaving this page. A saved revision draft does not
-        replace your last submission until you review and submit it.
+      <div className="report-state">
+        <span>
+          {report?.latestRevision
+            ? `Submitted revision ${report.latestRevision}${report.hasDraft ? " · Revision draft saved" : ""}`
+            : "Not submitted"}
+        </span>
+        <span className={dirty ? "draft-unsaved" : ""} aria-live="polite">
+          {dirty ? "Unsaved changes" : !report ? "No saved draft yet" : "Saved"}
+        </span>
+      </div>
+      <p className="form-intro">
+        Complete all six writing sections to submit. Write “None” where
+        appropriate. You can save an incomplete draft and return to it later.
       </p>
       <ErrorNotice message={error} />
       {notice && <p role="status">{notice}</p>}
@@ -492,7 +513,7 @@ function ReportEditor({
             <input type="checkbox" required />I have reviewed this report and
             its selected records.
           </label>
-          <div className="action-row">
+          <div className="action-row workflow-actions">
             <button
               className="secondary"
               type="button"
@@ -508,6 +529,8 @@ function ReportEditor({
         </form>
       ) : (
         <form
+          className="weekly-draft-form"
+          aria-busy={busy}
           onSubmit={(e) => {
             e.preventDefault();
             void save(false);
@@ -523,165 +546,213 @@ function ReportEditor({
                 onChange={(e) => change("project", e.target.value)}
               />
             </label>
-            <div className="form-grid">
-              {Object.entries(reportFields).map(([key, label]) => (
-                <label key={key}>
-                  {label}
-                  <textarea
-                    aria-label={label}
-                    value={draft[key as keyof typeof reportFields]}
-                    maxLength={6000}
-                    onChange={(e) =>
-                      change(key as keyof typeof reportFields, e.target.value)
-                    }
-                  />
-                </label>
-              ))}
-            </div>
-            <p>
-              Complete all six sections to submit. Write “None” where
-              appropriate. Booking records describe activity; they do not
-              measure research quality.
+            <p className="field-hint">
+              Project is optional. Use your current project or leave it blank.
             </p>
-            <fieldset>
-              <legend>Include relevant bookings from this week</legend>
-              <p>
-                Only bookings you booked, operated or participated in are
-                offered. Selecting a scheduled booking does not claim it was
-                measured.
-              </p>
-              {!sources.bookings.length && (
-                <p>No relevant bookings for this week.</p>
-              )}
-              {sources.bookings.map((b) => (
-                <label className="check-row" key={b.id}>
-                  <input
-                    type="checkbox"
-                    checked={draft.bookingIds.includes(b.id)}
-                    onChange={(e) =>
-                      toggle("bookingIds", b.id, e.target.checked)
-                    }
-                  />
-                  <span>
-                    {b.instrumentName} · {b.measurementType} ·{" "}
-                    {formatDate(b.startsAt)} · {b.status}
-                    {b.actualStart
-                      ? " · Actual check-in recorded"
-                      : " · Scheduled only"}
+            {[
+              {
+                title: "Completed work",
+                keys: ["workCompleted", "experiments"] as const,
+              },
+              {
+                title: "Results & blockers",
+                keys: ["results", "blockers"] as const,
+              },
+              {
+                title: "Next steps",
+                keys: ["nextPlan", "helpNeeded"] as const,
+              },
+            ].map((section, index) => (
+              <fieldset
+                className="workflow-section report-writing-section"
+                key={section.title}
+              >
+                <legend>
+                  <span className="form-step" aria-hidden="true">
+                    {index + 1}
                   </span>
-                </label>
-              ))}
-            </fieldset>
-            <fieldset>
-              <legend>Include relevant samples</legend>
-              <p>Your samples and samples from your relevant bookings.</p>
-              {!sources.samples.length && <p>No relevant samples yet.</p>}
-              {sources.samples.map((s) => (
-                <label className="check-row" key={s.id}>
-                  <input
-                    type="checkbox"
-                    checked={draft.sampleIds.includes(s.id)}
-                    onChange={(e) =>
-                      toggle("sampleIds", s.id, e.target.checked)
-                    }
-                  />
-                  <span>
-                    {s.code} · {s.compound}
-                    {s.archived ? " · Archived" : ""}
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-            <fieldset>
-              <legend>Data links</legend>
-              <p>
-                Link to independently access-controlled research data. File
-                uploads are not configured.
-              </p>
-              {draft.dataLinks.map((l, i) => (
-                <div className="weekly-link-row" key={i}>
-                  <label>
-                    Link {i + 1} label
-                    <input
-                      required
-                      value={l.label}
-                      maxLength={150}
-                      onChange={(e) =>
-                        change(
-                          "dataLinks",
-                          draft.dataLinks.map((v, j) =>
-                            j === i ? { ...v, label: e.target.value } : v,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                  <label>
-                    Link {i + 1} URL
-                    <input
-                      type="url"
-                      required
-                      value={l.url}
-                      maxLength={1000}
-                      onChange={(e) =>
-                        change(
-                          "dataLinks",
-                          draft.dataLinks.map((v, j) =>
-                            j === i ? { ...v, url: e.target.value } : v,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      change(
-                        "dataLinks",
-                        draft.dataLinks.filter((_, j) => j !== i),
-                      )
-                    }
-                  >
-                    Remove link {i + 1}
-                  </button>
+                  {section.title}
+                </legend>
+                <div className="form-grid">
+                  {section.keys.map((key) => (
+                    <label key={key}>
+                      {reportFields[key]}
+                      <textarea
+                        aria-label={reportFields[key]}
+                        value={draft[key]}
+                        maxLength={6000}
+                        onChange={(e) => change(key, e.target.value)}
+                      />
+                    </label>
+                  ))}
                 </div>
-              ))}
-              <button
-                type="button"
-                className="secondary"
-                disabled={draft.dataLinks.length >= 10}
-                onClick={() =>
-                  change("dataLinks", [
-                    ...draft.dataLinks,
-                    { label: "", url: "" },
-                  ])
-                }
-              >
-                Add data link
-              </button>
-            </fieldset>
-            <div className="action-row">
-              <button className="secondary" disabled={busy}>
-                Save draft
-              </button>
-              <button
-                type="button"
-                className="primary"
-                disabled={busy}
-                onClick={() => void save(true)}
-              >
-                Save and review submission
-              </button>
-              {!!report?.latestRevision && (
+              </fieldset>
+            ))}
+            <OptionalFields
+              title="Linked bookings & samples (optional)"
+              initialOpen={
+                draft.bookingIds.length > 0 || draft.sampleIds.length > 0
+              }
+            >
+              <p className="field-hint">
+                {draft.bookingIds.length} bookings and {draft.sampleIds.length}{" "}
+                samples selected. Booking records describe activity; they do not
+                measure research quality.
+              </p>
+              <fieldset>
+                <legend>Include relevant bookings from this week</legend>
+                <p>
+                  Only bookings you booked, operated or participated in are
+                  offered. Selecting a scheduled booking does not claim it was
+                  measured.
+                </p>
+                {!sources.bookings.length && (
+                  <p>No relevant bookings for this week.</p>
+                )}
+                {sources.bookings.map((b) => (
+                  <label className="check-row" key={b.id}>
+                    <input
+                      type="checkbox"
+                      checked={draft.bookingIds.includes(b.id)}
+                      onChange={(e) =>
+                        toggle("bookingIds", b.id, e.target.checked)
+                      }
+                    />
+                    <span>
+                      {b.instrumentName} · {b.measurementType} ·{" "}
+                      {formatDate(b.startsAt)} · {b.status}
+                      {b.actualStart
+                        ? " · Actual check-in recorded"
+                        : " · Scheduled only"}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              <fieldset>
+                <legend>Include relevant samples</legend>
+                <p>Your samples and samples from your relevant bookings.</p>
+                {!sources.samples.length && <p>No relevant samples yet.</p>}
+                {sources.samples.map((s) => (
+                  <label className="check-row" key={s.id}>
+                    <input
+                      type="checkbox"
+                      checked={draft.sampleIds.includes(s.id)}
+                      onChange={(e) =>
+                        toggle("sampleIds", s.id, e.target.checked)
+                      }
+                    />
+                    <span>
+                      {s.code} · {s.compound}
+                      {s.archived ? " · Archived" : ""}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            </OptionalFields>
+            <OptionalFields
+              title="Research data links (optional)"
+              initialOpen={draft.dataLinks.length > 0}
+            >
+              <fieldset>
+                <legend>Data links</legend>
+                <p>
+                  Link to independently access-controlled research data. File
+                  uploads are not configured.
+                </p>
+                {draft.dataLinks.map((l, i) => (
+                  <div className="weekly-link-row" key={i}>
+                    <label>
+                      Link {i + 1} label
+                      <input
+                        required
+                        value={l.label}
+                        maxLength={150}
+                        onChange={(e) =>
+                          change(
+                            "dataLinks",
+                            draft.dataLinks.map((v, j) =>
+                              j === i ? { ...v, label: e.target.value } : v,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Link {i + 1} URL
+                      <input
+                        type="url"
+                        required
+                        value={l.url}
+                        maxLength={1000}
+                        onChange={(e) =>
+                          change(
+                            "dataLinks",
+                            draft.dataLinks.map((v, j) =>
+                              j === i ? { ...v, url: e.target.value } : v,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() =>
+                        change(
+                          "dataLinks",
+                          draft.dataLinks.filter((_, j) => j !== i),
+                        )
+                      }
+                    >
+                      Remove link {i + 1}
+                    </button>
+                  </div>
+                ))}
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() => setHistory(true)}
+                  disabled={draft.dataLinks.length >= 10}
+                  onClick={() =>
+                    change("dataLinks", [
+                      ...draft.dataLinks,
+                      { label: "", url: "" },
+                    ])
+                  }
                 >
-                  View submitted history
+                  Add data link
                 </button>
-              )}
+              </fieldset>
+            </OptionalFields>
+            <div className="workflow-actions report-actions">
+              <p className="field-hint">
+                Save keeps your draft private. Review it before submitting to
+                the supervisor.
+              </p>
+              <div className="action-row">
+                <button className="primary" disabled={busy}>
+                  Save draft
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={(event) => {
+                    if (event.currentTarget.form?.reportValidity())
+                      void save(true);
+                  }}
+                >
+                  Save and review submission
+                </button>
+                {!!report?.latestRevision && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setHistory(true)}
+                  >
+                    View submitted history
+                  </button>
+                )}
+              </div>
             </div>
           </fieldset>
         </form>
