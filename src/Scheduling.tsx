@@ -776,6 +776,9 @@ function BookingForm({
                 value={sampleSearch}
                 onChange={(e) => setSampleSearch(e.target.value)}
                 placeholder="Sample ID, compound or project"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.preventDefault();
+                }}
               />
             </label>
             <p className="selection-count" aria-live="polite">

@@ -100,6 +100,17 @@ test("booking sample search preserves selection, collapsed optional fields and i
   await page
     .getByLabel("Find a sample", { exact: true })
     .fill("no-such-sample");
+  let earlyReservations = 0;
+  const onWrite = (request: import("@playwright/test").Request) => {
+    if (request.url().endsWith("/api/bookings") && request.method() === "POST")
+      earlyReservations++;
+  };
+  page.on("request", onWrite);
+  await page.getByLabel("Find a sample", { exact: true }).press("Enter");
+  await page.waitForTimeout(200);
+  expect(earlyReservations).toBe(0);
+  page.off("request", onWrite);
+  await expect(dialog).toBeVisible();
   await expect(
     page.getByLabel(`${sample.code} · ${sample.compound}`, { exact: true }),
   ).toBeChecked();
