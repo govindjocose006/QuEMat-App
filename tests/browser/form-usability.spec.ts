@@ -85,7 +85,7 @@ test("booking sample search preserves selection, collapsed optional fields and i
     .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption(instrument.id);
   await page
-    .getByLabel("Measurement / process type", { exact: true })
+    .getByLabel("Measurement / process type")
     .fill("Synthetic forms scan");
   await page
     .getByLabel("Start (Asia/Kolkata)", { exact: true })
