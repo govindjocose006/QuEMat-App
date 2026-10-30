@@ -486,8 +486,8 @@ function ReportEditor({
         </span>
       </div>
       <p className="report-privacy">
-        <Icon name="lock" /> Your draft is private. After submission, only you
-        and the supervisor can read your report.
+        <Icon name="lock" /> Your draft is private. Submissions are shared only
+        with the supervisor.
       </p>
       <div className="report-state">
         <span>
@@ -500,9 +500,19 @@ function ReportEditor({
         </span>
       </div>
       <p className="form-intro">
-        Complete all six writing sections to submit. Write “None” where
-        appropriate. You can save an incomplete draft and return to it later.
+        Complete six sections to submit; write “None” where appropriate. Save a
+        partial draft at any time.
       </p>
+      {!!report?.latestRevision && (
+        <button
+          className="text-button report-history"
+          type="button"
+          disabled={busy}
+          onClick={() => setHistory(true)}
+        >
+          View submitted history
+        </button>
+      )}
       <ErrorNotice message={error} />
       {notice && <p role="status">{notice}</p>}
       {preview ? (
@@ -725,8 +735,7 @@ function ReportEditor({
             </OptionalFields>
             <div className="workflow-actions report-actions">
               <p className="field-hint">
-                Save keeps your draft private. Review it before submitting to
-                the supervisor.
+                Save privately or review before submitting.
               </p>
               <div className="action-row">
                 <button className="primary" disabled={busy}>
@@ -743,15 +752,6 @@ function ReportEditor({
                 >
                   Save and review submission
                 </button>
-                {!!report?.latestRevision && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => setHistory(true)}
-                  >
-                    View submitted history
-                  </button>
-                )}
               </div>
             </div>
           </fieldset>
@@ -984,11 +984,7 @@ export function Weekly({
   }
   return (
     <div className="weekly-page">
-      <div className="no-print">
-        <p>
-          Monday–Sunday weeks in Asia/Kolkata. Drafts stay private; each
-          submission preserves its content and timestamp.
-        </p>
+      <div className="no-print weekly-toolbar">
         <label>
           Week beginning (Monday)
           <input
@@ -998,24 +994,28 @@ export function Weekly({
             onChange={(e) => selectWeek(e.target.value)}
           />
         </label>
-        <div className="action-row">
-          <button
-            className={tab === "mine" ? "primary" : "secondary"}
-            onClick={() => setTab("mine")}
-          >
-            My weekly report
-          </button>
-          {canOpenReview(user.appRole) && (
+        {canOpenReview(user.appRole) && (
+          <div className="action-row weekly-tabs">
             <button
-              className={tab === "review" ? "primary" : "secondary"}
-              onClick={() => {
-                if (mayLeaveWorkspace()) setTab("review");
-              }}
+              className="secondary"
+              aria-pressed={tab === "mine"}
+              onClick={() => setTab("mine")}
             >
-              Review weekly reports
+              My weekly report
             </button>
-          )}
-        </div>
+            {canOpenReview(user.appRole) && (
+              <button
+                className="secondary"
+                aria-pressed={tab === "review"}
+                onClick={() => {
+                  if (mayLeaveWorkspace()) setTab("review");
+                }}
+              >
+                Review weekly reports
+              </button>
+            )}
+          </div>
+        )}
       </div>
       {tab === "mine" ? (
         <ReportEditor

@@ -155,6 +155,9 @@ test("weekly sections save privately and reveal invalid link fields before focus
   const work = page.getByLabel("Work completed", { exact: true });
   await expect(work).toBeVisible();
   await expect(page.locator(".report-writing-section")).toHaveCount(3);
+  await expect(
+    page.getByRole("button", { name: "My weekly report", exact: true }),
+  ).toHaveCount(0);
   await work.fill("Synthetic form draft retained privately");
   await expect(page.locator(".report-progress")).toHaveText(
     "1 / 6 sections drafted",
@@ -210,7 +213,10 @@ test("weekly sections save privately and reveal invalid link fields before focus
     { label: "Synthetic dataset", url: "https://example.test/forms-dataset" },
   ]);
   await accessible(page);
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page
+    .locator(".report-writing-section")
+    .first()
+    .scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath("workspace-form-weekly.png") });
   await page.reload();
   await page.getByLabel("Week beginning (Monday)").fill("2012-01-02");
