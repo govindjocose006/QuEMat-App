@@ -80,7 +80,7 @@ test("booking sample search preserves selection, collapsed optional fields and i
     name: "Reserve booking",
     exact: true,
   });
-  await expect(reserve).toBeInViewport();
+  await expect(reserve).toBeInViewport({ ratio: 1 });
   await dialog
     .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption(instrument.id);
@@ -122,7 +122,20 @@ test("booking sample search preserves selection, collapsed optional fields and i
   await page.getByLabel("Temperature minimum", { exact: true }).fill("2");
   await page.getByLabel("Temperature maximum", { exact: true }).fill("300");
   await dialog.evaluate((el) => (el.scrollTop = 0));
-  await expect(reserve).toBeInViewport();
+  await expect(reserve).toBeInViewport({ ratio: 1 });
+  expect(
+    await dialog
+      .locator(
+        ".workflow-section .form-grid input, .workflow-section .form-grid select",
+      )
+      .evaluateAll((els) =>
+        els.every((el) => {
+          const box = el.getBoundingClientRect();
+          const group = el.closest("fieldset")!.getBoundingClientRect();
+          return box.right <= group.right + 1 && box.left >= group.left - 1;
+        }),
+      ),
+  ).toBe(true);
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-form-booking.png"),
