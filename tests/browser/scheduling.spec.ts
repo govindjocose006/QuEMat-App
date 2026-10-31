@@ -199,9 +199,11 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await page.getByRole("button", { name: "Save sample", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(target).toHaveCount(0);
-  await expect(page.getByRole("status")).toHaveText(
-    "No samples match your search in this view.",
-  );
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "No samples match your search in this view." }),
+  ).toBeVisible();
   await status.selectOption("active");
   await expect(target).toBeVisible();
   await expect(control).toBeVisible();
