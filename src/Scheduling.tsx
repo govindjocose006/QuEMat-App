@@ -226,9 +226,9 @@ export function Samples({ user }: { user: Member }) {
   );
   return (
     <section className="records-page samples-page">
+      <h2 className="sr-only">Shared sample register</h2>
       <div className="section-title">
         <div>
-          <h2>Shared sample register</h2>
           <p>Stable IDs connect batches, measurements, and result links.</p>
         </div>
         <button className="primary" onClick={() => setEditing(null)}>

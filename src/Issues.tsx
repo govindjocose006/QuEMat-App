@@ -775,9 +775,9 @@ export function Issues({
   };
   return (
     <section className="records-page issues-page">
+      <h2 className="sr-only">Shared issues &amp; requests</h2>
       <div className="section-title">
         <div>
-          <h2>Shared issues &amp; requests</h2>
           <p>
             Coordinate lab work and decisions. Resolved history stays available.
           </p>
@@ -800,7 +800,16 @@ export function Issues({
           Retry issues
         </button>
       )}
-      <div className="issue-filters">
+      <div className="issue-filters issue-primary-filters">
+        <label>
+          Search issues
+          <input
+            maxLength={200}
+            value={q}
+            onChange={(e) => filter(setQ)(e.target.value)}
+            placeholder="Title, ID, project, person, instrument"
+          />
+        </label>
         <label>
           Work view
           <select
@@ -815,15 +824,6 @@ export function Issues({
             <option value="resolved">Resolved</option>
             <option value="all">All</option>
           </select>
-        </label>
-        <label>
-          Search issues
-          <input
-            maxLength={200}
-            value={q}
-            onChange={(e) => filter(setQ)(e.target.value)}
-            placeholder="Title, ID, project, person, instrument"
-          />
         </label>
         <label>
           Assignee

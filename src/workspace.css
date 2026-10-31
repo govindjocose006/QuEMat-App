@@ -1533,6 +1533,12 @@
 .records-page > .section-title {
   align-items: flex-start;
 }
+.records-page > .section-title p {
+  margin-top: 0;
+}
+.issues-page > .issue-primary-filters {
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+}
 .records-page .section-title p {
   max-width: 64ch;
 }
@@ -1715,6 +1721,35 @@
   min-height: 44px;
   align-items: center;
 }
+.task-form :is(.checkbox, .checkbox-label) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  line-height: 1.6;
+}
+.task-form input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--teal);
+}
+.task-form .workflow-section > small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #526b65;
+}
+.task-form .workflow-section > .text-button {
+  display: block;
+  min-height: 44px;
+  font-size: 13px;
+}
 .order-form {
   max-width: 900px;
 }
@@ -1742,6 +1777,12 @@
   }
   .records-page .issue-filters {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .issues-page > .issue-primary-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .issue-primary-filters > label:first-child {
+    grid-column: 1 / -1;
   }
   .records-page .section-title .action-row {
     margin: 0;

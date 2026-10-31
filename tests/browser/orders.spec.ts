@@ -40,7 +40,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     .click();
   await page.screenshot({
     path: info.outputPath("workspace-chemical-form.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page
     .getByRole("button", { name: "Save chemical request", exact: true })
@@ -169,7 +169,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   ).toBe(true);
   await page.screenshot({
     path: info.outputPath("chemical-order.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Open inbox", exact: true }).click();
   const link = page

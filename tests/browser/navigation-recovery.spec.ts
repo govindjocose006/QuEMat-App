@@ -44,7 +44,7 @@ test("sections survive reload and browser history without exposing record detail
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Shared sample register" }),
+    page.getByRole("heading", { name: "Samples", exact: true }),
   ).toHaveCount(0);
 });
 

@@ -135,7 +135,7 @@ test("issue filters remain visible when collapsed and stale results cannot repla
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-issue-list.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
 });
 
@@ -171,7 +171,7 @@ test("sample handling stays visible while metadata expands and grouped edits ret
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-sample-list.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await row
     .getByRole("button", { name: `Edit ${sample.code}`, exact: true })
@@ -205,7 +205,7 @@ test("meeting attendee search retains selection and reveals invalid optional lin
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-collaboration-list.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "New meeting", exact: true }).click();
   const title = `Register meeting ${info.project.name}`;
@@ -221,6 +221,11 @@ test("meeting attendee search retains selection and reveals invalid optional lin
     page.getByRole("checkbox", { name: attendee, exact: true }),
   ).toBeChecked();
   await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+  const checkbox = await page
+    .getByRole("checkbox", { name: attendee, exact: true })
+    .boundingBox();
+  expect(checkbox!.width).toBeLessThanOrEqual(24);
+  expect(checkbox!.height).toBeLessThanOrEqual(24);
   await expect(page.getByLabel("Meeting title", { exact: true })).toHaveValue(
     title,
   );
@@ -250,7 +255,7 @@ test("meeting attendee search retains selection and reveals invalid optional lin
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-meeting-form.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   const response = page.waitForResponse(
     (r) => r.url().endsWith("/api/meetings") && r.request().method() === "POST",

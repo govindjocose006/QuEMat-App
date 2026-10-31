@@ -172,9 +172,11 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await expect(target).toContainText("Archived");
   await expect(control).toHaveCount(0);
   await search.fill("No such synthetic sample");
-  await expect(page.getByRole("status")).toHaveText(
-    "No samples match your search in this view.",
-  );
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "No samples match your search in this view." }),
+  ).toBeVisible();
   await search.fill(`FeSe-${info.project.name}`);
   await status.selectOption("all");
   await expect(target).toBeVisible();

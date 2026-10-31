@@ -505,9 +505,9 @@ export function Orders({
   );
   return (
     <section className="orders-page records-page">
+      <h2 className="sr-only">Chemicals &amp; orders</h2>
       <div className="section-title">
         <div>
-          <h2>Chemicals & orders</h2>
           <p>
             Shared chemical requests, recorded costs and deliveries. Records do
             not initiate purchases or payments.

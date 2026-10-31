@@ -130,12 +130,17 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByLabel("Link 1 URL", { exact: true })
     .fill("https://example.test/observation");
+  const attentionBox = await page
+    .getByLabel("Supervisor attention requested", { exact: true })
+    .boundingBox();
+  expect(attentionBox!.width).toBeLessThanOrEqual(24);
+  expect(attentionBox!.height).toBeLessThanOrEqual(24);
   await accessible(page);
   await page.getByText("Related records (optional)", { exact: true }).click();
   await page.getByText("Data links (optional)", { exact: true }).click();
   await page.screenshot({
     path: info.outputPath("workspace-issue-form.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page
     .getByRole("button", { name: "Create issue/request", exact: true })
@@ -155,7 +160,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-reporter.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.getByLabel("Search issues", { exact: true }).fill(title);
@@ -219,7 +224,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-resolved-history.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await openIssues(page);
@@ -379,6 +384,6 @@ test("academic supervisor cannot manage unrelated work; application supervisor c
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-supervisor-decision.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
 });

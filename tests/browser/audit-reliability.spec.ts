@@ -222,7 +222,7 @@ test("malformed sample response shows a recoverable error instead of crashing", 
     .click();
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Shared sample register" }),
+    page.getByRole("heading", { name: "Samples", exact: true }),
   ).toBeVisible();
 });
 
