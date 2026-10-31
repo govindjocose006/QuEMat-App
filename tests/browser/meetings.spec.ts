@@ -135,6 +135,10 @@ test("selected-attendee meeting lifecycle, notes, owned actions, IST export and 
   await accessible(page);
   await signOut(page);
   await login(page, "member", d);
+  await page
+    .locator("summary")
+    .filter({ hasText: "Meetings, notices & action items" })
+    .click();
   await expect(
     page.getByRole("button", {
       name: `Prepare synthetic action ${d}`,
@@ -247,6 +251,10 @@ test("notice drafts, publishing, explicit per-revision reading, pin changes, his
   await expect(page.getByRole("dialog")).toContainText("revision 2");
   await signOut(page);
   await login(page, "member", d);
+  await page
+    .locator("summary")
+    .filter({ hasText: "Meetings, notices & action items" })
+    .click();
   await expect(
     page.getByRole("button", { name: title, exact: true }),
   ).toBeVisible();

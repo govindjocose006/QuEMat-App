@@ -8,7 +8,8 @@ import {
 import type { Instrument, Member, Session } from "../shared/schema.js";
 import { api, setSessionToken } from "./api.js";
 import { pageLabels, useWorkspaceNavigation, type Page } from "./navigation.js";
-import { Schedule, Samples, LiveUsage, Notifications } from "./Scheduling.js";
+import { Schedule, Samples, Notifications } from "./Scheduling.js";
+import { Overview } from "./Overview.js";
 import { Auth, Onboarding } from "./Auth.js";
 import {
   Brand,
@@ -21,10 +22,10 @@ import {
 import { InstrumentRegister } from "./Instruments.js";
 import { AuditLog, Members } from "./Members.js";
 import { mayLeaveWorkspace } from "./unsaved.js";
-import { Orders, OrdersOverview } from "./Orders.js";
-import { Issues, IssuesOverview } from "./Issues.js";
-import { Meetings, MeetingsOverview } from "./Meetings.js";
-import { Weekly, WeeklyOverview } from "./Weekly.js";
+import { Orders } from "./Orders.js";
+import { Issues } from "./Issues.js";
+import { Meetings } from "./Meetings.js";
+import { Weekly } from "./Weekly.js";
 import { QuickGuide, WelcomeTips, useWelcomeTips } from "./QuickGuide.js";
 
 export function App() {
@@ -185,6 +186,10 @@ function Workspace({
   const openedOrder = useCallback(() => setOrderId(null), []);
   const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
+  const [weeklyReview, setWeeklyReview] = useState(false);
+  useEffect(() => {
+    if (page !== "weekly") setWeeklyReview(false);
+  }, [page]);
   const [items, setItems] = useState<Instrument[] | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
   const [error, setError] = useState("");
@@ -244,7 +249,6 @@ function Workspace({
       ],
     },
   ];
-  const active = items?.filter((i) => !i.archived) ?? [];
   const primaryPages: Page[] = ["overview", "calendar", "notifications"];
   const badge =
     unreadCount !== null && unreadCount > 0 ? (
@@ -444,70 +448,24 @@ function Workspace({
                   }}
                 />
               )}
-              <div className="overview-totals" aria-label="Instrument summary">
-                <div>
-                  <span>REGISTERED INSTRUMENTS</span>
-                  <strong>
-                    {items ? active.length.toString().padStart(2, "0") : "—"}
-                  </strong>
-                </div>
-                <div>
-                  <span>PRIORITY RESOURCES</span>
-                  <strong>
-                    {items
-                      ? active
-                          .filter((i) => i.priority)
-                          .length.toString()
-                          .padStart(2, "0")
-                      : "—"}
-                  </strong>
-                </div>
-                <div>
-                  <span>REQUIRING ATTENTION</span>
-                  <strong>
-                    {items
-                      ? active
-                          .filter((i) => i.status !== "available")
-                          .length.toString()
-                          .padStart(2, "0")
-                      : "—"}
-                  </strong>
-                </div>
-              </div>
-              <div className="overview-layout">
-                <LiveUsage
-                  user={user}
-                  onCalendar={() => setPage("calendar")}
-                  onInstruments={acceptInstruments}
-                />
-                <div className="overview-rail" aria-label="Lab follow-ups">
-                  <IssuesOverview
-                    user={user}
-                    onOpen={(id) => {
-                      setIssueId(id);
-                      setPage("issues");
-                    }}
-                  />
-                  <MeetingsOverview
-                    open={(selection) => {
-                      setCollaboration(selection);
-                      setPage("meetings");
-                    }}
-                  />
-                  <WeeklyOverview
-                    onOpen={() => {
-                      setWeeklyId(null);
-                      setPage("weekly");
-                    }}
-                  />
-                  <OrdersOverview
-                    open={() => {
-                      setOrderId(null);
-                      setPage("orders");
-                    }}
-                  />
-                </div>
-              </div>
+              <Overview
+                user={user}
+                onNavigate={setPage}
+                onInstruments={acceptInstruments}
+                onIssue={(id) => {
+                  setIssueId(id);
+                  setPage("issues");
+                }}
+                onWeekly={(review) => {
+                  setWeeklyId(null);
+                  setWeeklyReview(review);
+                  setPage("weekly");
+                }}
+                onCollaboration={(selection) => {
+                  setCollaboration(selection);
+                  setPage("meetings");
+                }}
+              />
             </>
           )}
           {page === "instruments" &&
@@ -543,7 +501,13 @@ function Workspace({
               opened={() => setCollaboration(null)}
             />
           )}
-          {page === "weekly" && <Weekly user={user} initialId={weeklyId} />}
+          {page === "weekly" && (
+            <Weekly
+              user={user}
+              initialId={weeklyId}
+              initialReview={weeklyReview}
+            />
+          )}
           {page === "notifications" && (
             <Notifications
               onOrder={(id) => {

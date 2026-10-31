@@ -107,6 +107,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
     .getByRole("combobox", { name: "Assignee", exact: true })
     .last()
     .selectOption(assignee.id);
+  await page.getByText("Related records (optional)", { exact: true }).click();
   await page
     .getByRole("combobox", { name: "Related instrument", exact: true })
     .selectOption(instrument.id);
@@ -119,6 +120,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByLabel("Supervisor attention requested", { exact: true })
     .check();
+  await page.getByText("Data links (optional)", { exact: true }).click();
   await page
     .getByRole("button", { name: "Add data link", exact: true })
     .click();
@@ -128,7 +130,18 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByLabel("Link 1 URL", { exact: true })
     .fill("https://example.test/observation");
+  const attentionBox = await page
+    .getByLabel("Supervisor attention requested", { exact: true })
+    .boundingBox();
+  expect(attentionBox!.width).toBeLessThanOrEqual(24);
+  expect(attentionBox!.height).toBeLessThanOrEqual(24);
   await accessible(page);
+  await page.getByText("Related records (optional)", { exact: true }).click();
+  await page.getByText("Data links (optional)", { exact: true }).click();
+  await page.screenshot({
+    path: info.outputPath("workspace-issue-form.png"),
+    fullPage: info.project.name !== "phone",
+  });
   await page
     .getByRole("button", { name: "Create issue/request", exact: true })
     .click();
@@ -147,7 +160,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-reporter.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.getByLabel("Search issues", { exact: true }).fill(title);
@@ -156,9 +169,10 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   ).toBeVisible();
   await logout(page);
   await login(page, "mentor", d);
-  await expect(
-    page.getByRole("heading", { name: /Assigned to me/ }),
-  ).toContainText("(1)");
+  const assigned = page.locator(".focus-card").filter({
+    has: page.getByRole("heading", { name: "Assigned to you", exact: true }),
+  });
+  await expect(assigned.locator(".focus-number")).toContainText("1");
   await page
     .getByRole("button", { name: new RegExp(`ISS-.*${title}`) })
     .first()
@@ -181,6 +195,10 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
       exact: true,
     }),
   ).toBeVisible();
+  await page
+    .locator("summary")
+    .filter({ hasText: "Status & edit history" })
+    .click();
   await transition(page, "acknowledged");
   await expect(page.getByRole("dialog")).toContainText("No reason provided.");
   await expect(page.getByRole("dialog")).toContainText(`Weekly ${d} mentor`);
@@ -199,10 +217,14 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page.getByRole("button", { name: title, exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Blocked → Resolved");
   await expect(page.getByRole("dialog")).toContainText("No reason provided.");
+  await page
+    .locator("summary")
+    .filter({ hasText: "Status & edit history" })
+    .click();
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-resolved-history.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Close dialog" }).click();
   await openIssues(page);
@@ -222,6 +244,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByRole("combobox", { name: "Work view", exact: true })
     .selectOption("all");
+  await page.locator("summary").filter({ hasText: "More filters" }).click();
   await page
     .getByRole("combobox", { name: "Priority", exact: true })
     .selectOption("urgent");
@@ -297,7 +320,7 @@ test("academic supervisor cannot manage unrelated work; application supervisor c
   await logout(page);
   await login(page, "supervisor", d);
   await expect(
-    page.getByRole("heading", { name: /Supervisor attention requested/ }),
+    page.getByRole("heading", { name: "Needs your attention", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: `${created.code} · ${title}`, exact: true })
@@ -361,6 +384,6 @@ test("academic supervisor cannot manage unrelated work; application supervisor c
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-supervisor-decision.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
 });

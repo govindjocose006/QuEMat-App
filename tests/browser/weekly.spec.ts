@@ -83,8 +83,16 @@ test("weekly drafts, selected records, review-before-submit and revision history
     await page
       .getByLabel(label, { exact: true })
       .fill(`${key}: synthetic ${device}`);
+  await page
+    .locator("summary")
+    .filter({ hasText: "Linked bookings & samples (optional)" })
+    .click();
   await page.getByLabel(new RegExp(`PPMS.*Weekly M\\(T\\) ${device}`)).check();
   await page.getByLabel(new RegExp(`${s.code}.*Weekly sample`)).check();
+  await page
+    .locator("summary")
+    .filter({ hasText: "Research data links (optional)" })
+    .click();
   await page
     .getByRole("button", { name: "Add data link", exact: true })
     .click();

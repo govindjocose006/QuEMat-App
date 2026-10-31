@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export function Brand({ small = false }: { small?: boolean }) {
   return (
@@ -116,12 +116,70 @@ export function Icon({ name }: { name: keyof typeof iconPaths }) {
     </svg>
   );
 }
+export function OptionalFields({
+  title,
+  initialOpen = false,
+  children,
+}: {
+  title: string;
+  initialOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(initialOpen);
+  return (
+    <details
+      className="optional-fields"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onInvalidCapture={(event) => {
+        // Reveal invalid fields before native validation tries to focus them.
+        event.currentTarget.open = true;
+        setOpen(true);
+      }}
+    >
+      <summary>
+        {title}
+        <span aria-hidden="true">
+          <Icon name="arrow" />
+        </span>
+      </summary>
+      <div className="optional-fields-body">{children}</div>
+    </details>
+  );
+}
 export function ErrorNotice({ message }: { message: string }) {
   return message ? (
     <div className="notice error" role="alert">
       {message}
     </div>
   ) : null;
+}
+export function FilterSummary({
+  count,
+  active,
+  onClear,
+}: {
+  count: string;
+  active: string[];
+  onClear: () => void;
+}) {
+  return (
+    <div className="filter-summary">
+      <p role="status">{count}</p>
+      {active.length > 0 && (
+        <>
+          <ul aria-label="Active filters">
+            {active.map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ul>
+          <button type="button" className="text-button" onClick={onClear}>
+            Clear filters
+          </button>
+        </>
+      )}
+    </div>
+  );
 }
 export function Status({ value }: { value: string }) {
   return (

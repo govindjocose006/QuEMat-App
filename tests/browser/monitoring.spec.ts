@@ -14,6 +14,7 @@ async function login(page: Page) {
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
+  await page.locator("summary").filter({ hasText: "Lab activity" }).click();
   await expect(
     page.getByRole("heading", {
       name: "Usage & next reservations",
@@ -99,6 +100,7 @@ test("open dashboard refreshes instrument state with bookings, handovers and sam
     endsAt: new Date(now + 90000000).toISOString(),
   });
   await page.reload();
+  await page.locator("summary").filter({ hasText: "Lab activity" }).click();
   const card = page.locator("article.panel").filter({
     has: page.getByRole("heading", { name: resource.name, exact: true }),
   });
@@ -288,6 +290,10 @@ test("successful meeting and sample retries remove earlier connection errors", a
     return route.continue();
   });
   await login(page);
+  await page
+    .locator("summary")
+    .filter({ hasText: "Meetings, notices & action items" })
+    .click();
   await expect(page.getByRole("alert")).toContainText(
     "Synthetic meeting outage",
   );

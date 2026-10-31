@@ -26,8 +26,22 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     .getByLabel("Purpose", { exact: true })
     .fill("Synthetic order lifecycle test");
   await page
+    .getByText("Specifications & purchasing details (optional)", {
+      exact: true,
+    })
+    .click();
+  await page
     .getByLabel("Estimated cost — INR (optional)", { exact: true })
     .fill("1234.50");
+  await page
+    .getByText("Specifications & purchasing details (optional)", {
+      exact: true,
+    })
+    .click();
+  await page.screenshot({
+    path: info.outputPath("workspace-chemical-form.png"),
+    fullPage: info.project.name !== "phone",
+  });
   await page
     .getByRole("button", { name: "Save chemical request", exact: true })
     .click();
@@ -95,6 +109,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   ).json();
   const item = rows.items[0];
   expect(item.receivedQuantity).toBe(0.3);
+  expect(item.estimatedCostPaise).toBe(123450);
   expect(item.costPaise).toBe(120025);
   await page.reload();
   await navigate(page, "Chemicals & Orders");
@@ -108,7 +123,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     page.getByText("Synthetic corrected invoice", { exact: false }).first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Retained history", exact: true }),
+    page.locator("summary").filter({ hasText: /^Retained history/ }),
   ).toBeVisible();
   // Reopening the same selection must fetch again without hiding its details.
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -120,20 +135,20 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
       .click();
     await refreshed;
     await expect(
-      page.getByRole("heading", { name: "Retained history", exact: true }),
+      page.locator("summary").filter({ hasText: /^Retained history/ }),
     ).toBeVisible();
   }
   await page
     .getByRole("button", { name: "Close order details", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Retained history", exact: true }),
+    page.locator("summary").filter({ hasText: /^Retained history/ }),
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Open " + item.code, exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Retained history", exact: true }),
+    page.locator("summary").filter({ hasText: /^Retained history/ }),
   ).toBeVisible();
   const reopened = await (
     await page.request.get(`/api/orders/${item.id}`)
@@ -154,7 +169,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
   ).toBe(true);
   await page.screenshot({
     path: info.outputPath("chemical-order.png"),
-    fullPage: true,
+    fullPage: info.project.name !== "phone",
   });
   await page.getByRole("button", { name: "Open inbox", exact: true }).click();
   const link = page

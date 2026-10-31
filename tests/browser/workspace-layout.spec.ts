@@ -16,6 +16,7 @@ test("overview groups instruments without losing access to follow-ups and phone 
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
+  await page.locator("summary").filter({ hasText: "Lab activity" }).click();
   const filters = page.getByRole("group", { name: "Instrument category" });
   const cards = page.locator(".usage-card");
   await expect(
@@ -52,8 +53,12 @@ test("overview groups instruments without losing access to follow-ups and phone 
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Weekly progress", exact: true }),
+    page.getByRole("heading", { name: "My weekly report", exact: true }),
   ).toBeVisible();
+  await page
+    .locator("summary")
+    .filter({ hasText: "Meetings, notices & action items" })
+    .click();
   await expect(
     page.getByRole("heading", {
       name: "Meetings & pinned notices",
