@@ -22,7 +22,14 @@ import {
   type IssueSummary,
 } from "../shared/issues.js";
 import { api } from "./api.js";
-import { ErrorNotice, Modal, formatDate, messageOf } from "./components.js";
+import {
+  ErrorNotice,
+  FilterSummary,
+  OptionalFields,
+  Modal,
+  formatDate,
+  messageOf,
+} from "./components.js";
 const blank: IssueInput = {
   title: "",
   description: "",
@@ -136,148 +143,168 @@ function IssueForm({
     }
   }
   return (
-    <form onSubmit={submit} className="dialog-body">
+    <form onSubmit={submit} className="dialog-body task-form">
       <ErrorNotice message={error} />
       <p>
         Shared with approved lab members. Reporter and change history are
         recorded automatically.
       </p>
-      <label>
-        Title
-        <input
-          required
-          minLength={3}
-          maxLength={180}
-          value={data.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-      </label>
-      <label>
-        Description
-        <textarea
-          required
-          minLength={5}
-          maxLength={8000}
-          rows={5}
-          value={data.description}
-          onChange={(e) => set("description", e.target.value)}
-        />
-      </label>
-      <div className="form-grid">
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">1</span>Issue or request
+        </legend>
         <label>
-          Category
-          <select
-            value={data.category}
-            onChange={(e) =>
-              set("category", e.target.value as IssueInput["category"])
-            }
-          >
-            {Object.entries(issueCategories).map(([k, label]) => (
-              <option value={k} key={k}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Priority
-          <select
-            value={data.priority}
-            onChange={(e) =>
-              set("priority", e.target.value as IssueInput["priority"])
-            }
-          >
-            {issuePriorities.map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Due date (Asia/Kolkata)
+          Title
           <input
-            type="date"
-            value={data.dueDate ?? ""}
-            onChange={(e) => set("dueDate", e.target.value || null)}
+            required
+            minLength={3}
+            maxLength={180}
+            value={data.title}
+            onChange={(e) => set("title", e.target.value)}
           />
         </label>
         <label>
-          Assignee
-          <select
-            value={data.assigneeId ?? ""}
-            onChange={(e) => set("assigneeId", e.target.value || null)}
-          >
-            <option value="">Unassigned</option>
-            {initial?.assigneeId &&
-              !options.people.some((p) => p.id === initial.assigneeId) && (
-                <option value={initial.assigneeId}>
-                  Previous assignee (inactive) · {initial.assigneeName}
-                </option>
-              )}
-            {options.people
-              .filter((p) => p.active || p.id === initial?.assigneeId)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.fullName}
-                  {p.active ? "" : " (inactive)"}
+          Description
+          <textarea
+            required
+            minLength={5}
+            maxLength={8000}
+            rows={5}
+            value={data.description}
+            onChange={(e) => set("description", e.target.value)}
+          />
+        </label>
+      </fieldset>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">2</span>Responsibility & priority
+        </legend>
+        <div className="form-grid">
+          <label>
+            Category
+            <select
+              value={data.category}
+              onChange={(e) =>
+                set("category", e.target.value as IssueInput["category"])
+              }
+            >
+              {Object.entries(issueCategories).map(([k, label]) => (
+                <option value={k} key={k}>
+                  {label}
                 </option>
               ))}
-          </select>
-        </label>
-        <label>
-          Related instrument
-          <select
-            value={data.instrumentId ?? ""}
-            onChange={(e) => set("instrumentId", e.target.value || null)}
-          >
-            <option value="">None</option>
-            {options.instruments
-              .filter((i) => !i.archived || i.id === initial?.instrumentId)
-              .map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                  {i.archived ? " (archived)" : ""}
-                </option>
+            </select>
+          </label>
+          <label>
+            Priority
+            <select
+              value={data.priority}
+              onChange={(e) =>
+                set("priority", e.target.value as IssueInput["priority"])
+              }
+            >
+              {issuePriorities.map((p) => (
+                <option key={p}>{p}</option>
               ))}
-          </select>
+            </select>
+          </label>
+          <label>
+            Due date (Asia/Kolkata)
+            <input
+              type="date"
+              value={data.dueDate ?? ""}
+              onChange={(e) => set("dueDate", e.target.value || null)}
+            />
+          </label>
+          <label>
+            Assignee
+            <select
+              value={data.assigneeId ?? ""}
+              onChange={(e) => set("assigneeId", e.target.value || null)}
+            >
+              <option value="">Unassigned</option>
+              {initial?.assigneeId &&
+                !options.people.some((p) => p.id === initial.assigneeId) && (
+                  <option value={initial.assigneeId}>
+                    Previous assignee (inactive) · {initial.assigneeName}
+                  </option>
+                )}
+              {options.people
+                .filter((p) => p.active || p.id === initial?.assigneeId)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.fullName}
+                    {p.active ? "" : " (inactive)"}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={data.supervisorAttention}
+            onChange={(e) => set("supervisorAttention", e.target.checked)}
+          />{" "}
+          Supervisor attention requested
         </label>
-        <label>
-          Related sample
-          <select
-            value={data.sampleId ?? ""}
-            onChange={(e) => set("sampleId", e.target.value || null)}
-          >
-            <option value="">None</option>
-            {options.samples
-              .filter((s) => !s.archived || s.id === initial?.sampleId)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.code} · {s.compound}
-                  {s.archived ? " (archived)" : ""}
-                </option>
-              ))}
-          </select>
-        </label>
-      </div>
-      <label>
-        Related project
-        <input
-          maxLength={500}
-          value={data.project}
-          onChange={(e) => set("project", e.target.value)}
-        />
-      </label>
-      <label className="checkbox">
-        <input
-          type="checkbox"
-          checked={data.supervisorAttention}
-          onChange={(e) => set("supervisorAttention", e.target.checked)}
-        />{" "}
-        Supervisor attention requested
-      </label>
-      <p>
-        Requesting attention does not acknowledge the item. The assignee or a
-        lab manager must explicitly acknowledge it.
-      </p>
+        <p>
+          Requesting attention does not acknowledge the item. The assignee or a
+          lab manager must explicitly acknowledge it.
+        </p>
+      </fieldset>
+      <OptionalFields
+        title="Related records (optional)"
+        initialOpen={
+          !!(initial?.instrumentId || initial?.sampleId || initial?.project)
+        }
+      >
+        <div className="form-grid">
+          <label>
+            Related instrument
+            <select
+              value={data.instrumentId ?? ""}
+              onChange={(e) => set("instrumentId", e.target.value || null)}
+            >
+              <option value="">None</option>
+              {options.instruments
+                .filter((i) => !i.archived || i.id === initial?.instrumentId)
+                .map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                    {i.archived ? " (archived)" : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            Related sample
+            <select
+              value={data.sampleId ?? ""}
+              onChange={(e) => set("sampleId", e.target.value || null)}
+            >
+              <option value="">None</option>
+              {options.samples
+                .filter((s) => !s.archived || s.id === initial?.sampleId)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.code} · {s.compound}
+                    {s.archived ? " (archived)" : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+
+          <label>
+            Related project
+            <input
+              maxLength={500}
+              value={data.project}
+              onChange={(e) => set("project", e.target.value)}
+            />
+          </label>
+        </div>
+      </OptionalFields>
       {data.category === "helium_refill" && (
         <p className="notice">
           Record a manual observation and requested action. This is not a sensor
@@ -290,8 +317,10 @@ function IssueForm({
           does not place an order, authorize payment or record a purchase.
         </p>
       )}
-      <fieldset>
-        <legend>Data links</legend>
+      <OptionalFields
+        title="Data links (optional)"
+        initialOpen={!!initial?.dataLinks.length}
+      >
         <p>
           Use links to material shared only with intended readers. Attachments
           are not enabled.
@@ -355,8 +384,8 @@ function IssueForm({
         >
           Add data link
         </button>
-      </fieldset>
-      <div className="form-actions">
+      </OptionalFields>
+      <div className="form-actions workflow-actions">
         <button className="primary" disabled={busy}>
           {busy ? "Saving…" : initial ? "Save changes" : "Create issue/request"}
         </button>
@@ -637,8 +666,9 @@ function Detail({
               </p>
             )}
           </section>
-          <section>
-            <h3>Status &amp; edit history</h3>
+          <OptionalFields
+            title={`Status & edit history (${item.events.length})`}
+          >
             <ol className="issue-history">
               {item.events.map((e) => (
                 <li key={e.id}>
@@ -662,7 +692,7 @@ function Detail({
                 </li>
               ))}
             </ol>
-          </section>
+          </OptionalFields>
         </>
       )}
     </div>
@@ -729,12 +759,14 @@ export function Issues({
   }, [view, q, status, priority, category, instrument, assignee, offset]);
   useEffect(() => {
     let active = true;
+    setLoading(true);
     const timer = setTimeout(() => {
       if (active) void reload();
     }, 200);
     return () => {
       active = false;
       clearTimeout(timer);
+      generation.current++;
     };
   }, [reload]);
   const filter = (setter: (s: string) => void) => (v: string) => {
@@ -742,7 +774,7 @@ export function Issues({
     setOffset(0);
   };
   return (
-    <section>
+    <section className="records-page issues-page">
       <div className="section-title">
         <div>
           <h2>Shared issues &amp; requests</h2>
@@ -794,67 +826,6 @@ export function Issues({
           />
         </label>
         <label>
-          Status
-          <select
-            value={status}
-            onChange={(e) => filter(setStatus)(e.target.value)}
-          >
-            <option value="">Any status</option>
-            {issueStatuses
-              .filter(
-                (s) =>
-                  view === "all" ||
-                  (view === "resolved" ? s === "resolved" : s !== "resolved"),
-              )
-              .map((s) => (
-                <option key={s} value={s}>
-                  {issueStatusLabels[s]}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label>
-          Priority
-          <select
-            value={priority}
-            onChange={(e) => filter(setPriority)(e.target.value)}
-          >
-            <option value="">Any priority</option>
-            {issuePriorities.map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Category
-          <select
-            value={category}
-            onChange={(e) => filter(setCategory)(e.target.value)}
-          >
-            <option value="">Any category</option>
-            {Object.entries(issueCategories).map(([k, l]) => (
-              <option key={k} value={k}>
-                {l}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Instrument
-          <select
-            value={instrument}
-            onChange={(e) => filter(setInstrument)(e.target.value)}
-          >
-            <option value="">Any instrument</option>
-            {options?.instruments.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-                {i.archived ? " (archived)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
           Assignee
           <select
             value={assignee}
@@ -871,21 +842,114 @@ export function Issues({
           </select>
         </label>
       </div>
+      <OptionalFields
+        title={`More filters${[status, priority, category, instrument].filter(Boolean).length ? ` (${[status, priority, category, instrument].filter(Boolean).length} active)` : ""}`}
+      >
+        <div className="issue-filters">
+          <label>
+            Status
+            <select
+              value={status}
+              onChange={(e) => filter(setStatus)(e.target.value)}
+            >
+              <option value="">Any status</option>
+              {issueStatuses
+                .filter(
+                  (s) =>
+                    view === "all" ||
+                    (view === "resolved" ? s === "resolved" : s !== "resolved"),
+                )
+                .map((s) => (
+                  <option key={s} value={s}>
+                    {issueStatusLabels[s]}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            Priority
+            <select
+              value={priority}
+              onChange={(e) => filter(setPriority)(e.target.value)}
+            >
+              <option value="">Any priority</option>
+              {issuePriorities.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Category
+            <select
+              value={category}
+              onChange={(e) => filter(setCategory)(e.target.value)}
+            >
+              <option value="">Any category</option>
+              {Object.entries(issueCategories).map(([k, l]) => (
+                <option key={k} value={k}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Instrument
+            <select
+              value={instrument}
+              onChange={(e) => filter(setInstrument)(e.target.value)}
+            >
+              <option value="">Any instrument</option>
+              {options?.instruments.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name}
+                  {i.archived ? " (archived)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </OptionalFields>
       {loading && <p role="status">Loading issues…</p>}
-      {!loading && !error && (
-        <p>
-          {total} matching item{total === 1 ? "" : "s"}
-        </p>
-      )}
+      <FilterSummary
+        count={
+          loading
+            ? "Updating results…"
+            : error
+              ? "Results unavailable"
+              : `${total} matching item${total === 1 ? "" : "s"}`
+        }
+        active={[
+          q && `Search: ${q}`,
+          status && `Status: ${issueStatusLabels[status as Issue["status"]]}`,
+          priority && `Priority: ${priority}`,
+          category &&
+            `Category: ${issueCategories[category as Issue["category"]]}`,
+          instrument &&
+            `Instrument: ${options?.instruments.find((i) => i.id === instrument)?.name ?? "Selected"}`,
+          assignee &&
+            `Assignee: ${assignee === "me" ? "Me" : assignee === "unassigned" ? "Unassigned" : (options?.people.find((p) => p.id === assignee)?.fullName ?? "Selected")}`,
+        ].filter((value): value is string => !!value)}
+        onClear={() => {
+          setQ("");
+          setStatus("");
+          setPriority("");
+          setCategory("");
+          setInstrument("");
+          setAssignee("");
+          setOffset(0);
+        }}
+      />
       <div className="issue-grid">
-        {items.map((i) => (
-          <IssueCard key={i.id} item={i} onOpen={setSelected} />
-        ))}
+        {!loading &&
+          !error &&
+          items.map((i) => (
+            <IssueCard key={i.id} item={i} onOpen={setSelected} />
+          ))}
       </div>
       {!loading && !error && !items.length && (
         <p role="status">No issues match this view.</p>
       )}
-      {total > 50 && (
+      {!loading && !error && total > 50 && (
         <div className="action-row">
           <button
             className="secondary"

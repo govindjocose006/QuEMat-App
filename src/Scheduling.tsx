@@ -22,6 +22,7 @@ import {
 import { api } from "./api.js";
 import {
   ErrorNotice,
+  FilterSummary,
   OptionalFields,
   Icon,
   Modal,
@@ -118,64 +119,78 @@ function SampleForm({
     }
   }
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} className="task-form">
       <ErrorNotice message={error} />
-      <div className="form-grid">
-        <Field
-          label="Compound / formula"
-          name="compound"
-          value={sample?.compound}
-          required
-        />
-        <Field label="Project" name="project" value={sample?.project} />
-        <Field label="Batch" name="batch" value={sample?.batch} />
-        <Field
-          label="Preparation date"
-          name="preparedOn"
-          type="date"
-          value={sample?.preparedOn ?? ""}
-        />
-        <label>
-          Origin
-          <select name="origin" defaultValue={sample?.origin ?? "internal"}>
-            <option value="internal">Internal</option>
-            <option value="external">External</option>
-          </select>
-        </label>
-        <Field
-          label="Physical form"
-          name="physicalForm"
-          value={sample?.physicalForm}
-        />
-        <Field
-          label="Quantity / mass (include units)"
-          name="quantity"
-          value={sample?.quantity}
-        />
-        <Field
-          label="Storage location"
-          name="storage"
-          value={sample?.storage}
-        />
-        <Notes
-          label="Notes and handling information"
-          name="notes"
-          value={sample?.notes}
-        />
-        {sample && (
-          <label className="check-row">
-            <input
-              type="checkbox"
-              name="archived"
-              defaultChecked={sample.archived}
-            />
-            Archive sample
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">1</span>Sample identity
+        </legend>
+        <div className="form-grid">
+          <Field
+            label="Compound / formula"
+            name="compound"
+            value={sample?.compound}
+            required
+          />
+          <Field label="Project" name="project" value={sample?.project} />
+        </div>
+      </fieldset>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">2</span>Preparation & handling
+        </legend>
+        <div className="form-grid">
+          <Field label="Batch" name="batch" value={sample?.batch} />
+          <Field
+            label="Preparation date"
+            name="preparedOn"
+            type="date"
+            value={sample?.preparedOn ?? ""}
+          />
+          <label>
+            Origin
+            <select name="origin" defaultValue={sample?.origin ?? "internal"}>
+              <option value="internal">Internal</option>
+              <option value="external">External</option>
+            </select>
           </label>
-        )}
+          <Field
+            label="Physical form"
+            name="physicalForm"
+            value={sample?.physicalForm}
+          />
+          <Field
+            label="Quantity / mass (include units)"
+            name="quantity"
+            value={sample?.quantity}
+          />
+          <Field
+            label="Storage location"
+            name="storage"
+            value={sample?.storage}
+          />
+          <Notes
+            label="Notes and handling information"
+            name="notes"
+            value={sample?.notes}
+          />
+          {sample && (
+            <label className="check-row">
+              <input
+                type="checkbox"
+                name="archived"
+                defaultChecked={sample.archived}
+              />
+              Archive sample
+            </label>
+          )}
+        </div>
+      </fieldset>
+      <div className="workflow-actions">
+        <button className="primary" disabled={busy}>
+          {busy ? "Saving…" : "Save sample"}
+        </button>
       </div>
-      <button className="primary" disabled={busy}>
-        {busy ? "Saving…" : "Save sample"}
-      </button>
     </form>
   );
 }
@@ -210,7 +225,7 @@ export function Samples({ user }: { user: Member }) {
       JSON.stringify(s).toLowerCase().includes(query),
   );
   return (
-    <section>
+    <section className="records-page samples-page">
       <div className="section-title">
         <div>
           <h2>Shared sample register</h2>
@@ -254,53 +269,76 @@ export function Samples({ user }: { user: Member }) {
           </select>
         </label>
       </div>
+      <FilterSummary
+        count={
+          loading
+            ? "Updating results…"
+            : error
+              ? "Results unavailable"
+              : `${visibleSamples.length} sample${visibleSamples.length === 1 ? "" : "s"}`
+        }
+        active={[
+          search && `Search: ${search}`,
+          sampleStatus !== "active" && `Status: ${sampleStatus}`,
+        ].filter((value): value is string => !!value)}
+        onClear={() => {
+          setSearch("");
+          setSampleStatus("active");
+        }}
+      />
       <div className="sample-grid">
-        {visibleSamples.map((s) => (
-          <article className="panel" key={s.id}>
-            <span className="eyebrow">
-              {s.code}
-              {s.archived ? " · Archived" : ""}
-            </span>
-            <h3>{s.compound}</h3>
-            <p>
-              {s.ownerName} · {s.project || "No project"}
-            </p>
-            <dl>
-              <dt>Batch / preparation</dt>
-              <dd>
-                {s.batch || "—"} / {s.preparedOn || "—"}
-              </dd>
-              <dt>Origin / form / quantity</dt>
-              <dd>
-                {s.origin} / {s.physicalForm || "—"} / {s.quantity || "—"}
-              </dd>
-              <dt>Storage</dt>
-              <dd>{s.storage || "Not recorded"}</dd>
-              <dt>Handling notes</dt>
-              <dd>{s.notes || "Not recorded"}</dd>
-            </dl>
-            <div className="action-row">
-              {(s.ownerId === user.id || managesOperations(user.appRole)) && (
-                <button className="secondary" onClick={() => setEditing(s)}>
-                  Edit {s.code}
+        {!loading &&
+          !error &&
+          visibleSamples.map((s) => (
+            <article className="panel" key={s.id}>
+              <span className="eyebrow">
+                {s.code}
+                {s.archived ? " · Archived" : ""}
+              </span>
+              <h3>{s.compound}</h3>
+              <p>
+                {s.ownerName} · {s.project || "No project"}
+              </p>
+              <dl className="sample-handling">
+                <dt>Storage</dt>
+                <dd>{s.storage || "Not recorded"}</dd>
+                <dt>Handling notes</dt>
+                <dd>{s.notes || "Not recorded"}</dd>
+              </dl>
+              <OptionalFields title="Sample details">
+                <dl>
+                  <dt>Batch / preparation</dt>
+                  <dd>
+                    {s.batch || "—"} / {s.preparedOn || "—"}
+                  </dd>
+                  <dt>Origin / form / quantity</dt>
+                  <dd>
+                    {s.origin} / {s.physicalForm || "—"} / {s.quantity || "—"}
+                  </dd>
+                </dl>
+              </OptionalFields>
+              <div className="action-row">
+                {(s.ownerId === user.id || managesOperations(user.appRole)) && (
+                  <button className="secondary" onClick={() => setEditing(s)}>
+                    Edit {s.code}
+                  </button>
+                )}
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    void api<Booking[]>(`/samples/${s.id}/bookings`)
+                      .then((data) => {
+                        setHistory(data);
+                        setError("");
+                      })
+                      .catch((e) => setError(messageOf(e)))
+                  }
+                >
+                  History {s.code}
                 </button>
-              )}
-              <button
-                className="secondary"
-                onClick={() =>
-                  void api<Booking[]>(`/samples/${s.id}/bookings`)
-                    .then((data) => {
-                      setHistory(data);
-                      setError("");
-                    })
-                    .catch((e) => setError(messageOf(e)))
-                }
-              >
-                History {s.code}
-              </button>
-            </div>
-          </article>
-        ))}
+              </div>
+            </article>
+          ))}
       </div>
       {!loading && !error && !visibleSamples.length && (
         <p role="status">

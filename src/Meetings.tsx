@@ -18,7 +18,13 @@ import {
 } from "../shared/meetings.js";
 import { fromIST, istInput } from "../shared/scheduling-ui.js";
 import { api } from "./api.js";
-import { ErrorNotice, Modal, formatDate, messageOf } from "./components.js";
+import {
+  ErrorNotice,
+  OptionalFields,
+  Modal,
+  formatDate,
+  messageOf,
+} from "./components.js";
 
 type Link = NoticeInput["dataLinks"][number];
 type Selection = { kind: "meeting" | "notice"; id: string };
@@ -44,8 +50,10 @@ function LinkFields({
   onChange: (value: Link[]) => void;
 }) {
   return (
-    <fieldset>
-      <legend>Data links (optional)</legend>
+    <OptionalFields
+      title="Data links (optional)"
+      initialOpen={value.length > 0}
+    >
       <p>
         Share access to linked data separately. File uploads are not configured.
       </p>
@@ -99,7 +107,7 @@ function LinkFields({
       >
         Add data link
       </button>
-    </fieldset>
+    </OptionalFields>
   );
 }
 function MeetingCard({
@@ -205,6 +213,7 @@ function MeetingForm({
           dataLinks: [],
         },
   );
+  const [attendeeSearch, setAttendeeSearch] = useState("");
   const [reason, setReason] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -235,106 +244,158 @@ function MeetingForm({
     }
   }
   return (
-    <form className="collaboration-form" onSubmit={(e) => void submit(e)}>
+    <form
+      className="collaboration-form task-form"
+      onSubmit={(e) => void submit(e)}
+    >
       <ErrorNotice message={error} />
-      <label>
-        Meeting title
-        <input
-          required
-          minLength={3}
-          maxLength={180}
-          value={data.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-      </label>
-      <label>
-        Meeting type
-        <select
-          value={data.kind}
-          onChange={(e) => set("kind", e.target.value as MeetingInput["kind"])}
-        >
-          <option value="group">Group</option>
-          <option value="individual">Individual</option>
-        </select>
-      </label>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">1</span>Meeting & time
+        </legend>
+        <label>
+          Meeting title
+          <input
+            required
+            minLength={3}
+            maxLength={180}
+            value={data.title}
+            onChange={(e) => set("title", e.target.value)}
+          />
+        </label>
+        <label>
+          Meeting type
+          <select
+            value={data.kind}
+            onChange={(e) =>
+              set("kind", e.target.value as MeetingInput["kind"])
+            }
+          >
+            <option value="group">Group</option>
+            <option value="individual">Individual</option>
+          </select>
+        </label>
+        <div className="collaboration-columns">
+          <label>
+            Start (Asia/Kolkata)
+            <input
+              type="datetime-local"
+              required
+              value={istInput(data.startsAt)}
+              onChange={(e) => {
+                if (e.target.value) set("startsAt", fromIST(e.target.value));
+              }}
+            />
+          </label>
+          <label>
+            End (Asia/Kolkata)
+            <input
+              type="datetime-local"
+              required
+              value={istInput(data.endsAt)}
+              onChange={(e) => {
+                if (e.target.value) set("endsAt", fromIST(e.target.value));
+              }}
+            />
+          </label>
+        </div>
+      </fieldset>
       <p>
         Only selected attendees and application supervisors/administrators can
         view this meeting and its notes. Group meetings also use explicit
         attendee selection.
       </p>
-      <fieldset>
-        <legend>Selected attendees</legend>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">2</span>Selected attendees
+        </legend>
+        <label>
+          Find attendees
+          <input
+            type="search"
+            value={attendeeSearch}
+            onChange={(e) => setAttendeeSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.preventDefault();
+            }}
+            placeholder="Search by name"
+          />
+        </label>
+        <p className="selection-count" role="status">
+          {data.attendeeIds.length} selected
+        </p>
         <div className="collaboration-attendees">
-          {choices.map((p) => (
-            <label className="checkbox-label" key={p.id}>
-              <input
-                type="checkbox"
-                checked={data.attendeeIds.includes(p.id)}
-                onChange={(e) =>
-                  set(
-                    "attendeeIds",
-                    e.target.checked
-                      ? [...data.attendeeIds, p.id]
-                      : data.attendeeIds.filter((id) => id !== p.id),
-                  )
-                }
-              />
-              {p.fullName}
-              {!p.active && " (inactive; retained)"}
-            </label>
-          ))}
+          {choices
+            .filter(
+              (p) =>
+                data.attendeeIds.includes(p.id) ||
+                p.fullName
+                  .toLowerCase()
+                  .includes(attendeeSearch.trim().toLowerCase()),
+            )
+            .map((p) => (
+              <label className="checkbox-label" key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={data.attendeeIds.includes(p.id)}
+                  onChange={(e) =>
+                    set(
+                      "attendeeIds",
+                      e.target.checked
+                        ? [...data.attendeeIds, p.id]
+                        : data.attendeeIds.filter((id) => id !== p.id),
+                    )
+                  }
+                />
+                {p.fullName}
+                {!p.active && " (inactive; retained)"}
+              </label>
+            ))}
         </div>
-        <small>Select at least one attendee.</small>
+        {attendeeSearch && (
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setAttendeeSearch("")}
+          >
+            Clear attendee search
+          </button>
+        )}
+        <small>
+          Select at least one attendee. Selected people stay visible while
+          searching.
+        </small>
       </fieldset>
-      <div className="collaboration-columns">
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">3</span>Agenda & location
+        </legend>
         <label>
-          Start (Asia/Kolkata)
-          <input
-            type="datetime-local"
-            required
-            value={istInput(data.startsAt)}
-            onChange={(e) => {
-              if (e.target.value) set("startsAt", fromIST(e.target.value));
-            }}
+          Agenda
+          <textarea
+            maxLength={8000}
+            value={data.agenda}
+            onChange={(e) => set("agenda", e.target.value)}
           />
         </label>
         <label>
-          End (Asia/Kolkata)
+          Venue
           <input
-            type="datetime-local"
-            required
-            value={istInput(data.endsAt)}
-            onChange={(e) => {
-              if (e.target.value) set("endsAt", fromIST(e.target.value));
-            }}
+            maxLength={500}
+            value={data.venue}
+            onChange={(e) => set("venue", e.target.value)}
           />
         </label>
-      </div>
-      <label>
-        Agenda
-        <textarea
-          maxLength={8000}
-          value={data.agenda}
-          onChange={(e) => set("agenda", e.target.value)}
-        />
-      </label>
-      <label>
-        Venue
-        <input
-          maxLength={500}
-          value={data.venue}
-          onChange={(e) => set("venue", e.target.value)}
-        />
-      </label>
-      <label>
-        Video link (optional)
-        <input
-          type="url"
-          maxLength={1000}
-          value={data.videoUrl}
-          onChange={(e) => set("videoUrl", e.target.value)}
-        />
-      </label>
+        <label>
+          Video link (optional)
+          <input
+            type="url"
+            maxLength={1000}
+            value={data.videoUrl}
+            onChange={(e) => set("videoUrl", e.target.value)}
+          />
+        </label>
+      </fieldset>
       <LinkFields
         value={data.dataLinks}
         onChange={(v) => set("dataLinks", v)}
@@ -349,7 +410,7 @@ function MeetingForm({
           />
         </label>
       )}
-      <div className="action-row">
+      <div className="action-row workflow-actions">
         <button className="primary" disabled={busy}>
           {busy
             ? "Saving…"
@@ -421,63 +482,76 @@ function NoticeForm({
     }
   }
   return (
-    <form className="collaboration-form" onSubmit={(e) => void submit(e)}>
+    <form
+      className="collaboration-form task-form"
+      onSubmit={(e) => void submit(e)}
+    >
       <ErrorNotice message={error} />
-      <label>
-        Notice title
-        <input
-          required
-          minLength={3}
-          maxLength={180}
-          value={data.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-      </label>
-      <label>
-        Notice text
-        <textarea
-          required
-          maxLength={12000}
-          value={data.body}
-          onChange={(e) => set("body", e.target.value)}
-        />
-      </label>
-      <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={data.pinned}
-          onChange={(e) => set("pinned", e.target.checked)}
-        />
-        Pin on dashboard
-      </label>
-      <label>
-        Expiry (Asia/Kolkata, optional)
-        <input
-          type="datetime-local"
-          value={data.expiresAt ? istInput(data.expiresAt) : ""}
-          onChange={(e) =>
-            set("expiresAt", e.target.value ? fromIST(e.target.value) : null)
-          }
-        />
-      </label>
-      <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={data.acknowledgementRequired}
-          onChange={(e) => set("acknowledgementRequired", e.target.checked)}
-        />
-        Request explicit read acknowledgement
-      </label>
-      <p>
-        Acknowledgement confirms reading, not approval or agreement. Each saved
-        published revision needs its own confirmation. Expiry is evaluated when
-        viewed; no background reminder runs.
-      </p>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">1</span>Notice content
+        </legend>
+        <label>
+          Notice title
+          <input
+            required
+            minLength={3}
+            maxLength={180}
+            value={data.title}
+            onChange={(e) => set("title", e.target.value)}
+          />
+        </label>
+        <label>
+          Notice text
+          <textarea
+            required
+            maxLength={12000}
+            value={data.body}
+            onChange={(e) => set("body", e.target.value)}
+          />
+        </label>
+      </fieldset>
+      <fieldset className="workflow-section">
+        <legend>
+          <span className="form-step">2</span>Visibility & acknowledgement
+        </legend>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={data.pinned}
+            onChange={(e) => set("pinned", e.target.checked)}
+          />
+          Pin on dashboard
+        </label>
+        <label>
+          Expiry (Asia/Kolkata, optional)
+          <input
+            type="datetime-local"
+            value={data.expiresAt ? istInput(data.expiresAt) : ""}
+            onChange={(e) =>
+              set("expiresAt", e.target.value ? fromIST(e.target.value) : null)
+            }
+          />
+        </label>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={data.acknowledgementRequired}
+            onChange={(e) => set("acknowledgementRequired", e.target.checked)}
+          />
+          Request explicit read acknowledgement
+        </label>
+        <p>
+          Acknowledgement confirms reading, not approval or agreement. Each
+          saved published revision needs its own confirmation. Expiry is
+          evaluated when viewed; no background reminder runs.
+        </p>
+      </fieldset>
       <LinkFields
         value={data.dataLinks}
         onChange={(v) => set("dataLinks", v)}
       />
-      <div className="action-row">
+      <div className="action-row workflow-actions">
         <button className="primary" disabled={busy}>
           {busy
             ? "Saving…"
@@ -1076,7 +1150,7 @@ export function Meetings({
     }
   }, [initial, open, opened]);
   return (
-    <section className="collaboration">
+    <section className="collaboration records-page">
       <p>
         Selected-attendee meetings and lab notices · all times Asia/Kolkata.
         Notifications are in-app; no email, push or background reminders.
@@ -1103,107 +1177,109 @@ export function Meetings({
         </div>
       )}
       {loading && <p role="status">Loading meetings and notices…</p>}
-      <section>
-        <h2>Meetings</h2>
-        <label>
-          Meeting view
-          <select
-            value={meetingView}
-            onChange={(e) => {
-              setMeetingView(e.target.value);
-              setMeetingOffset(0);
-            }}
-          >
-            <option value="upcoming">Upcoming</option>
-            <option value="past">Past</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="all">All authorized meetings</option>
-          </select>
-        </label>
-        {!meetings.length && !loading && !listError && (
-          <p>No meetings in this view.</p>
-        )}
-        <div className="collaboration-grid">
-          {!loading &&
-            !listError &&
-            meetings.map((m) => (
-              <MeetingCard key={m.id} item={m} open={(s) => void open(s)} />
-            ))}
-        </div>
-        <div className="action-row">
-          {meetingOffset > 0 && (
-            <button
-              className="secondary"
-              disabled={loading}
-              onClick={() => setMeetingOffset((v) => Math.max(0, v - 50))}
+      <div className="collaboration-lists">
+        <section>
+          <h2>Meetings</h2>
+          <label>
+            Meeting view
+            <select
+              value={meetingView}
+              onChange={(e) => {
+                setMeetingView(e.target.value);
+                setMeetingOffset(0);
+              }}
             >
-              Previous meetings
-            </button>
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="all">All authorized meetings</option>
+            </select>
+          </label>
+          {!meetings.length && !loading && !listError && (
+            <p>No meetings in this view.</p>
           )}
-          {moreMeetings && !loading && !listError && (
-            <button
-              className="secondary"
-              disabled={loading}
-              onClick={() => setMeetingOffset((v) => v + 50)}
-            >
-              More meetings
-            </button>
-          )}
-        </div>
-      </section>
-      <section>
-        <h2>Notices</h2>
-        <label>
-          Notice view
-          <select
-            value={noticeView}
-            onChange={(e) => {
-              setNoticeView(e.target.value);
-              setNoticeOffset(0);
-            }}
-          >
-            <option value="current">Current published</option>
-            <option value="expired">Expired</option>
-            {staff && (
-              <>
-                <option value="drafts">Manager drafts</option>
-                <option value="withdrawn">Withdrawn</option>
-              </>
+          <div className="collaboration-grid">
+            {!loading &&
+              !listError &&
+              meetings.map((m) => (
+                <MeetingCard key={m.id} item={m} open={(s) => void open(s)} />
+              ))}
+          </div>
+          <div className="action-row">
+            {meetingOffset > 0 && (
+              <button
+                className="secondary"
+                disabled={loading}
+                onClick={() => setMeetingOffset((v) => Math.max(0, v - 50))}
+              >
+                Previous meetings
+              </button>
             )}
-            <option value="all">All accessible notices</option>
-          </select>
-        </label>
-        {!notices.length && !loading && !listError && (
-          <p>No notices in this view.</p>
-        )}
-        <div className="collaboration-grid">
-          {!loading &&
-            !listError &&
-            notices.map((n) => (
-              <NoticeCard key={n.id} item={n} open={(s) => void open(s)} />
-            ))}
-        </div>
-        <div className="action-row">
-          {noticeOffset > 0 && (
-            <button
-              className="secondary"
-              disabled={loading}
-              onClick={() => setNoticeOffset((v) => Math.max(0, v - 50))}
+            {moreMeetings && !loading && !listError && (
+              <button
+                className="secondary"
+                disabled={loading}
+                onClick={() => setMeetingOffset((v) => v + 50)}
+              >
+                More meetings
+              </button>
+            )}
+          </div>
+        </section>
+        <section>
+          <h2>Notices</h2>
+          <label>
+            Notice view
+            <select
+              value={noticeView}
+              onChange={(e) => {
+                setNoticeView(e.target.value);
+                setNoticeOffset(0);
+              }}
             >
-              Previous notices
-            </button>
+              <option value="current">Current published</option>
+              <option value="expired">Expired</option>
+              {staff && (
+                <>
+                  <option value="drafts">Manager drafts</option>
+                  <option value="withdrawn">Withdrawn</option>
+                </>
+              )}
+              <option value="all">All accessible notices</option>
+            </select>
+          </label>
+          {!notices.length && !loading && !listError && (
+            <p>No notices in this view.</p>
           )}
-          {moreNotices && !loading && !listError && (
-            <button
-              className="secondary"
-              disabled={loading}
-              onClick={() => setNoticeOffset((v) => v + 50)}
-            >
-              More notices
-            </button>
-          )}
-        </div>
-      </section>
+          <div className="collaboration-grid">
+            {!loading &&
+              !listError &&
+              notices.map((n) => (
+                <NoticeCard key={n.id} item={n} open={(s) => void open(s)} />
+              ))}
+          </div>
+          <div className="action-row">
+            {noticeOffset > 0 && (
+              <button
+                className="secondary"
+                disabled={loading}
+                onClick={() => setNoticeOffset((v) => Math.max(0, v - 50))}
+              >
+                Previous notices
+              </button>
+            )}
+            {moreNotices && !loading && !listError && (
+              <button
+                className="secondary"
+                disabled={loading}
+                onClick={() => setNoticeOffset((v) => v + 50)}
+              >
+                More notices
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
       {creating && (
         <Modal
           title={

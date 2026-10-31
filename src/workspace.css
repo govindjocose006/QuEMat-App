@@ -1528,3 +1528,253 @@
 .workflow-section .form-grid > label {
   min-width: 0;
 }
+
+/* Daily registers share a quieter list rhythm and explicit filter state. */
+.records-page > .section-title {
+  align-items: flex-start;
+}
+.records-page .section-title p {
+  max-width: 64ch;
+}
+.records-page .issue-grid,
+.records-page .collaboration-grid,
+.record-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.records-page .issue-card,
+.records-page .collaboration-card,
+.records-page .sample-grid > .panel,
+.record-row {
+  margin: 0;
+  padding: 18px 20px;
+  box-shadow: none;
+}
+.records-page .issue-card h3,
+.records-page .collaboration-card h3,
+.record-row h3 {
+  margin: 8px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.records-page .issue-card p,
+.records-page .collaboration-card p,
+.record-row p {
+  margin: 6px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.records-page .issue-card .action-row {
+  gap: 8px;
+  margin: 0;
+}
+.records-page .status {
+  font-size: 11px;
+}
+.records-page .text-button {
+  text-decoration: none;
+}
+.records-page .text-button:hover {
+  text-decoration: underline;
+}
+.records-page > .optional-fields {
+  margin: 0 0 12px;
+}
+.records-page .optional-fields .issue-filters {
+  margin: 0;
+}
+.filter-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 16px 0;
+  min-height: 36px;
+  color: #526b65;
+  font-size: 12px;
+}
+.filter-summary p {
+  margin: 0;
+}
+.filter-summary ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.filter-summary li {
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: #edf3ef;
+  color: #355f4d;
+  overflow-wrap: anywhere;
+}
+.filter-summary .text-button {
+  min-height: 44px;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.list-empty {
+  padding: 24px;
+  background: #f7faf8;
+  border: 1px dashed #cbdcd1;
+  border-radius: 10px;
+}
+.sample-handling {
+  margin: 14px 0;
+}
+.sample-handling dt {
+  margin-top: 8px;
+}
+.samples-page .sample-grid .optional-fields {
+  margin: 12px 0;
+}
+.samples-page .optional-fields dl {
+  margin: 0;
+}
+.samples-page .optional-fields dt:first-child {
+  margin-top: 0;
+}
+.collaboration-lists {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  margin-top: 28px;
+  align-items: start;
+}
+.collaboration-lists > section {
+  min-width: 0;
+}
+.collaboration-lists h2 {
+  margin-top: 0;
+}
+.collaboration-lists > section > label {
+  margin-bottom: 18px;
+}
+.order-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 20px;
+  align-items: center;
+}
+.order-row h3 {
+  grid-column: 1;
+}
+.order-row > .status {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+.order-row p {
+  grid-column: 1;
+}
+.order-row > button {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+.task-form {
+  min-width: 0;
+}
+.task-form .workflow-section {
+  margin-top: 12px;
+}
+.task-form .workflow-section p,
+.task-form > p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #526b65;
+}
+.task-form .workflow-actions {
+  padding-bottom: 14px;
+  box-shadow: 0 -8px 16px #fff;
+  margin-top: 20px;
+}
+.task-form :is(input, select, textarea, summary) {
+  scroll-margin-block: 80px 150px;
+}
+.task-form :is(label, input, select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+.collaboration-form.task-form {
+  display: block;
+}
+.collaboration-form.task-form .workflow-section {
+  margin-bottom: 20px;
+}
+.collaboration-form.task-form .workflow-section > label {
+  margin-block: 14px;
+}
+.collaboration-form.task-form .collaboration-attendees {
+  margin: 12px 0;
+}
+.collaboration-attendees .checkbox-label {
+  min-height: 44px;
+  align-items: center;
+}
+.order-form {
+  max-width: 900px;
+}
+.orders-page > .panel > h3[tabindex="-1"] {
+  scroll-margin-top: 100px;
+}
+@media (max-width: 1000px) {
+  .collaboration-lists {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .task-form .form-grid,
+  .task-form .collaboration-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .records-page .issue-card,
+  .records-page .collaboration-card,
+  .records-page .sample-grid > .panel,
+  .record-row {
+    padding: 16px;
+  }
+  .records-page .section-title {
+    gap: 14px;
+  }
+  .records-page .issue-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .records-page .section-title .action-row {
+    margin: 0;
+  }
+  .order-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-row > .status {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+  }
+  .order-row > button {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    margin-top: 10px;
+  }
+  .order-form > .workflow-actions {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  .task-form .workflow-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .task-form .workflow-actions button {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+}
+@media print {
+  .task-form .workflow-actions {
+    position: static;
+  }
+}

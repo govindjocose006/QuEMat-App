@@ -107,6 +107,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
     .getByRole("combobox", { name: "Assignee", exact: true })
     .last()
     .selectOption(assignee.id);
+  await page.getByText("Related records (optional)", { exact: true }).click();
   await page
     .getByRole("combobox", { name: "Related instrument", exact: true })
     .selectOption(instrument.id);
@@ -119,6 +120,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByLabel("Supervisor attention requested", { exact: true })
     .check();
+  await page.getByText("Data links (optional)", { exact: true }).click();
   await page
     .getByRole("button", { name: "Add data link", exact: true })
     .click();
@@ -129,6 +131,12 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
     .getByLabel("Link 1 URL", { exact: true })
     .fill("https://example.test/observation");
   await accessible(page);
+  await page.getByText("Related records (optional)", { exact: true }).click();
+  await page.getByText("Data links (optional)", { exact: true }).click();
+  await page.screenshot({
+    path: info.outputPath("workspace-issue-form.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Create issue/request", exact: true })
     .click();
@@ -182,6 +190,10 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
       exact: true,
     }),
   ).toBeVisible();
+  await page
+    .locator("summary")
+    .filter({ hasText: "Status & edit history" })
+    .click();
   await transition(page, "acknowledged");
   await expect(page.getByRole("dialog")).toContainText("No reason provided.");
   await expect(page.getByRole("dialog")).toContainText(`Weekly ${d} mentor`);
@@ -200,6 +212,10 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page.getByRole("button", { name: title, exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Blocked → Resolved");
   await expect(page.getByRole("dialog")).toContainText("No reason provided.");
+  await page
+    .locator("summary")
+    .filter({ hasText: "Status & edit history" })
+    .click();
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("issue-resolved-history.png"),
@@ -223,6 +239,7 @@ test("shared issues, explicit acknowledgement, status history, resolved filters 
   await page
     .getByRole("combobox", { name: "Work view", exact: true })
     .selectOption("all");
+  await page.locator("summary").filter({ hasText: "More filters" }).click();
   await page
     .getByRole("combobox", { name: "Priority", exact: true })
     .selectOption("urgent");

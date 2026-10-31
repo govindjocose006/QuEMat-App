@@ -6,7 +6,13 @@ import {
   type FormEvent,
 } from "react";
 import { api } from "./api.js";
-import { ErrorNotice, Status, messageOf } from "./components.js";
+import {
+  ErrorNotice,
+  FilterSummary,
+  OptionalFields,
+  Status,
+  messageOf,
+} from "./components.js";
 import type { Member } from "../shared/schema.js";
 import {
   orderLabels,
@@ -52,6 +58,14 @@ export function Orders({
     [notice, setNotice] = useState(""),
     [orderedBy, setOrderedBy] = useState(user.id),
     [people, setPeople] = useState<{ id: string; fullName: string }[]>([]);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
+  const formHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    detailHeading.current?.focus();
+  }, [detail?.id]);
+  useEffect(() => {
+    formHeading.current?.focus();
+  }, [mode]);
   const generation = useRef(0);
   const reload = useCallback(async () => {
     const g = ++generation.current;
@@ -215,11 +229,11 @@ export function Orders({
   );
   const form = mode && (mode === "new" || detail) && (
     <form
-      className="panel"
+      className="panel task-form order-form"
       key={`${mode}-${detail?.id ?? "new"}-${detail?.version ?? 0}`}
       onSubmit={save}
     >
-      <h3>
+      <h3 ref={formHeading} tabIndex={-1}>
         {mode === "new"
           ? "New chemical request"
           : mode === "edit"
@@ -231,93 +245,107 @@ export function Orders({
                 : "Cancel remaining request"}
       </h3>
       {(mode === "new" || mode === "edit") && (
-        <div className="form-grid">
-          {input(
-            "Chemical name",
-            "chemical",
-            mode === "edit" ? detail!.chemical : "",
-            "text",
-            true,
-            { maxLength: 200 },
-          )}
-          {input(
-            "CAS number (optional)",
-            "casNumber",
-            mode === "edit" ? detail!.casNumber : "",
-            "text",
-            false,
-            { maxLength: 80 },
-          )}
-          {input(
-            "Purity / grade (optional)",
-            "purity",
-            mode === "edit" ? detail!.purity : "",
-          )}
-          {input(
-            "Catalogue number (optional)",
-            "catalogue",
-            mode === "edit" ? detail!.catalogue : "",
-          )}
-          {input(
-            "Quantity requested",
-            "quantity",
-            mode === "edit" ? detail!.quantity : 1,
-            "number",
-            true,
-            { min: 0.001, max: 1000000, step: 0.001 },
-          )}
-          <label>
-            Unit
-            <select
-              name="unit"
-              defaultValue={mode === "edit" ? detail!.unit : "g"}
-            >
-              {["g", "kg", "mg", "mL", "L", "bottle", "pack", "piece"].map(
-                (u) => (
-                  <option key={u}>{u}</option>
-                ),
+        <>
+          <fieldset className="workflow-section">
+            <legend>
+              <span className="form-step">1</span>Chemical & quantity
+            </legend>
+            <div className="form-grid">
+              {input(
+                "Chemical name",
+                "chemical",
+                mode === "edit" ? detail!.chemical : "",
+                "text",
+                true,
+                { maxLength: 200 },
               )}
-            </select>
-          </label>
-          <label>
-            Purpose
-            <textarea
-              name="purpose"
-              defaultValue={mode === "edit" ? detail!.purpose : ""}
-              required
-              minLength={3}
-              maxLength={2000}
-            />
-          </label>
-          {input(
-            "Project (optional)",
-            "project",
-            mode === "edit" ? detail!.project : "",
-          )}
-          {input(
-            "Preferred supplier (optional)",
-            "preferredSupplier",
-            mode === "edit" ? detail!.preferredSupplier : "",
-          )}
-          {input(
-            "Estimated cost — INR (optional)",
-            "estimate",
-            mode === "edit" && detail!.estimatedCostPaise !== null
-              ? (detail!.estimatedCostPaise / 100).toFixed(2)
-              : "",
-            "text",
-            false,
-            { inputMode: "decimal" },
-          )}
-          <label>
-            Request notes (optional)
-            <textarea
-              name="notes"
-              defaultValue={mode === "edit" ? detail!.notes : ""}
-              maxLength={4000}
-            />
-          </label>
-        </div>
+              {input(
+                "Quantity requested",
+                "quantity",
+                mode === "edit" ? detail!.quantity : 1,
+                "number",
+                true,
+                { min: 0.001, max: 1000000, step: 0.001 },
+              )}
+              <label>
+                Unit
+                <select
+                  name="unit"
+                  defaultValue={mode === "edit" ? detail!.unit : "g"}
+                >
+                  {["g", "kg", "mg", "mL", "L", "bottle", "pack", "piece"].map(
+                    (u) => (
+                      <option key={u}>{u}</option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label>
+                Purpose
+                <textarea
+                  name="purpose"
+                  defaultValue={mode === "edit" ? detail!.purpose : ""}
+                  required
+                  minLength={3}
+                  maxLength={2000}
+                />
+              </label>
+            </div>
+          </fieldset>
+          <OptionalFields
+            title="Specifications & purchasing details (optional)"
+            initialOpen={mode === "edit"}
+          >
+            <div className="form-grid">
+              {input(
+                "CAS number (optional)",
+                "casNumber",
+                mode === "edit" ? detail!.casNumber : "",
+                "text",
+                false,
+                { maxLength: 80 },
+              )}
+              {input(
+                "Purity / grade (optional)",
+                "purity",
+                mode === "edit" ? detail!.purity : "",
+              )}
+              {input(
+                "Catalogue number (optional)",
+                "catalogue",
+                mode === "edit" ? detail!.catalogue : "",
+              )}
+              {input(
+                "Project (optional)",
+                "project",
+                mode === "edit" ? detail!.project : "",
+              )}
+              {input(
+                "Preferred supplier (optional)",
+                "preferredSupplier",
+                mode === "edit" ? detail!.preferredSupplier : "",
+              )}
+              {input(
+                "Estimated cost — INR (optional)",
+                "estimate",
+                mode === "edit" && detail!.estimatedCostPaise !== null
+                  ? (detail!.estimatedCostPaise / 100).toFixed(2)
+                  : "",
+                "text",
+                false,
+                { inputMode: "decimal" },
+              )}
+              <label>
+                Request notes (optional)
+                <textarea
+                  name="notes"
+                  defaultValue={mode === "edit" ? detail!.notes : ""}
+                  maxLength={4000}
+                />
+              </label>
+            </div>
+          </OptionalFields>
+        </>
       )}
       {mode === "record" && (
         <>
@@ -447,7 +475,7 @@ export function Orders({
           </label>
         </>
       )}
-      <div className="action-row">
+      <div className="action-row workflow-actions">
         <button
           className="primary"
           disabled={busy || (mode === "record" && !people.length)}
@@ -476,31 +504,44 @@ export function Orders({
     </form>
   );
   return (
-    <section className="orders-page">
-      <h2>Chemicals & orders</h2>
-      <p>
-        Shared chemical requests, recorded costs and deliveries. Records do not
-        initiate purchases or payments.
-      </p>
-      <div className="action-row">
-        <button
-          className="primary"
-          onClick={() => {
-            setMode("new");
-            setNotice("");
-          }}
-        >
-          New chemical request
-        </button>
-        <button
-          className="secondary"
-          disabled={loading || busy}
-          onClick={() => void reload()}
-        >
-          Refresh orders
-        </button>
+    <section className="orders-page records-page">
+      <div className="section-title">
+        <div>
+          <h2>Chemicals & orders</h2>
+          <p>
+            Shared chemical requests, recorded costs and deliveries. Records do
+            not initiate purchases or payments.
+          </p>
+        </div>
+        <div className="action-row">
+          <button
+            className="primary"
+            onClick={() => {
+              setMode("new");
+              setNotice("");
+            }}
+          >
+            New chemical request
+          </button>
+          <button
+            className="secondary"
+            disabled={loading || busy}
+            onClick={() => void reload()}
+          >
+            Refresh orders
+          </button>
+        </div>
       </div>
       <ErrorNotice message={error} />
+      {error && (
+        <button
+          className="secondary"
+          disabled={loading}
+          onClick={() => void reload()}
+        >
+          Retry orders
+        </button>
+      )}
       {notice && <p role="status">{notice}</p>}
       {loading && <p role="status">Loading order records…</p>}
       {form}
@@ -518,7 +559,7 @@ export function Orders({
           >
             Close order details
           </button>
-          <h3>
+          <h3 ref={detailHeading} tabIndex={-1}>
             {detail.code} · {detail.chemical}
           </h3>
           <Status value={orderLabels[detail.status]} />
@@ -592,37 +633,39 @@ export function Orders({
           ) : (
             <p>No deliveries recorded.</p>
           )}
-          <h4>Retained history</h4>
-          {detail.events.map((e) => (
-            <details key={e.id}>
-              <summary>
-                {e.kind} · {e.actorName} · revision {e.version} ·{" "}
-                {new Date(e.createdAt).toLocaleString("en-IN", {
-                  timeZone: "Asia/Kolkata",
-                })}
-              </summary>
-              <p>{e.reason || "No additional note."}</p>
-              <p>
-                {e.after.chemical} · CAS {e.after.casNumber || "Not recorded"} ·{" "}
-                {e.after.purity} · {e.after.catalogue}
-              </p>
-              <p>
-                Purpose: {e.after.purpose} · Project: {e.after.project} ·
-                Request notes: {e.after.notes}
-              </p>
-              <p>
-                State: {orderLabels[e.after.status]} · {e.after.quantity}{" "}
-                {e.after.unit} · received {e.after.receivedQuantity}{" "}
-                {e.after.unit} · order cost {rupees(e.after.costPaise)}
-              </p>
-              <p>
-                Supplier: {e.after.supplier || "Not recorded"} · Order date:{" "}
-                {e.after.orderedOn || "Not recorded"} · Expected:{" "}
-                {e.after.expectedOn || "Not recorded"} · Reference:{" "}
-                {e.after.reference || "Not recorded"}
-              </p>
-            </details>
-          ))}
+          <OptionalFields title={`Retained history (${detail.events.length})`}>
+            <h4>Retained history</h4>
+            {detail.events.map((e) => (
+              <details key={e.id}>
+                <summary>
+                  {e.kind} · {e.actorName} · revision {e.version} ·{" "}
+                  {new Date(e.createdAt).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                  })}
+                </summary>
+                <p>{e.reason || "No additional note."}</p>
+                <p>
+                  {e.after.chemical} · CAS {e.after.casNumber || "Not recorded"}{" "}
+                  · {e.after.purity} · {e.after.catalogue}
+                </p>
+                <p>
+                  Purpose: {e.after.purpose} · Project: {e.after.project} ·
+                  Request notes: {e.after.notes}
+                </p>
+                <p>
+                  State: {orderLabels[e.after.status]} · {e.after.quantity}{" "}
+                  {e.after.unit} · received {e.after.receivedQuantity}{" "}
+                  {e.after.unit} · order cost {rupees(e.after.costPaise)}
+                </p>
+                <p>
+                  Supplier: {e.after.supplier || "Not recorded"} · Order date:{" "}
+                  {e.after.orderedOn || "Not recorded"} · Expected:{" "}
+                  {e.after.expectedOn || "Not recorded"} · Reference:{" "}
+                  {e.after.reference || "Not recorded"}
+                </p>
+              </details>
+            ))}
+          </OptionalFields>
         </article>
       )}
       <div className="filters">
@@ -670,45 +713,71 @@ export function Orders({
           />
         </label>
       </div>
-      {!loading && !error && !items.length && <p>No requests in this view.</p>}
-      {items.map((r) => (
-        <article className="panel" key={r.id}>
-          <h3>
-            {r.code} · {r.chemical}
-          </h3>
-          <Status value={orderLabels[r.status]} />
-          <p>
-            {r.quantity} {r.unit} · {r.requesterName} · received{" "}
-            {r.receivedQuantity} {r.unit}
-          </p>
-          <p>
-            {r.supplier || r.preferredSupplier || "Supplier not recorded"} ·{" "}
-            {rupees(r.costPaise)}
-          </p>
-          <button className="secondary" onClick={() => open(r)}>
-            Open {r.code}
-          </button>
-        </article>
-      ))}
-      <div className="action-row">
-        <button
-          className="secondary"
-          disabled={loading || offset === 0}
-          onClick={() => setOffset((n) => Math.max(0, n - 50))}
-        >
-          Newer orders
-        </button>
-        <p>
-          {total} requests · Page {Math.floor(offset / 50) + 1}
-        </p>
-        <button
-          className="secondary"
-          disabled={loading || offset + 50 >= total}
-          onClick={() => setOffset((n) => n + 50)}
-        >
-          Older orders
-        </button>
+      <FilterSummary
+        count={
+          loading
+            ? "Updating results…"
+            : error
+              ? "Results unavailable"
+              : `${total} requests`
+        }
+        active={[
+          search && `Search: ${search}`,
+          status && `Status: ${orderLabels[status as ChemicalOrder["status"]]}`,
+        ].filter((value): value is string => !!value)}
+        onClear={() => {
+          setSearch("");
+          setStatus("");
+          setOffset(0);
+        }}
+      />
+      {!loading && !error && !items.length && (
+        <p className="list-empty">No requests in this view.</p>
+      )}
+      <div className="record-list">
+        {!loading &&
+          !error &&
+          items.map((r) => (
+            <article className="panel record-row order-row" key={r.id}>
+              <h3>
+                {r.code} · {r.chemical}
+              </h3>
+              <Status value={orderLabels[r.status]} />
+              <p>
+                {r.quantity} {r.unit} · {r.requesterName} · received{" "}
+                {r.receivedQuantity} {r.unit}
+              </p>
+              <p>
+                {r.supplier || r.preferredSupplier || "Supplier not recorded"} ·{" "}
+                {rupees(r.costPaise)}
+              </p>
+              <button className="secondary" onClick={() => open(r)}>
+                Open {r.code}
+              </button>
+            </article>
+          ))}
       </div>
+      {!loading && !error && total > 50 && (
+        <div className="action-row">
+          <button
+            className="secondary"
+            disabled={loading || offset === 0}
+            onClick={() => setOffset((n) => Math.max(0, n - 50))}
+          >
+            Newer orders
+          </button>
+          <p>
+            {total} requests · Page {Math.floor(offset / 50) + 1}
+          </p>
+          <button
+            className="secondary"
+            disabled={loading || offset + 50 >= total}
+            onClick={() => setOffset((n) => n + 50)}
+          >
+            Older orders
+          </button>
+        </div>
+      )}
     </section>
   );
 }

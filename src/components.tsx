@@ -154,6 +154,33 @@ export function ErrorNotice({ message }: { message: string }) {
     </div>
   ) : null;
 }
+export function FilterSummary({
+  count,
+  active,
+  onClear,
+}: {
+  count: string;
+  active: string[];
+  onClear: () => void;
+}) {
+  return (
+    <div className="filter-summary">
+      <p role="status">{count}</p>
+      {active.length > 0 && (
+        <>
+          <ul aria-label="Active filters">
+            {active.map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ul>
+          <button type="button" className="text-button" onClick={onClear}>
+            Clear filters
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 export function Status({ value }: { value: string }) {
   return (
     <span className={`status ${value.replaceAll(" ", "-")}`}>
