@@ -41,7 +41,7 @@ test("instrument shortcut filters schedule and preselects booking; duration resp
     .getByRole("button", { name: "View schedule for SQUID", exact: true })
     .click();
   await expect(
-    page.getByLabel("Filter instrument", { exact: true }),
+    page.getByRole("combobox", { name: "Filter instrument", exact: true }),
   ).toHaveValue(squid.id);
   await expect(
     page.getByRole("button", { name: "Add maintenance", exact: true }),
