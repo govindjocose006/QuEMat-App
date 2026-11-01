@@ -1819,3 +1819,221 @@
     position: static;
   }
 }
+
+/* Live-review refinements: task shortcuts and compact, readable records. */
+.form-grid > .field-full {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.form-grid .field-full > label {
+  display: grid;
+  gap: 8px;
+}
+.booking-duration {
+  margin: 0;
+  padding: 10px 12px;
+  background: #edf5f0;
+  color: #355f4d;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.instrument-schedule-action {
+  padding: 12px 20px;
+}
+.instrument-schedule-action button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+.instrument-schedule-action svg {
+  width: 16px;
+  height: 16px;
+}
+.calendar-navigation {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.calendar-navigation .action-row {
+  margin: 0;
+}
+.calendar-management summary {
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 1px solid #cbd8d3;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.calendar-management[open] .action-row {
+  margin-top: 10px;
+}
+.notification-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.notification-toolbar label {
+  display: grid;
+  gap: 8px;
+}
+.notification-toolbar p {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 13px;
+}
+.notifications-page .notification-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  margin: 8px 0;
+  box-shadow: none;
+}
+.notification-row.notification-unread {
+  border-left: 4px solid #27665d;
+}
+.notification-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.notification-row .notification-meta {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #526b65;
+}
+.notification-row .notification-message {
+  margin: 0;
+  line-height: 1.6;
+}
+.notification-row .action-row {
+  margin: 0;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.weekly-editor .report-heading {
+  margin-bottom: 8px;
+}
+.weekly-editor .report-heading h2 {
+  margin-bottom: 4px;
+}
+.weekly-editor .report-privacy {
+  margin: 8px 0;
+}
+.weekly-editor .report-state {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+.weekly-editor > .form-intro {
+  margin: 8px 0 12px;
+  font-size: 12px;
+}
+.report-section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.report-section-nav button {
+  min-height: 44px;
+}
+.report-project {
+  max-width: 480px;
+}
+.sample-layout-picker {
+  display: flex;
+  gap: 8px;
+}
+.sample-layout-picker [aria-pressed="true"] {
+  background: #e3f0e8;
+  border-color: #27665d;
+  color: #19453e;
+}
+.sample-grid.sample-list-compact {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.samples-page .sample-list-compact > .panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  gap: 10px 20px;
+  align-items: start;
+  padding: 16px 20px;
+}
+.sample-list-compact .sample-identity h3 {
+  margin: 5px 0;
+  font-size: 16px;
+}
+.sample-list-compact .sample-identity p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sample-list-compact .sample-handling {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sample-list-compact .sample-handling dt {
+  margin-top: 0;
+}
+.sample-list-compact .sample-handling dd {
+  margin-bottom: 6px;
+}
+.samples-page .sample-list-compact .optional-fields {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.sample-list-compact .action-row {
+  grid-column: 3;
+  grid-row: 1;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .samples-page .sample-list-compact > .panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .sample-list-compact .action-row {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .notification-row .action-row {
+    flex-shrink: 1;
+  }
+}
+@media (max-width: 600px) {
+  .notifications-page .notification-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 10px;
+  }
+  .notification-row .action-row {
+    justify-content: flex-start;
+  }
+  .samples-page .sample-list-compact > .panel {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+  .calendar-management {
+    width: 100%;
+  }
+  .calendar-management .action-row {
+    flex-wrap: wrap;
+  }
+  .report-section-nav {
+    gap: 6px;
+  }
+  .report-section-nav button {
+    flex: 1 1 140px;
+  }
+}

@@ -187,6 +187,11 @@ function Workspace({
   const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [weeklyReview, setWeeklyReview] = useState(false);
+  const [scheduleInstrument, setScheduleInstrument] = useState("");
+  useEffect(() => {
+    if (page !== "calendar" && page !== "instruments")
+      setScheduleInstrument("");
+  }, [page]);
   useEffect(() => {
     if (page !== "weekly") setWeeklyReview(false);
   }, [page]);
@@ -476,12 +481,20 @@ function Workspace({
                 reload={reload}
                 includeArchived={includeArchived}
                 setIncludeArchived={setIncludeArchived}
+                onSchedule={(instrument) => {
+                  setScheduleInstrument(instrument.id);
+                  setPage("calendar");
+                }}
               />
             ) : (
               <p role="status">Loading instruments…</p>
             ))}
           {page === "calendar" && items && (
-            <Schedule user={user} items={items} />
+            <Schedule
+              user={user}
+              items={items}
+              initialInstrumentId={scheduleInstrument}
+            />
           )}
           {page === "samples" && <Samples user={user} />}
           {page === "orders" && (

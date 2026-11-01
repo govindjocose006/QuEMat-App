@@ -271,15 +271,17 @@ export function Orders({
             <legend>
               <span className="form-step">1</span>Chemical & quantity
             </legend>
-            <div className="form-grid">
-              {input(
-                "Chemical name",
-                "chemical",
-                mode === "edit" ? detail!.chemical : "",
-                "text",
-                true,
-                { maxLength: 200 },
-              )}
+            <div className="form-grid chemical-quantity-grid">
+              <div className="field-full">
+                {input(
+                  "Chemical name",
+                  "chemical",
+                  mode === "edit" ? detail!.chemical : "",
+                  "text",
+                  true,
+                  { maxLength: 200 },
+                )}
+              </div>
               {input(
                 "Quantity requested",
                 "quantity",
@@ -301,7 +303,7 @@ export function Orders({
                   )}
                 </select>
               </label>
-              <label>
+              <label className="field-full">
                 Purpose
                 <textarea
                   name="purpose"

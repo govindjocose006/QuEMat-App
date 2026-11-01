@@ -15,9 +15,11 @@ import {
 export function InstrumentCard({
   instrument: i,
   onEdit,
+  onSchedule,
 }: {
   instrument: Instrument;
   onEdit?: (i: Instrument) => void;
+  onSchedule?: (i: Instrument) => void;
 }) {
   return (
     <article className={`instrument-card ${i.archived ? "archived-card" : ""}`}>
@@ -99,6 +101,17 @@ export function InstrumentCard({
           <p className="updated">Updated {formatDate(i.updatedAt)} IST</p>
         </div>
       </details>
+      {onSchedule && !i.archived && (
+        <div className="instrument-schedule-action">
+          <button
+            className="secondary"
+            onClick={() => onSchedule(i)}
+            aria-label={`View schedule for ${i.name}`}
+          >
+            <Icon name="calendar" /> View schedule
+          </button>
+        </div>
+      )}
       {onEdit && (
         <button className="card-edit" onClick={() => onEdit(i)}>
           Edit instrument <Icon name="arrow" />
@@ -406,12 +419,14 @@ export function InstrumentRegister({
   reload,
   includeArchived,
   setIncludeArchived,
+  onSchedule,
 }: {
   items: Instrument[];
   admin: boolean;
   reload: () => Promise<void>;
   includeArchived: boolean;
   setIncludeArchived: (v: boolean) => void;
+  onSchedule: (i: Instrument) => void;
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -477,6 +492,7 @@ export function InstrumentRegister({
               key={i.id}
               instrument={i}
               onEdit={admin ? setEditor : undefined}
+              onSchedule={onSchedule}
             />
           ))}
         </div>
