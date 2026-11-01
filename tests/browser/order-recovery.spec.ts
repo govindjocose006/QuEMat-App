@@ -114,9 +114,9 @@ for (const mode of ["record", "correct"]) {
     await expect(
       page.getByLabel("Recorded order cost — INR (optional)", { exact: true }),
     ).toHaveValue("234.56");
-    await expect(page.getByLabel("Ordered by", { exact: true })).toHaveValue(
-      session.user.id,
-    );
+    await expect(
+      page.getByRole("combobox", { name: "Ordered by", exact: true }),
+    ).toHaveValue(session.user.id);
     await save.click();
     await expect(
       page.getByText("Saved. Order tracking and history updated.", {
