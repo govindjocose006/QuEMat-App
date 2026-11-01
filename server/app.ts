@@ -94,6 +94,9 @@ export function createApp(db: DB, options: Options) {
   // Meeting/notice text and ten links can exceed 64 KiB in UTF-8.
   // 256 KiB also accommodates six-byte JSON escapes within field limits.
   app.use(["/api/meetings", "/api/notices"], express.json({ limit: "256kb" }));
+  // Instrument fields permit 41,680 UTF-16 units including names and SOPs.
+  // 256 KiB covers six-byte JSON escapes plus keys/array overhead, for create/edit.
+  app.use("/api/instruments", express.json({ limit: "256kb" }));
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
   app.use("/api", (_req, res, next) => {

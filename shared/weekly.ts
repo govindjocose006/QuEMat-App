@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { storedText as text, validUnicode } from "./validation.js";
 export const reportFields = {
   workCompleted: "Work completed",
   experiments: "Experiments / samples measured",
@@ -41,13 +42,6 @@ export const weekSchema = z.iso
       new Date(v + "T00:00:00Z").getUTCDay() === 1,
     "Select a Monday week start (2000–2100).",
   );
-const validUnicode = (value: string) => !/[\u0000\uD800-\uDFFF]/u.test(value);
-const text = (n: number) =>
-  z
-    .string()
-    .trim()
-    .max(n)
-    .refine(validUnicode, "Use valid Unicode text without null characters.");
 export const reportSchema = z.object({
   project: text(500).default(""),
   workCompleted: text(6000).default(""),

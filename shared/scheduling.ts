@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { Instrument } from "./schema.js";
-const text = (max = 2000) => z.string().trim().max(max);
+import {
+  storedText as text,
+  validUnicode,
+  unicodeMessage,
+} from "./validation.js";
 const id = z.string().uuid();
 const instant = z.iso
   .datetime({ offset: true })
@@ -120,6 +124,7 @@ export const actionSchema = z.object({
       z
         .url()
         .max(1000)
+        .refine(validUnicode, unicodeMessage)
         .refine((v) => ["http:", "https:"].includes(new URL(v).protocol)),
     ])
     .default(""),

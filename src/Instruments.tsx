@@ -75,7 +75,10 @@ export function InstrumentCard({
             Coordinator approval:{" "}
             {i.coordinatorApproval ? "Required" : "Not required"}
           </p>
-          <p>Bookings and allocation windows will be implemented in Phase 2.</p>
+          <p>
+            Use the calendar to view reservations and available allocation
+            windows.
+          </p>
           {i.sopLinks.length > 0 && (
             <>
               <h4>Standard operating procedures</h4>
@@ -270,8 +273,8 @@ export function InstrumentEditor({
         <fieldset>
           <legend>Booking configuration</legend>
           <p className="field-hint">
-            Saved for the Phase 2 booking workflow. These settings do not create
-            reservations or facility approvals.
+            These settings control reservation buffers, scheduling windows and
+            coordinator approval. Create reservations in the calendar.
           </p>
           <div className="form-grid">
             <label>
