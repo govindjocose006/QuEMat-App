@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  storedText as text,
+  validUnicode,
+  unicodeMessage,
+} from "./validation.js";
 
 import {
   academicRoles,
@@ -6,7 +11,6 @@ import {
   memberStatuses,
   operationalStatuses,
 } from "./options.js";
-const text = (max: number) => z.string().trim().max(max);
 export const passwordSchema = z
   .string()
   .min(12, "Use at least 12 characters.")
@@ -55,6 +59,7 @@ export const memberUpdateSchema = z.object({
 const safeUrl = z
   .url()
   .max(1000)
+  .refine(validUnicode, unicodeMessage)
   .refine(
     (v) => ["https:", "http:"].includes(new URL(v).protocol),
     "Use an HTTP or HTTPS link.",

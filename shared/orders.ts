@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Member } from "./schema.js";
-const text = (n: number) => z.string().trim().max(n);
+import { storedText as text } from "./validation.js";
 export const orderStatuses = [
   "requested",
   "ordered",

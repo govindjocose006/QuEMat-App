@@ -1,5 +1,10 @@
 import { z } from "zod";
 import type { Member } from "./schema.js";
+import {
+  storedText as text,
+  validUnicode,
+  unicodeMessage,
+} from "./validation.js";
 export const issueCategories = {
   helium_refill: "Helium refill",
   instrument_malfunction: "Instrument malfunction",
@@ -32,12 +37,12 @@ export const issueTransitions: Record<IssueStatus, IssueStatus[]> = {
   blocked: ["in_progress", "resolved"],
   resolved: ["open"],
 };
-const text = (max: number) => z.string().trim().max(max);
 export const issueLink = z.object({
   label: text(150).min(1),
   url: z
     .url()
     .max(1000)
+    .refine(validUnicode, unicodeMessage)
     .refine((v) => {
       const u = new URL(v);
       return (

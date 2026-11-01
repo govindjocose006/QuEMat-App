@@ -210,9 +210,11 @@ function MemberEditor({
           </select>
         </label>
         <p className="field-hint">
-          Administrators manage membership and instruments. Mentor and
-          supervisor permissions are separate; their progress and operations
-          workflows arrive in later phases.
+          Administrators manage membership and instruments. Academic titles do
+          not grant application permissions. Submitted weekly reports are
+          visible only to their author and the supervisor; drafts remain private
+          to the author. Routine issues can be assigned to lab members and
+          escalated when supervisor attention is needed.
         </p>
         {needsMentor && (
           <MentorField mentors={mentors} value={mentor} onChange={setMentor} />

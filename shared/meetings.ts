@@ -1,15 +1,9 @@
 import { z } from "zod";
 import type { Member } from "./schema.js";
 import { issueLink } from "./issues.js";
+import { storedText as text } from "./validation.js";
 
-const validUnicode = (value: string) => !/[\u0000\uD800-\uDFFF]/u.test(value);
-const unicodeMessage = "Use valid Unicode text without null characters.";
-const text = (max: number) =>
-  z.string().trim().max(max).refine(validUnicode, unicodeMessage);
-const collaborationLink = issueLink.extend({
-  label: text(150).min(1),
-  url: issueLink.shape.url.refine(validUnicode, unicodeMessage),
-});
+const collaborationLink = issueLink;
 const instant = z.iso
   .datetime({ offset: true })
   .transform((v) => new Date(v).toISOString());

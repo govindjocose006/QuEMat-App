@@ -58,6 +58,29 @@ export function Orders({
     [notice, setNotice] = useState(""),
     [orderedBy, setOrderedBy] = useState(user.id),
     [people, setPeople] = useState<{ id: string; fullName: string }[]>([]);
+  const [peopleLoading, setPeopleLoading] = useState(false);
+  const [peopleError, setPeopleError] = useState("");
+  const peopleGeneration = useRef(0);
+  const reloadPeople = useCallback(async () => {
+    const request = ++peopleGeneration.current;
+    setPeopleLoading(true);
+    try {
+      const result =
+        await api<{ id: string; fullName: string }[]>("/orders/options");
+      if (request === peopleGeneration.current) {
+        setPeople(result);
+        setPeopleError(
+          result.length
+            ? ""
+            : "No approved members were returned. Retry the member list.",
+        );
+      }
+    } catch (e) {
+      if (request === peopleGeneration.current) setPeopleError(messageOf(e));
+    } finally {
+      if (request === peopleGeneration.current) setPeopleLoading(false);
+    }
+  }, []);
   const detailHeading = useRef<HTMLHeadingElement>(null);
   const formHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -110,19 +133,13 @@ export function Orders({
   useEffect(() => {
     if (mode !== "record") return;
     setPeople([]);
+    setPeopleError("");
     setOrderedBy(detail?.orderedBy ?? user.id);
-    let active = true;
-    void api<{ id: string; fullName: string }[]>("/orders/options")
-      .then((p) => {
-        if (active) setPeople(p);
-      })
-      .catch((e) => {
-        if (active) setError(messageOf(e));
-      });
+    void reloadPeople();
     return () => {
-      active = false;
+      peopleGeneration.current++;
     };
-  }, [mode, detail?.orderedBy, user.id]);
+  }, [mode, detail?.id, detail?.orderedBy, user.id, reloadPeople]);
   const open = (r: ChemicalOrder) => {
     setMode(null);
     setNotice("");
@@ -137,7 +154,11 @@ export function Orders({
   };
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (busy) return;
+    if (
+      busy ||
+      (mode === "record" && (peopleLoading || peopleError || !people.length))
+    )
+      return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -353,6 +374,18 @@ export function Orders({
             This saves a record only. Place orders through the institute’s
             normal process.
           </p>
+          {peopleLoading && <p role="status">Loading order members…</p>}
+          <ErrorNotice message={peopleError} />
+          {peopleError && (
+            <button
+              className="secondary"
+              type="button"
+              disabled={peopleLoading}
+              onClick={() => void reloadPeople()}
+            >
+              Retry member list
+            </button>
+          )}
           <div className="form-grid">
             {input(
               "Supplier",
@@ -367,6 +400,7 @@ export function Orders({
               <select
                 name="orderedBy"
                 required
+                disabled={peopleLoading || !!peopleError}
                 value={orderedBy}
                 onChange={(e) => setOrderedBy(e.target.value)}
               >
@@ -478,7 +512,11 @@ export function Orders({
       <div className="action-row workflow-actions">
         <button
           className="primary"
-          disabled={busy || (mode === "record" && !people.length)}
+          disabled={
+            busy ||
+            (mode === "record" &&
+              (peopleLoading || !!peopleError || !people.length))
+          }
         >
           {busy
             ? "Saving…"
