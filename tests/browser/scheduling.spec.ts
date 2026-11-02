@@ -308,6 +308,10 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
+    .locator("summary")
+    .filter({ hasText: "Manage availability" })
+    .click();
+  await page
     .getByRole("button", { name: "Add maintenance", exact: true })
     .click();
   await page.getByLabel("Maintenance reason").fill("Planned inspection");

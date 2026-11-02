@@ -244,11 +244,19 @@ function IssueForm({
           <input
             type="checkbox"
             checked={data.supervisorAttention}
+            aria-describedby="supervisor-attention-help"
             onChange={(e) => set("supervisorAttention", e.target.checked)}
           />{" "}
           Supervisor attention requested
         </label>
-        <p>
+        <p className="field-hint" id="supervisor-attention-help">
+          Assign routine work to the responsible senior PhD or postdoc. Request
+          supervisor attention when her decision or intervention is needed. This
+          sends an in-app update to the supervisor and administrators (except
+          the person making the change). The supervisor can still monitor all
+          issues without receiving routine updates.
+        </p>
+        <p className="field-hint">
           Requesting attention does not acknowledge the item. The assignee or a
           lab manager must explicitly acknowledge it.
         </p>

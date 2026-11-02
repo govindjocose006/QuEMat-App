@@ -163,6 +163,17 @@ test("sample handling stays visible while metadata expands and grouped edits ret
   await expect(
     row.getByText("Synthetic cabinet", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Compact list", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Cards", exact: true }).click();
+  await expect(
+    row.getByText("Synthetic handling instructions", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Search samples", { exact: true })).toHaveValue(
+    sample.code,
+  );
+  await page.getByRole("button", { name: "Compact list", exact: true }).click();
   await expect(row.locator("details")).not.toHaveAttribute("open", "");
   await row.locator("summary").click();
   await expect(

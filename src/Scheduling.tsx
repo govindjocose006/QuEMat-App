@@ -20,6 +20,7 @@ import {
   fromIST,
 } from "../shared/scheduling-ui.js";
 import { api } from "./api.js";
+import { bookingDuration, notificationMessage } from "./ui-format.js";
 import {
   ErrorNotice,
   FilterSummary,
@@ -198,6 +199,7 @@ export function Samples({ user }: { user: Member }) {
   const [items, setItems] = useState<Sample[]>([]),
     [loading, setLoading] = useState(true),
     [search, setSearch] = useState(""),
+    [sampleLayout, setSampleLayout] = useState("compact"),
     [sampleStatus, setSampleStatus] = useState<"active" | "archived" | "all">(
       "active",
     ),
@@ -286,19 +288,43 @@ export function Samples({ user }: { user: Member }) {
           setSampleStatus("active");
         }}
       />
-      <div className="sample-grid">
+      <div
+        className="sample-layout-picker"
+        role="group"
+        aria-label="Sample layout"
+      >
+        <button
+          className="secondary"
+          aria-pressed={sampleLayout === "compact"}
+          onClick={() => setSampleLayout("compact")}
+        >
+          Compact list
+        </button>
+        <button
+          className="secondary"
+          aria-pressed={sampleLayout === "cards"}
+          onClick={() => setSampleLayout("cards")}
+        >
+          Cards
+        </button>
+      </div>
+      <div
+        className={`sample-grid ${sampleLayout === "compact" ? "sample-list-compact" : ""}`}
+      >
         {!loading &&
           !error &&
           visibleSamples.map((s) => (
             <article className="panel" key={s.id}>
-              <span className="eyebrow">
-                {s.code}
-                {s.archived ? " · Archived" : ""}
-              </span>
-              <h3>{s.compound}</h3>
-              <p>
-                {s.ownerName} · {s.project || "No project"}
-              </p>
+              <div className="sample-identity">
+                <span className="eyebrow">
+                  {s.code}
+                  {s.archived ? " · Archived" : ""}
+                </span>
+                <h3>{s.compound}</h3>
+                <p>
+                  {s.ownerName} · {s.project || "No project"}
+                </p>
+              </div>
               <dl className="sample-handling">
                 <dt>Storage</dt>
                 <dd>{s.storage || "Not recorded"}</dd>
@@ -578,15 +604,20 @@ function BookingForm({
   user,
   items,
   b,
+  initialInstrumentId,
   onSaved,
 }: {
   user: Member;
   items: Instrument[];
   b?: Booking;
+  initialInstrumentId?: string;
   onSaved: () => void;
 }) {
   const [instrumentId, setInstrumentId] = useState(
-      b?.instrumentId ?? items[0]?.id ?? "",
+      b?.instrumentId ??
+        items.find((i) => i.id === initialInstrumentId && !i.archived)?.id ??
+        items.find((i) => !i.archived)?.id ??
+        "",
     ),
     [samples, setSamples] = useState<Sample[]>([]),
     [operators, setOperators] = useState<Operator[]>([]),
@@ -600,6 +631,12 @@ function BookingForm({
     [sampleSearch, setSampleSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [startsAt, setStartsAt] = useState(() =>
+    istInput(b?.startsAt ?? new Date().toISOString()),
+  );
+  const [endsAt, setEndsAt] = useState(() =>
+    istInput(b?.endsAt ?? new Date(Date.now() + 3600000).toISOString()),
+  );
   const instrument = items.find((i) => i.id === instrumentId);
   useEffect(() => {
     let live = true;
@@ -754,7 +791,7 @@ function BookingForm({
                   ))}
                 </select>
               </label>
-              <label>
+              <label className="field-full">
                 Measurement / process type
                 <input
                   name="measurementType"
@@ -778,22 +815,29 @@ function BookingForm({
                 </datalist>
               </label>
 
-              <Field
-                label="Start (Asia/Kolkata)"
-                name="startsAt"
-                type="datetime-local"
-                value={istInput(b?.startsAt ?? new Date().toISOString())}
-                required
-              />
-              <Field
-                label="End including cooling (Asia/Kolkata)"
-                name="endsAt"
-                type="datetime-local"
-                value={istInput(
-                  b?.endsAt ?? new Date(Date.now() + 3600000).toISOString(),
-                )}
-                required
-              />
+              <label>
+                Start (Asia/Kolkata)
+                <input
+                  type="datetime-local"
+                  name="startsAt"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                End including cooling (Asia/Kolkata)
+                <input
+                  type="datetime-local"
+                  name="endsAt"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  required
+                />
+              </label>
+              <p className="field-full booking-duration" role="status">
+                {bookingDuration(startsAt, endsAt)}
+              </p>
             </div>
           </fieldset>
           <fieldset className="workflow-section sample-chooser" disabled={busy}>
@@ -1133,13 +1177,15 @@ function BookingDetails({
 export function Schedule({
   user,
   items,
+  initialInstrumentId = "",
 }: {
   user: Member;
   items: Instrument[];
+  initialInstrumentId?: string;
 }) {
   const [date, setDate] = useState(day()),
     [view, setView] = useState("week"),
-    [instrument, setInstrument] = useState(""),
+    [instrument, setInstrument] = useState(initialInstrumentId),
     [mine, setMine] = useState(false),
     [bookings, setBookings] = useState<Booking[]>([]),
     [windows, setWindows] = useState<Availability[]>([]),
@@ -1286,37 +1332,45 @@ export function Schedule({
           Refresh schedule
         </button>
       </div>
-      <div className="action-row">
-        <button className="secondary" onClick={() => moveDate(-1)}>
-          Previous
-        </button>
-        <button className="secondary" onClick={() => setDate(day())}>
-          Today
-        </button>
-        <button className="secondary" onClick={() => moveDate(1)}>
-          Next
-        </button>
+      <div className="calendar-navigation">
+        <div
+          className="action-row"
+          role="group"
+          aria-label="Calendar date navigation"
+        >
+          <button className="secondary" onClick={() => moveDate(-1)}>
+            Previous
+          </button>
+          <button className="secondary" onClick={() => setDate(day())}>
+            Today
+          </button>
+          <button className="secondary" onClick={() => moveDate(1)}>
+            Next
+          </button>
+        </div>
         {managesOperations(user.appRole) && (
-          <>
-            <button
-              className="secondary"
-              onClick={() => setBlock("maintenance")}
-            >
-              Add maintenance
-            </button>
-            <button
-              className="secondary"
-              onClick={() => setBlock("availability")}
-            >
-              Add allocated window
-            </button>
-          </>
+          <details className="calendar-management">
+            <summary>Manage availability</summary>
+            <div className="action-row">
+              <button
+                className="secondary"
+                onClick={() => setBlock("maintenance")}
+              >
+                Add maintenance
+              </button>
+              <button
+                className="secondary"
+                onClick={() => setBlock("availability")}
+              >
+                Add allocated window
+              </button>
+            </div>
+          </details>
         )}
       </div>
       <p className="field-hint">
         Requested bookings reserve a slot while awaiting approval. Buffers and
-        maintenance block overlapping reservations. Phone layouts use a daily
-        agenda.
+        maintenance block overlapping reservations.
       </p>
       {loading && <p role="status">Loading schedule…</p>}
       {error && (
@@ -1425,6 +1479,7 @@ export function Schedule({
               user={user}
               items={items}
               b={editing ?? undefined}
+              initialInstrumentId={instrument}
               onSaved={() => {
                 setEditing(undefined);
                 void reload();
@@ -1835,13 +1890,13 @@ export function Notifications({
   }, [reload]);
   const items = data?.items ?? [];
   return (
-    <section>
-      <h2>In-app notifications</h2>
+    <section className="notifications-page">
+      <h2 className="sr-only">In-app notifications</h2>
       <p>
-        Persistent booking, weekly progress, issue/request, chemical order,
-        meeting and notice updates. Refreshed every 30 seconds while open.
+        Your lab updates. Opening an update does not acknowledge the underlying
+        issue or notice.
       </p>
-      <div className="action-row">
+      <div className="notification-toolbar">
         <label>
           Notification view
           <select
@@ -1858,7 +1913,11 @@ export function Notifications({
             <option value="unread">Unread only</option>
           </select>
         </label>
-        <button className="secondary" onClick={() => void reload()}>
+        <button
+          className="secondary"
+          disabled={loading}
+          onClick={() => void reload()}
+        >
           Refresh inbox
         </button>
         {data && <p>{data.unreadCount} unread updates</p>}
@@ -1873,12 +1932,19 @@ export function Notifications({
         </p>
       )}
       {items.map((n) => (
-        <article className="panel" key={n.id}>
-          <p>
-            <strong>{n.readAt ? "Read" : "Unread"}</strong> ·{" "}
-            {formatDate(n.createdAt)}
-          </p>
-          <p>{n.message}</p>
+        <article
+          className={`panel notification-row ${n.readAt ? "" : "notification-unread"}`}
+          key={n.id}
+        >
+          <div className="notification-copy">
+            <p className="notification-meta">
+              <strong>{n.readAt ? "Read" : "Unread"}</strong> ·{" "}
+              {formatDate(n.createdAt)}
+            </p>
+            <p className="notification-message">
+              {notificationMessage(n.message, !!n.bookingId)}
+            </p>
+          </div>
           <div className="action-row">
             {n.orderId ? (
               <button className="secondary" onClick={() => onOrder(n.orderId!)}>

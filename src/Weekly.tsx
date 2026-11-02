@@ -548,17 +548,41 @@ function ReportEditor({
         >
           <fieldset className="weekly-draft-fields" disabled={busy}>
             <legend className="sr-only">Weekly draft</legend>
-            <label>
-              Report project
+            <nav className="report-section-nav" aria-label="Report sections">
+              {[
+                ["workCompleted", "Completed work"],
+                ["results", "Results & blockers"],
+                ["nextPlan", "Next steps"],
+              ].map(([key, label]) => (
+                <button
+                  type="button"
+                  className="secondary"
+                  key={key}
+                  onClick={() => {
+                    const field = document.getElementById(
+                      `report-field-${key}`,
+                    );
+                    field?.focus({ preventScroll: true });
+                    field?.scrollIntoView({
+                      block: "start",
+                      behavior: "instant",
+                    });
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <label className="report-project">
+              Report project (optional)
               <input
+                aria-label="Report project"
                 value={draft.project}
                 maxLength={500}
                 onChange={(e) => change("project", e.target.value)}
               />
             </label>
-            <p className="field-hint">
-              Project is optional. Use your current project or leave it blank.
-            </p>
+
             {[
               {
                 title: "Completed work",
@@ -588,6 +612,7 @@ function ReportEditor({
                     <label key={key}>
                       {reportFields[key]}
                       <textarea
+                        id={`report-field-${key}`}
                         aria-label={reportFields[key]}
                         value={draft[key]}
                         maxLength={6000}
