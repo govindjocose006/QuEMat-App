@@ -211,7 +211,7 @@ test("malformed sample response shows a recoverable error instead of crashing", 
   await navigate(page, "Samples");
   await expect(page.getByRole("alert")).toContainText("unexpected response");
   await expect(
-    page.getByText("No active samples.", { exact: true }),
+    page.getByText("No samples in this view.", { exact: true }),
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Retry samples", exact: true })
