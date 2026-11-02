@@ -111,6 +111,13 @@ test("report section shortcuts move keyboard focus without losing unsaved writin
   await expect(
     page.getByLabel("Work completed", { exact: true }),
   ).toBeFocused();
+  const writing = await page
+    .getByLabel("Work completed", { exact: true })
+    .boundingBox();
+  const actions = await page.locator(".report-actions").boundingBox();
+  const header = await page.locator(".topbar").boundingBox();
+  expect(writing!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+  expect(writing!.y + writing!.height).toBeLessThanOrEqual(actions!.y);
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-refined-weekly.png"),
@@ -155,6 +162,12 @@ test("compact notification rows preserve destination and explicit read action", 
     .getByRole("button", { name: "Refresh inbox" })
     .boundingBox();
   expect(refresh!.height).toBeLessThan(60);
+  const view = await page
+    .getByRole("combobox", { name: "Notification view", exact: true })
+    .boundingBox();
+  expect(
+    Math.abs(view!.y + view!.height - refresh!.y - refresh!.height),
+  ).toBeLessThan(2);
   await accessible(page);
   await page.screenshot({
     path: info.outputPath("workspace-refined-notifications.png"),

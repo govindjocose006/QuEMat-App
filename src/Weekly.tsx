@@ -559,7 +559,14 @@ function ReportEditor({
                   className="secondary"
                   key={key}
                   onClick={() => {
-                    document.getElementById(`report-field-${key}`)?.focus();
+                    const field = document.getElementById(
+                      `report-field-${key}`,
+                    );
+                    field?.focus({ preventScroll: true });
+                    field?.scrollIntoView({
+                      block: "start",
+                      behavior: "instant",
+                    });
                   }}
                 >
                   {label}
