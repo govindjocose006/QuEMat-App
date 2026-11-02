@@ -89,10 +89,10 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await tile.click();
   await page.getByRole("button", { name: "Edit / reschedule" }).click();
   await page
-    .getByLabel("Start (Asia/Kolkata)", { exact: true })
+    .getByLabel("Start (IST)", { exact: true })
     .fill(istInput(new Date(Date.now() - 60000).toISOString()));
   await page
-    .getByLabel("End including cooling (Asia/Kolkata)")
+    .getByLabel("End including cooling (IST)")
     .fill(istInput(new Date(Date.now() + 1800000).toISOString()));
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -173,9 +173,10 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await expect(control).toHaveCount(0);
   await search.fill("No such synthetic sample");
   await expect(
-    page
-      .getByRole("status")
-      .filter({ hasText: "No samples match your search in this view." }),
+    page.getByRole("heading", {
+      name: "No samples match your search in this view.",
+      exact: true,
+    }),
   ).toBeVisible();
   await search.fill(`FeSe-${info.project.name}`);
   await status.selectOption("all");
@@ -200,9 +201,10 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(target).toHaveCount(0);
   await expect(
-    page
-      .getByRole("status")
-      .filter({ hasText: "No samples match your search in this view." }),
+    page.getByRole("heading", {
+      name: "No samples match your search in this view.",
+      exact: true,
+    }),
   ).toBeVisible();
   await status.selectOption("active");
   await expect(target).toBeVisible();

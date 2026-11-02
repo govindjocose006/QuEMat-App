@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 
 async function login(page: Page, email: string, section = "overview") {
   await page.goto("/#" + section);
@@ -9,9 +9,7 @@ async function login(page: Page, email: string, section = "overview") {
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function noOverflow(page: Page) {
   expect(
@@ -94,7 +92,7 @@ test("member can learn, hide and reopen tips without affecting another account",
   await page.getByRole("button", { name: "Show welcome tips" }).click();
   await expect(welcome).toBeVisible();
   await welcome.getByRole("button", { name: "Hide welcome tips" }).click();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
@@ -111,7 +109,7 @@ test("member can learn, hide and reopen tips without affecting another account",
   await expect(
     page.getByRole("button", { name: "Go to Members & access" }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await page.goto("/#guide");
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),

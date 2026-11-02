@@ -21,36 +21,62 @@ export function InstrumentCard({
   onEdit?: (i: Instrument) => void;
   onSchedule?: (i: Instrument) => void;
 }) {
+  const category = i.category.toLowerCase();
+  const symbol = category.includes("furnace")
+    ? "furnace"
+    : category.includes("magnetic")
+      ? "magnet"
+      : category.includes("diffraction")
+        ? "diffraction"
+        : category.includes("spectroscopy")
+          ? "spectrum"
+          : category.includes("temperature")
+            ? "cold"
+            : category.includes("preparation")
+              ? "samples"
+              : "instruments";
   return (
     <article className={`instrument-card ${i.archived ? "archived-card" : ""}`}>
       <div className="card-top">
         <span className="instrument-symbol">
-          <Icon name="instruments" />
+          <Icon name={symbol} />
         </span>
-        <Status value={i.archived ? "archived" : i.status} />
+        <Status
+          value={i.archived ? "archived" : i.status}
+          label={
+            !i.archived && i.status === "available" ? "Operational" : undefined
+          }
+        />
       </div>
       <p className="category">{i.category}</p>
       <h3>{i.name}</h3>
-      <p className="instrument-location">
-        {i.location || "Location not recorded"}
-      </p>
+      {i.location && <p className="instrument-location">{i.location}</p>}
       <div className="card-facts">
         {i.maxTemperatureC !== null ? (
           <span>
             Maximum <strong>{i.maxTemperatureC} °C</strong>
           </span>
-        ) : (
-          <span>No operating limits supplied</span>
-        )}
+        ) : null}
         <span>
           {i.schedulingMode === "internal"
-            ? "Internal scheduling"
-            : "Allocated-window scheduling"}
+            ? "Lab bookings"
+            : "Allocated windows"}
         </span>
       </div>
       <details>
         <summary>Instrument details</summary>
         <div className="instrument-details">
+          {!i.location && <p>Location not recorded.</p>}
+          {i.maxTemperatureC === null && (
+            <p>
+              No operating limits supplied. Check the SOP or coordinator before
+              use.
+            </p>
+          )}
+          <p>
+            Operational status does not indicate a free booking slot. Check the
+            schedule.
+          </p>
           {i.description && <p>{i.description}</p>}
           <h4>Trained-user directory</h4>
           <p>
@@ -442,8 +468,11 @@ export function InstrumentRegister({
     <>
       <div className="section-title">
         <div>
-          <h2>Instrument register</h2>
-          <p>Shared resources, operating status, and essential details.</p>
+          <h2 className="sr-only">Instrument register</h2>
+          <p>
+            Operating status and lab resources. Check a schedule for free
+            booking slots.
+          </p>
         </div>
         {admin && (
           <button className="primary" onClick={() => setEditor(null)}>

@@ -30,6 +30,15 @@ import {
   messageOf,
 } from "./components.js";
 
+const reportPrompts = {
+  workCompleted: "What did you finish or make progress on?",
+  experiments: "List the samples, measurements, or analysis completed.",
+  results: "Summarize your findings and link supporting data below.",
+  blockers: "What slowed the work? Write None if there were no blockers.",
+  nextPlan: "What will you work on next week?",
+  helpNeeded: "What advice, resources, or decisions do you need?",
+};
+
 function Content({ content: c }: { content: ReportContent }) {
   return (
     <div className="weekly-content">
@@ -481,9 +490,14 @@ function ReportEditor({
           <h2>My report</h2>
           <p className="field-hint">{weekLabel(week)}</p>
         </div>
-        <span className="report-progress">
-          {completedSections} / 6 sections drafted
-        </span>
+        <div className="report-progress">
+          <span>{completedSections} / 6 sections drafted</span>
+          <progress
+            aria-label="Report sections drafted"
+            value={completedSections}
+            max={6}
+          />
+        </div>
       </div>
       <p className="report-privacy">
         <Icon name="lock" /> Your draft is private. Submissions are shared only
@@ -500,8 +514,8 @@ function ReportEditor({
         </span>
       </div>
       <p className="form-intro">
-        Complete six sections to submit; write “None” where appropriate. Save a
-        partial draft at any time.
+        Complete all six fields; write “None” where appropriate. You can save a
+        partial draft.
       </p>
       {!!report?.latestRevision && (
         <button
@@ -611,7 +625,14 @@ function ReportEditor({
                   {section.keys.map((key) => (
                     <label key={key}>
                       {reportFields[key]}
+                      <small
+                        className="writing-prompt"
+                        id={`report-hint-${key}`}
+                      >
+                        {reportPrompts[key]}
+                      </small>
                       <textarea
+                        aria-describedby={`report-hint-${key}`}
                         id={`report-field-${key}`}
                         aria-label={reportFields[key]}
                         value={draft[key]}
@@ -775,7 +796,7 @@ function ReportEditor({
                       void save(true);
                   }}
                 >
-                  Save and review submission
+                  Save & review
                 </button>
               </div>
             </div>

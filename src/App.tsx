@@ -400,14 +400,40 @@ function Workspace({
             <span>Inbox</span>
             {badge}
           </button>
-          <button
-            className="workspace-logout secondary"
-            onClick={() => {
-              if (mayLeaveWorkspace()) onLogout();
+          <details
+            className="account-menu"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.currentTarget.open = false;
+                event.currentTarget.querySelector("summary")?.focus();
+              }
             }}
           >
-            Sign out
-          </button>
+            <summary>
+              <Icon name="settings" />
+              <span>Account</span>
+            </summary>
+            <div className="account-menu-body">
+              <strong>{user.fullName}</strong>
+              <button
+                className="secondary"
+                onClick={(event) => {
+                  event.currentTarget.closest("details")!.open = false;
+                  navigate("settings");
+                }}
+              >
+                My account
+              </button>
+              <button
+                className="workspace-logout secondary"
+                onClick={() => {
+                  if (mayLeaveWorkspace()) onLogout();
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </details>
         </header>
         <main id="main-content" tabIndex={-1}>
           <div className="page-heading">
@@ -427,7 +453,7 @@ function Workspace({
                 day: "numeric",
                 month: "long",
               }).format(new Date())}
-              <small>Indian Standard Time</small>
+              <small>IST · UTC+5:30</small>
             </div>
           </div>
           <ErrorNotice message={error} />

@@ -1,4 +1,4 @@
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 test.setTimeout(90000);
@@ -16,7 +16,7 @@ async function login(page: Page, key: string, device: string) {
   ).toBeVisible();
 }
 async function logout(page: Page) {
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();

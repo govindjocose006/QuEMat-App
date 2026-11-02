@@ -7,6 +7,7 @@ import {
 } from "react";
 import { api } from "./api.js";
 import {
+  EmptyState,
   ErrorNotice,
   FilterSummary,
   OptionalFields,
@@ -718,7 +719,7 @@ export function Orders({
               setOffset(0);
             }}
           >
-            <option value="work">Open work</option>
+            <option value="work">Open requests</option>
             <option value="closed">Received / cancelled</option>
             <option value="mine">My requests</option>
             <option value="all">All requests</option>
@@ -772,7 +773,30 @@ export function Orders({
         }}
       />
       {!loading && !error && !items.length && (
-        <p className="list-empty">No requests in this view.</p>
+        <EmptyState
+          icon="orders"
+          title="No requests in this view."
+          description={
+            search || status
+              ? "Remove filters to see more requests."
+              : view === "work"
+                ? "No open requests to track. Browse past orders or use New chemical request above."
+                : "Browse all requests, or use New chemical request above."
+          }
+          action={
+            <button
+              className="secondary"
+              onClick={() => {
+                setSearch("");
+                setStatus("");
+                setView("all");
+                setOffset(0);
+              }}
+            >
+              Show all requests
+            </button>
+          }
+        />
       )}
       <div className="record-list">
         {!loading &&

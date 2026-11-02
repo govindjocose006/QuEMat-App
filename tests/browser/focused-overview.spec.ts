@@ -15,9 +15,7 @@ async function login(
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function accessible(page: Page) {
   expect(
@@ -152,14 +150,12 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     });
   });
   await navigate(page, "Overview");
-  const card = page
-    .locator(".focus-card")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Today’s reservations",
-        exact: true,
-      }),
-    });
+  const card = page.locator(".focus-card").filter({
+    has: page.getByRole("heading", {
+      name: "Today’s reservations",
+      exact: true,
+    }),
+  });
   await expect(card).toContainText("My PPMS measurement");
   await expect(card).toContainText("Overdue furnace run");
   await expect(card).toContainText("Past scheduled end · completion needed");

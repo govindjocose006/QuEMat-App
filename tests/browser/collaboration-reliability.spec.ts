@@ -10,9 +10,7 @@ async function login(page: Page, device: string) {
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 const cases = [
   {

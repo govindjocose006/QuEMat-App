@@ -23,6 +23,7 @@ import {
 } from "../shared/issues.js";
 import { api } from "./api.js";
 import {
+  EmptyState,
   ErrorNotice,
   FilterSummary,
   OptionalFields,
@@ -828,7 +829,7 @@ export function Issues({
               setOffset(0);
             }}
           >
-            <option value="work">Open work (unresolved)</option>
+            <option value="work">Open issues</option>
             <option value="resolved">Resolved</option>
             <option value="all">All</option>
           </select>
@@ -955,7 +956,34 @@ export function Issues({
           ))}
       </div>
       {!loading && !error && !items.length && (
-        <p role="status">No issues match this view.</p>
+        <EmptyState
+          icon="issues"
+          title="No issues match this view."
+          description={
+            q || status || priority || category || instrument || assignee
+              ? "Try removing filters to see more issues."
+              : view === "work"
+                ? "No unresolved issues to show. You can still browse resolved work."
+                : "Choose another view to browse the issue history."
+          }
+          action={
+            <button
+              className="secondary"
+              onClick={() => {
+                setQ("");
+                setStatus("");
+                setPriority("");
+                setCategory("");
+                setInstrument("");
+                setAssignee("");
+                setView("all");
+                setOffset(0);
+              }}
+            >
+              Show all issues
+            </button>
+          }
+        />
       )}
       {!loading && !error && total > 50 && (
         <div className="action-row">

@@ -14,9 +14,7 @@ async function login(page: Page, device: string, role = "admin") {
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function write(page: Page, path: string, data: object) {
   const session = await (await page.request.get("/api/session")).json();
@@ -88,10 +86,10 @@ test("booking sample search preserves selection, collapsed optional fields and i
     .getByLabel("Measurement / process type")
     .fill("Synthetic forms scan");
   await page
-    .getByLabel("Start (Asia/Kolkata)", { exact: true })
+    .getByLabel("Start (IST)", { exact: true })
     .fill("2037-01-02T10:00");
   await page
-    .getByLabel("End including cooling (Asia/Kolkata)", { exact: true })
+    .getByLabel("End including cooling (IST)", { exact: true })
     .fill("2037-01-02T11:00");
   await page.getByLabel("Find a sample", { exact: true }).fill(sample.code);
   await page
@@ -190,7 +188,7 @@ test("weekly sections save privately and reveal invalid link fields before focus
   await expect(save).toBeInViewport();
   await expect(
     page.getByRole("button", {
-      name: "Save and review submission",
+      name: "Save & review",
       exact: true,
     }),
   ).toBeInViewport();
@@ -214,7 +212,7 @@ test("weekly sections save privately and reveal invalid link fields before focus
   await expect(page.getByLabel("Link 1 URL", { exact: true })).toBeFocused();
   await links.click();
   await page
-    .getByRole("button", { name: "Save and review submission", exact: true })
+    .getByRole("button", { name: "Save & review", exact: true })
     .click();
   await expect(page.getByLabel("Link 1 URL", { exact: true })).toBeFocused();
   expect(writes).toBe(0);

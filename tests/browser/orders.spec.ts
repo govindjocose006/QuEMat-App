@@ -171,7 +171,7 @@ test("chemical requests, recorded orders, partial deliveries, retained correctio
     path: info.outputPath("chemical-order.png"),
     fullPage: info.project.name !== "phone",
   });
-  await page.getByRole("button", { name: "Open inbox", exact: true }).click();
+  await navigate(page, "Notifications");
   const link = page
     .locator("article.panel")
     .filter({ hasText: item.code })

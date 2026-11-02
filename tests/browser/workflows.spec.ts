@@ -1,4 +1,4 @@
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 import { expect, test, type Page } from "@playwright/test";
 
 const password = "Browser-tests-only-passphrase!";
@@ -155,10 +155,7 @@ test("private access, onboarding, approval, member restrictions, and logout", as
   await expect(
     otherTab.getByRole("heading", { name: "Lab overview", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Sign out", exact: true })
-    .filter({ visible: true })
-    .click();
+  await signOut(page);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();

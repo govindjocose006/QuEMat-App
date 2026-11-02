@@ -204,7 +204,7 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
   await expect(page.locator("#unread-notification-status")).toContainText(
     "205 unread",
   );
-  await page.getByRole("button", { name: "Open inbox", exact: true }).click();
+  await navigate(page, "Notifications");
   await expect(
     page.getByText("Synthetic inbox update 205", { exact: true }),
   ).toBeVisible();
@@ -230,7 +230,7 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
   );
   if (info.project.name === "phone")
     await expect(
-      page.getByRole("button", { name: "Open inbox", exact: true }),
+      page.getByRole("button", { name: "Notifications", exact: true }),
     ).toBeInViewport();
   await page
     .getByRole("combobox", { name: "Notification view", exact: true })
@@ -271,7 +271,7 @@ test("inbox reaches the 205th update, refreshes the badge, recovers and uses Mor
     page.getByRole("heading", { name: "Samples", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Open inbox", exact: true }),
+    page.getByRole("button", { name: "Notifications", exact: true }),
   ).toBeVisible();
 });
 

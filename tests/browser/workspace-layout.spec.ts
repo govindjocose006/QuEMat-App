@@ -92,7 +92,7 @@ test("overview groups instruments without losing access to follow-ups and phone 
     const more = page.getByRole("button", { name: "More", exact: true });
     await expect(more).toBeInViewport();
     await expect(
-      page.getByRole("button", { name: "Open inbox", exact: true }),
+      page.getByRole("button", { name: "Notifications", exact: true }),
     ).toBeInViewport();
     await more.click();
     await expect(
@@ -123,7 +123,7 @@ test("overview groups instruments without losing access to follow-ups and phone 
   ).toBeVisible();
   await navigate(page, "Overview");
   await page
-    .getByRole("button", { name: "Open calendar", exact: true })
+    .getByRole("button", { name: "View calendar", exact: true })
     .click();
   await expect(page).toHaveURL(/#calendar$/);
   await expect(

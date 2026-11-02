@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 
 async function login(page: Page, email = "browser-admin@example.test") {
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -34,7 +34,7 @@ test("sections survive reload and browser history without exposing record detail
   await expect(
     page.getByRole("heading", { name: "Chemicals & Orders", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();

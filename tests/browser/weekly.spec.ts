@@ -1,4 +1,4 @@
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {
@@ -107,7 +107,7 @@ test("weekly drafts, selected records, review-before-submit and revision history
     `workCompleted: synthetic ${device}`,
   );
   await page
-    .getByRole("button", { name: "Save and review submission", exact: true })
+    .getByRole("button", { name: "Save & review", exact: true })
     .click();
   await expect(
     page.getByRole("heading", {
@@ -130,7 +130,7 @@ test("weekly drafts, selected records, review-before-submit and revision history
     .getByLabel("Main results", { exact: true })
     .fill(`Revised results ${device}`);
   await page
-    .getByRole("button", { name: "Save and review submission", exact: true })
+    .getByRole("button", { name: "Save & review", exact: true })
     .click();
   await page
     .getByLabel("I have reviewed this report and its selected records.")
@@ -183,7 +183,7 @@ test("private reports, supervisor review, follow-ups, notifications and printabl
     version: r.version,
   });
   r = await write(page, `/weekly/reports/${r.id}/submit`, preview);
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await login(page, "mentor", device);
   await openWeekly(page);
   await expect(
@@ -195,7 +195,7 @@ test("private reports, supervisor review, follow-ups, notifications and printabl
   expect(
     (await page.request.get(`/api/weekly/review?week=${week}`)).status(),
   ).toBe(403);
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await login(page, "supervisor", device);
   await openWeekly(page);
   page.once("dialog", (d) => d.accept());
@@ -231,7 +231,7 @@ test("private reports, supervisor review, follow-ups, notifications and printabl
   await expect(page.getByRole("dialog")).toContainText("reviewed revision 1");
   await accessible(page);
   await page.getByRole("button", { name: "Close dialog" }).click();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await login(page, "member", device);
   await navigate(page, "Notifications");
   await page
@@ -244,7 +244,7 @@ test("private reports, supervisor review, follow-ups, notifications and printabl
     .click();
   await expect(page.getByRole("dialog")).toContainText("Follow-up: done");
   await page.getByRole("button", { name: "Close dialog" }).click();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await login(page, "supervisor", device);
   await openWeekly(page);
   page.once("dialog", (d) => d.accept());
@@ -275,7 +275,7 @@ test("private reports, supervisor review, follow-ups, notifications and printabl
   ).not.toBeVisible();
   await page.emulateMedia({ media: "screen" });
   await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await login(page, "other", device);
   await openWeekly(page);
   await expect(

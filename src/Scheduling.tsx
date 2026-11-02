@@ -20,8 +20,14 @@ import {
   fromIST,
 } from "../shared/scheduling-ui.js";
 import { api } from "./api.js";
-import { bookingDuration, notificationMessage } from "./ui-format.js";
 import {
+  bookingDuration,
+  notificationMessage,
+  labDate,
+  bookingDaySegment,
+} from "./ui-format.js";
+import {
+  EmptyState,
   ErrorNotice,
   FilterSummary,
   OptionalFields,
@@ -231,7 +237,7 @@ export function Samples({ user }: { user: Member }) {
       <h2 className="sr-only">Shared sample register</h2>
       <div className="section-title">
         <div>
-          <p>Stable IDs connect batches, measurements, and result links.</p>
+          <p>Find samples, storage locations, and measurement history.</p>
         </div>
         <button className="primary" onClick={() => setEditing(null)}>
           New sample
@@ -322,14 +328,19 @@ export function Samples({ user }: { user: Member }) {
                 </span>
                 <h3>{s.compound}</h3>
                 <p>
-                  {s.ownerName} · {s.project || "No project"}
+                  {s.ownerName}
+                  {s.project ? ` · ${s.project}` : ""}
                 </p>
               </div>
               <dl className="sample-handling">
                 <dt>Storage</dt>
                 <dd>{s.storage || "Not recorded"}</dd>
-                <dt>Handling notes</dt>
-                <dd>{s.notes || "Not recorded"}</dd>
+                {s.notes && (
+                  <>
+                    <dt>Handling notes</dt>
+                    <dd className="handling-note">{s.notes}</dd>
+                  </>
+                )}
               </dl>
               <OptionalFields title="Sample details">
                 <dl>
@@ -367,15 +378,38 @@ export function Samples({ user }: { user: Member }) {
           ))}
       </div>
       {!loading && !error && !visibleSamples.length && (
-        <p role="status">
-          {query
-            ? "No samples match your search in this view."
-            : sampleStatus === "active"
-              ? "No active samples."
+        <EmptyState
+          icon="samples"
+          title={
+            query
+              ? "No samples match your search in this view."
               : sampleStatus === "archived"
                 ? "No archived samples."
-                : "No samples registered yet."}
-        </p>
+                : "No samples in this view."
+          }
+          description={
+            query || sampleStatus !== "active"
+              ? "Try a different search or return to active samples."
+              : "Register a sample to link its preparation, storage, and measurements."
+          }
+          action={
+            query || sampleStatus !== "active" ? (
+              <button
+                className="secondary"
+                onClick={() => {
+                  setSearch("");
+                  setSampleStatus("active");
+                }}
+              >
+                Show active samples
+              </button>
+            ) : (
+              <button className="secondary" onClick={() => setEditing(null)}>
+                Register a sample
+              </button>
+            )
+          }
+        />
       )}
       {editing !== undefined && (
         <Modal
@@ -758,8 +792,8 @@ function BookingForm({
               Reservation
             </legend>
             <p className="field-hint">
-              Instrument, operator, process type and times are required. All
-              times use Asia/Kolkata.
+              Choose the instrument, operator, and measurement. All times are in
+              IST.
             </p>
             <div className="form-grid">
               <label>
@@ -778,7 +812,7 @@ function BookingForm({
                 </select>
               </label>
               <label>
-                Actual operator
+                Who will operate the instrument?
                 <select
                   name="operatorId"
                   defaultValue={b?.operatorId ?? user.id}
@@ -816,7 +850,7 @@ function BookingForm({
               </label>
 
               <label>
-                Start (Asia/Kolkata)
+                Start (IST)
                 <input
                   type="datetime-local"
                   name="startsAt"
@@ -826,7 +860,7 @@ function BookingForm({
                 />
               </label>
               <label>
-                End including cooling (Asia/Kolkata)
+                End including cooling (IST)
                 <input
                   type="datetime-local"
                   name="endsAt"
@@ -836,6 +870,13 @@ function BookingForm({
                 />
               </label>
               <p className="field-full booking-duration" role="status">
+                {startsAt && endsAt && (
+                  <span className="booking-date-summary">
+                    {labDate(startsAt.slice(0, 10))} →{" "}
+                    {labDate(endsAt.slice(0, 10))} · IST
+                    <br />
+                  </span>
+                )}
                 {bookingDuration(startsAt, endsAt)}
               </p>
             </div>
@@ -1274,11 +1315,16 @@ export function Schedule({
     }
   }
   return (
-    <section>
+    <section className="schedule-page">
       <div className="section-title">
         <div>
-          <h2>Instrument calendar</h2>
-          <p>Asia/Kolkata · scheduled reservations and confirmed usage</p>
+          <h2>
+            {labDate(start)}
+            {start !== addDays(end, -1)
+              ? ` – ${labDate(addDays(end, -1))}`
+              : ""}
+          </h2>
+          <p>All times in IST · planned reservations and recorded usage</p>
         </div>
         <button className="primary" onClick={() => setEditing(null)}>
           Book instrument
@@ -1379,9 +1425,22 @@ export function Schedule({
           displayed records may be outdated.
         </p>
       )}
-      <div className={`calendar calendar-${view}`}>
+      {instrument && (
+        <p className="timeline-caption">
+          Planned reservations · 24-hour timeline. Maintenance and booking rules
+          still apply.
+        </p>
+      )}
+      <div
+        className={`calendar calendar-${view}${instrument ? " calendar-timeline" : ""}`}
+      >
         {days.map((d) => (
-          <section className="calendar-day" key={d}>
+          <section
+            className={`calendar-day${d === day() ? " calendar-today" : ""}`}
+            key={d}
+            aria-label={labDate(d)}
+          >
+            {d === day() && <span className="today-marker">Today</span>}
             <h3>
               {new Intl.DateTimeFormat("en-IN", {
                 timeZone: "Asia/Kolkata",
@@ -1390,6 +1449,13 @@ export function Schedule({
                 month: "short",
               }).format(new Date(fromIST(d + "T00:00")))}
             </h3>
+            {instrument && (
+              <div className="timeline-axis" aria-hidden="true">
+                <span>00:00</span>
+                <span>12:00</span>
+                <span>24:00</span>
+              </div>
+            )}
             {filtered
               .filter(
                 (b) =>
@@ -1404,6 +1470,13 @@ export function Schedule({
                   className={`booking-tile ${b.status}`}
                   onClick={() => setSelected(b)}
                 >
+                  {instrument && (
+                    <ReservationBar
+                      start={b.startsAt}
+                      end={b.endsAt}
+                      date={d}
+                    />
+                  )}
                   <strong>{b.instrumentName}</strong>
                   <span>{b.operatorName}</span>
                   <span>{b.measurementType}</span>
@@ -2047,5 +2120,43 @@ export function Notifications({
         </Modal>
       )}
     </section>
+  );
+}
+
+function ReservationBar({
+  start,
+  end,
+  date,
+}: {
+  start: string;
+  end: string;
+  date: string;
+}) {
+  const segment = bookingDaySegment(start, end, date);
+  if (!segment) return null;
+  return (
+    <svg
+      className="reservation-bar"
+      viewBox="0 0 1440 16"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="0"
+        y="4"
+        width="1440"
+        height="8"
+        rx="4"
+        className="timeline-track"
+      />
+      <rect
+        x={segment.from}
+        y="2"
+        width={Math.max(segment.to - segment.from, 1)}
+        height="12"
+        rx="3"
+        fill="currentColor"
+      />
+    </svg>
   );
 }

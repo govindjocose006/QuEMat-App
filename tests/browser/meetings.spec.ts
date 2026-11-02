@@ -1,4 +1,4 @@
-import { navigate } from "./navigation.js";
+import { navigate, signOut as signOutAccount } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
@@ -21,7 +21,7 @@ async function signOut(page: Page) {
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOutAccount(page);
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();
