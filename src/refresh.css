@@ -389,10 +389,9 @@ dialog .field-hint {
 /* Calendar uses the selected date range as its heading and lab-day timelines. */
 .schedule-page .schedule-controls {
   display: grid;
-  grid-template-columns: minmax(95px, 0.7fr) minmax(150px, 1fr) minmax(
-      180px,
-      1.5fr
-    ) auto auto;
+  grid-template-columns:
+    minmax(95px, 0.7fr) minmax(150px, 1fr) minmax(180px, 1.5fr)
+    auto auto;
 }
 .calendar-navigation {
   align-items: center;
@@ -459,6 +458,9 @@ dialog .field-hint {
   color: var(--muted);
   font-size: 11px;
   padding: 0 11px;
+}
+.booking-tile.confirmed {
+  color: #195d7a;
 }
 .booking-tile.requested {
   color: #6c4a14;

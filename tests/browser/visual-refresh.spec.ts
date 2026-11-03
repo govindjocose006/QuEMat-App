@@ -134,9 +134,9 @@ test("empty issue view offers a working reset without creating records", async (
   await expect(page.getByLabel("Search issues", { exact: true })).toHaveValue(
     "",
   );
-  await expect(page.getByLabel("Work view", { exact: true })).toHaveValue(
-    "all",
-  );
+  await expect(
+    page.getByRole("combobox", { name: "Work view", exact: true }),
+  ).toHaveValue("all");
 });
 test("report progress reflects writing and keeps a separate save and review action", async ({
   page,

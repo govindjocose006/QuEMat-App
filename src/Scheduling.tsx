@@ -1480,10 +1480,11 @@ export function Schedule({
                   <strong>{b.instrumentName}</strong>
                   <span>{b.operatorName}</span>
                   <span>{b.measurementType}</span>
-                  <span>
-                    {b.sampleSnapshots.map((s) => s.compound).join(", ") ||
-                      b.measurementType}
-                  </span>
+                  {!!b.sampleSnapshots.length && (
+                    <span>
+                      {b.sampleSnapshots.map((s) => s.compound).join(", ")}
+                    </span>
+                  )}
                   <span>
                     {istInput(b.startsAt).slice(11)}–
                     {istInput(b.endsAt).slice(11)} ·{" "}
