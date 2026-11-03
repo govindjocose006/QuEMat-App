@@ -12,9 +12,7 @@ async function login(page: Page, phone: boolean) {
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function accessible(page: Page) {
   expect(
@@ -62,20 +60,20 @@ test("instrument shortcut filters schedule and preselects booking; duration resp
     dialog.getByRole("combobox", { name: "Instrument", exact: true }),
   ).toHaveValue(squid.id);
   await page
-    .getByLabel("Start (Asia/Kolkata)", { exact: true })
+    .getByLabel("Start (IST)", { exact: true })
     .fill("2038-03-04T23:30");
   await page
-    .getByLabel("End including cooling (Asia/Kolkata)", { exact: true })
+    .getByLabel("End including cooling (IST)", { exact: true })
     .fill("2038-03-05T01:00");
   await expect(
     dialog.getByRole("status").filter({ hasText: "Reserved duration" }),
   ).toContainText("1 h 30 min");
   if (info.project.name === "desktop") {
     const start = await page
-      .getByLabel("Start (Asia/Kolkata)", { exact: true })
+      .getByLabel("Start (IST)", { exact: true })
       .boundingBox();
     const end = await page
-      .getByLabel("End including cooling (Asia/Kolkata)", { exact: true })
+      .getByLabel("End including cooling (IST)", { exact: true })
       .boundingBox();
     expect(Math.abs(start!.y - end!.y)).toBeLessThan(2);
   }

@@ -19,6 +19,7 @@ import {
 import { fromIST, istInput } from "../shared/scheduling-ui.js";
 import { api } from "./api.js";
 import {
+  EmptyState,
   ErrorNotice,
   OptionalFields,
   Modal,
@@ -1152,8 +1153,8 @@ export function Meetings({
   return (
     <section className="collaboration records-page">
       <p>
-        Selected-attendee meetings and lab notices · all times Asia/Kolkata.
-        Notifications are in-app; no email, push or background reminders.
+        Meetings and lab announcements · all times in IST. Check the inbox for
+        updates; email and push reminders are not sent.
       </p>
       <ErrorNotice message={error} />
       <ErrorNotice message={listError} />
@@ -1192,11 +1193,36 @@ export function Meetings({
               <option value="upcoming">Upcoming</option>
               <option value="past">Past</option>
               <option value="cancelled">Cancelled</option>
-              <option value="all">All authorized meetings</option>
+              <option value="all">All meetings I can view</option>
             </select>
           </label>
           {!meetings.length && !loading && !listError && (
-            <p>No meetings in this view.</p>
+            <EmptyState
+              icon="calendar"
+              title={
+                meetingView === "upcoming"
+                  ? "No upcoming meetings"
+                  : "No meetings in this view."
+              }
+              description={
+                meetingView === "upcoming"
+                  ? "Nothing scheduled for you here. Past meetings remain available."
+                  : "Choose another view to find meeting records."
+              }
+              action={
+                meetingView !== "all" ? (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      setMeetingView("all");
+                      setMeetingOffset(0);
+                    }}
+                  >
+                    View meeting history
+                  </button>
+                ) : undefined
+              }
+            />
           )}
           <div className="collaboration-grid">
             {!loading &&
@@ -1237,7 +1263,7 @@ export function Meetings({
                 setNoticeOffset(0);
               }}
             >
-              <option value="current">Current published</option>
+              <option value="current">Current notices</option>
               <option value="expired">Expired</option>
               {staff && (
                 <>
@@ -1245,11 +1271,32 @@ export function Meetings({
                   <option value="withdrawn">Withdrawn</option>
                 </>
               )}
-              <option value="all">All accessible notices</option>
+              <option value="all">All notices I can view</option>
             </select>
           </label>
           {!notices.length && !loading && !listError && (
-            <p>No notices in this view.</p>
+            <EmptyState
+              icon="meetings"
+              title={
+                noticeView === "current"
+                  ? "No current notices"
+                  : "No notices in this view."
+              }
+              description="Lab announcements will appear here when published for you."
+              action={
+                noticeView !== "all" ? (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      setNoticeView("all");
+                      setNoticeOffset(0);
+                    }}
+                  >
+                    View notice history
+                  </button>
+                ) : undefined
+              }
+            />
           )}
           <div className="collaboration-grid">
             {!loading &&

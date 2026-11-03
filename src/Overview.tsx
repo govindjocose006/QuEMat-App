@@ -213,7 +213,7 @@ export function Overview({
       <ReadState resource={monitoring} label="reservations" />
       {snapshot && !monitoring.error && (
         <>
-          <p className="focus-caption">Your bookings and runs · Asia/Kolkata</p>
+          <p className="focus-caption">Your bookings and runs · IST</p>
           {reservations.length ? (
             <ul className="focus-list">
               {reservations.slice(0, 3).map((b) => (
@@ -247,8 +247,7 @@ export function Overview({
             </ul>
           ) : (
             <p className="focus-empty">
-              No reservations for you today. Use the calendar to plan your next
-              measurement.
+              No reservations today. Plan your next measurement in the calendar.
             </p>
           )}
           {reservations.length > 3 && (
@@ -277,18 +276,18 @@ export function Overview({
           <p className="focus-lead">
             {supervisor
               ? "Decisions first. The whole lab within reach."
-              : "Your next steps, all in one place."}
+              : "Today at a glance"}
           </p>
         </div>
-        <button
-          className="primary"
-          onClick={() => (supervisor ? onWeekly(true) : onNavigate("calendar"))}
-        >
-          <Icon name={supervisor ? "weekly" : "calendar"} />
-          {supervisor ? "Review reports" : "Open calendar"}
-        </button>
+        {supervisor && (
+          <button className="primary" onClick={() => onWeekly(true)}>
+            <Icon name="weekly" /> Review reports
+          </button>
+        )}
       </div>
-      <div className="focus-grid">
+      <div
+        className={`focus-grid${issues.data && issues.data.counts[key] > 0 ? " has-attention" : ""}`}
+      >
         {!supervisor && reservationCard}
         <Panel
           title={supervisor ? "Needs your attention" : "Assigned to you"}
@@ -379,11 +378,11 @@ export function Overview({
               ) : (
                 <>
                   <p className="focus-report-state">{weekly.data.mine}</p>
-                  <p>
-                    {weekly.data.openActions
-                      ? `${weekly.data.openActions} open report follow-ups`
-                      : "No open report follow-ups."}
-                  </p>
+                  {weekly.data.openActions > 0 && (
+                    <p className="focus-warning">
+                      {weekly.data.openActions} open report follow-ups
+                    </p>
+                  )}
                   <p className="focus-privacy">
                     <Icon name="lock" />
                     Drafts are private to you. Submitted reports are shared only

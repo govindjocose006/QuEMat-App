@@ -25,3 +25,23 @@ export function notificationMessage(
     ? message.replace(/: cancel\. /, ": Booking cancelled. ")
     : message;
 }
+
+export function labDate(value: string): string {
+  const date = new Date(`${value}T00:00:00+05:30`);
+  return Number.isNaN(date.getTime())
+    ? "Choose a date"
+    : new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+}
+
+// Clip a planned reservation to one lab day, including overnight bookings.
+export function bookingDaySegment(start: string, end: string, date: string) {
+  const origin = Date.parse(`${date}T00:00:00+05:30`);
+  const from = Math.max(0, (Date.parse(start) - origin) / 60000);
+  const to = Math.min(1440, (Date.parse(end) - origin) / 60000);
+  return Number.isFinite(from + to) && to > from ? { from, to } : null;
+}

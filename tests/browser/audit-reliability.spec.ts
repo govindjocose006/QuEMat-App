@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 async function login(
   page: Page,
   device: string,
@@ -14,9 +14,7 @@ async function login(
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function dismissNext(page: Page, action: () => Promise<unknown>) {
   const dialog = page.waitForEvent("dialog");
@@ -41,9 +39,7 @@ test("unsaved weekly text survives cancelled section, history, review and sign-o
       .getByRole("button", { name: "Review weekly reports", exact: true })
       .click(),
   );
-  await dismissNext(page, () =>
-    page.getByRole("button", { name: "Sign out", exact: true }).click(),
-  );
+  await dismissNext(page, () => signOut(page));
   await expect(work).toHaveValue("Synthetic audit unsaved text");
   // Accept a section departure: only explicitly discarded text may be lost.
   page.once("dialog", (d) => d.accept());
@@ -169,7 +165,7 @@ for (const scenario of [
   {
     section: "Meetings & Notices",
     path: "**/api/meetings?*",
-    empty: "No meetings in this view.",
+    empty: "No upcoming meetings",
     retry: "Retry meetings and notices",
   },
 ])
@@ -215,7 +211,7 @@ test("malformed sample response shows a recoverable error instead of crashing", 
   await navigate(page, "Samples");
   await expect(page.getByRole("alert")).toContainText("unexpected response");
   await expect(
-    page.getByText("No active samples.", { exact: true }),
+    page.getByText("No samples in this view.", { exact: true }),
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Retry samples", exact: true })
@@ -243,9 +239,7 @@ test("sign-in recovers when the anonymous session cookie has expired", async ({
   // Reproduce browser expiry while preserving the open form and its old CSRF token.
   await context.clearCookies();
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 });
 
 for (const filter of ["person", "project"] as const)

@@ -9,3 +9,10 @@ export async function navigate(page: Page, label: string) {
   }
   await target.click();
 }
+
+export async function signOut(page: Page) {
+  const button = page.getByRole("button", { name: "Sign out", exact: true });
+  if (!(await button.isVisible()))
+    await page.locator(".account-menu > summary").click();
+  await button.click();
+}

@@ -13,9 +13,7 @@ async function login(page: Page, phone: boolean) {
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Sign out", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".account-menu > summary")).toBeVisible();
 }
 async function write(page: Page, path: string, data: object) {
   const session = await (await page.request.get("/api/session")).json();

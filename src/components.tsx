@@ -16,6 +16,33 @@ export function Brand({ small = false }: { small?: boolean }) {
   );
 }
 const iconPaths = {
+  furnace: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M7 7h10v10H7zM10 14c-2-2 2-3 0-5m4 5c-2-2 2-3 0-5M8 21v1m8-1v1" />
+    </>
+  ),
+  diffraction: (
+    <>
+      <path d="m3 5 8 7-8 7m18-14-8 7 8 7" />
+      <path d="m12 8 4 4-4 4-4-4 4-4Z" />
+    </>
+  ),
+  magnet: (
+    <>
+      <path d="M5 3v10a7 7 0 0 0 14 0V3h-5v10a2 2 0 0 1-4 0V3H5Zm0 5h5m4 0h5" />
+    </>
+  ),
+  spectrum: (
+    <>
+      <path d="M3 3v18h18M5 17h3l2-9 3 9 3-13 2 13h3" />
+    </>
+  ),
+  cold: (
+    <>
+      <path d="M12 2v20M3 7l18 10M3 17 21 7M9 4l3 3 3-3M9 20l3-3 3 3M3 11l4-1-1-4M18 18l-1-4 4-1M3 13l4 1-1 4M18 6l-1 4 4 1" />
+    </>
+  ),
   guide: (
     <>
       <path d="M12 6c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v15" />
@@ -181,10 +208,12 @@ export function FilterSummary({
     </div>
   );
 }
-export function Status({ value }: { value: string }) {
+export function Status({ value, label }: { value: string; label?: string }) {
   return (
-    <span className={`status ${value.replaceAll(" ", "-")}`}>
-      <span aria-hidden="true">●</span> {value}
+    <span
+      className={`status ${value.toLowerCase().replaceAll(" ", "-").replaceAll("_", "-")}`}
+    >
+      <span aria-hidden="true">●</span> {label ?? value.replaceAll("_", " ")}
     </span>
   );
 }
@@ -265,3 +294,28 @@ export const messageOf = (error: unknown) =>
   error instanceof Error
     ? error.message
     : "Something went wrong. Please try again.";
+
+export function EmptyState({
+  title,
+  description,
+  icon,
+  action,
+}: {
+  title: string;
+  description: string;
+  icon: Parameters<typeof Icon>[0]["name"];
+  action?: ReactNode;
+}) {
+  return (
+    <div className="empty-state">
+      <span className="empty-state-icon">
+        <Icon name={icon} />
+      </span>
+      <div>
+        <h3>{title}</h3>
+        <p>{description}</p>
+        {action}
+      </div>
+    </div>
+  );
+}

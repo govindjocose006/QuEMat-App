@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { navigate } from "./navigation.js";
+import { navigate, signOut } from "./navigation.js";
 
 async function login(page: Page, email = "browser-admin@example.test") {
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -34,7 +34,7 @@ test("sections survive reload and browser history without exposing record detail
   await expect(
     page.getByRole("heading", { name: "Chemicals & Orders", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await signOut(page);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
@@ -107,14 +107,14 @@ test("sample loading and failed requests never pretend the register is empty", a
     page.getByText("Loading samples…", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("No active samples.", { exact: true }),
+    page.getByText("No samples in this view.", { exact: true }),
   ).toHaveCount(0);
   release();
   await expect(page.getByRole("alert")).toContainText(
     "Synthetic temporary outage",
   );
   await expect(
-    page.getByText("No active samples.", { exact: true }),
+    page.getByText("No samples in this view.", { exact: true }),
   ).toHaveCount(0);
   const response = page.waitForResponse(
     (r) => r.url().endsWith("/api/samples") && r.status() === 200,
