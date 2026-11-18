@@ -334,7 +334,7 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
   });
 });
 
-test("a member can reserve two adjacent slots on the selected lab date", async ({
+test("a member can reserve adjacent slots and two instruments at the same time", async ({
   page,
 }, info) => {
   const date = info.project.name === "phone" ? "2040-03-07" : "2040-03-06";
@@ -378,6 +378,38 @@ test("a member can reserve two adjacent slots on the selected lab date", async (
     ).toBeVisible();
   }
   await expect(page.locator(".booking-tile")).toHaveCount(2);
+
+  const otherInstrument = `Weekly ${info.project.name} PPMS`;
+  await page
+    .getByRole("button", { name: "Book instrument", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Instrument", { exact: true })
+    .selectOption({ label: otherInstrument });
+  await dialog.getByLabel("Start (IST)", { exact: true }).fill(date + "T10:00");
+  await dialog
+    .getByLabel("Measurement / process type")
+    .fill("Parallel measurement");
+  await dialog.getByLabel(new RegExp(sample.code + " ·")).check();
+  await dialog.getByRole("button", { name: "Reserve booking" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  const filter = page.getByRole("combobox", { name: "Filter instrument" });
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: otherInstrument }),
+  ).toContainText("10:00–11:00");
+  await filter.selectOption("");
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: "10:00–11:00" }),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: "SQUID" }),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: otherInstrument }),
+  ).toHaveCount(1);
+  await filter.selectOption({ label: "SQUID" });
 
   // A run may still be active after its reservation ended exactly at midnight.
   await page.route("**/api/bookings?*", async (route) => {
