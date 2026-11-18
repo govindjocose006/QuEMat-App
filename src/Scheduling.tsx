@@ -1264,6 +1264,7 @@ export function Schedule({
     [editing, setEditing] = useState<Booking | null | undefined>(),
     [selected, setSelected] = useState<Booking | null>(null),
     [block, setBlock] = useState<"maintenance" | "availability" | null>(null),
+    [blockError, setBlockError] = useState(""),
     [busy, setBusy] = useState(false);
   const start = view === "month" ? date.slice(0, 7) + "-01" : date;
   const moveDate = (direction: number) =>
@@ -1322,6 +1323,14 @@ export function Schedule({
       (!instrument || b.instrumentId === instrument) &&
       (!mine || b.bookedBy === user.id || b.operatorId === user.id),
   );
+  const rangeStart = Date.parse(fromIST(start + "T00:00"));
+  const rangeEnd = Date.parse(fromIST(end + "T00:00"));
+  const outsideRange = filtered.filter(
+    (b) =>
+      b.status === "in_progress" &&
+      (Date.parse(b.endsAt) <= rangeStart ||
+        Date.parse(b.startsAt) >= rangeEnd),
+  );
   const visibleWindows = windows.filter(
     (w) => !instrument || w.instrumentId === instrument,
   );
@@ -1330,7 +1339,7 @@ export function Schedule({
   async function saveBlock(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
-    setError("");
+    setBlockError("");
     const f = new FormData(e.currentTarget);
     try {
       await api("/" + block, "POST", {
@@ -1342,7 +1351,7 @@ export function Schedule({
       setBlock(null);
       await reload();
     } catch (e) {
-      setError(messageOf(e));
+      setBlockError(messageOf(e));
     } finally {
       setBusy(false);
     }
@@ -1433,13 +1442,19 @@ export function Schedule({
             <div className="action-row">
               <button
                 className="secondary"
-                onClick={() => setBlock("maintenance")}
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("maintenance");
+                }}
               >
                 Add maintenance
               </button>
               <button
                 className="secondary"
-                onClick={() => setBlock("availability")}
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("availability");
+                }}
               >
                 Add allocated window
               </button>
@@ -1538,28 +1553,18 @@ export function Schedule({
           </section>
         ))}
       </div>
-      {filtered.some(
-        (b) =>
-          b.status === "in_progress" &&
-          (day(b.endsAt) < start || day(b.startsAt) >= end),
-      ) && (
+      {outsideRange.length > 0 && (
         <section className="panel">
           <h3>Still in use from another date</h3>
-          {filtered
-            .filter(
-              (b) =>
-                b.status === "in_progress" &&
-                (day(b.endsAt) < start || day(b.startsAt) >= end),
-            )
-            .map((b) => (
-              <button
-                key={b.id}
-                className="secondary"
-                onClick={() => setSelected(b)}
-              >
-                {b.instrumentName} — {b.operatorName}
-              </button>
-            ))}
+          {outsideRange.map((b) => (
+            <button
+              key={b.id}
+              className="secondary"
+              onClick={() => setSelected(b)}
+            >
+              {b.instrumentName} — {b.operatorName}
+            </button>
+          ))}
         </section>
       )}
       <details>
@@ -1626,7 +1631,7 @@ export function Schedule({
           onClose={() => setBlock(null)}
         >
           <form className="dialog-body" onSubmit={saveBlock}>
-            <ErrorNotice message={error} />
+            <ErrorNotice message={blockError} />
             <label>
               Instrument
               <select

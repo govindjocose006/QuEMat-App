@@ -1,3 +1,4 @@
+import { fromIST } from "../shared/scheduling-ui.js";
 import { describe, it, expect } from "vitest";
 import {
   bookingDuration,
@@ -41,6 +42,10 @@ it("clarifies stored booking cancellations without changing other notification t
 });
 
 describe("lab-day presentation", () => {
+  it("reads local form times with or without seconds in IST", () => {
+    expect(fromIST("2026-11-02T09:00")).toBe("2026-11-02T03:30:00.000Z");
+    expect(fromIST("2026-11-02T09:00:30")).toBe("2026-11-02T03:30:30.000Z");
+  });
   it("makes date summaries unambiguous", () => {
     expect(labDate("2026-11-02")).toBe("2 Nov 2026");
     expect(labDate("")).toBe("Choose a date");

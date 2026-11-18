@@ -1,7 +1,8 @@
+import type { Booking } from "../../shared/scheduling.js";
 import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { istInput } from "../../shared/scheduling-ui.js";
+import { fromIST, istInput } from "../../shared/scheduling-ui.js";
 async function login(page: Page, email = "browser-admin@example.test") {
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -376,5 +377,36 @@ test("a member can reserve two adjacent slots on the selected lab date", async (
         .filter({ hasText: "Same-day scan " + hour }),
     ).toBeVisible();
   }
+  await expect(page.locator(".booking-tile")).toHaveCount(2);
+
+  // A run may still be active after its reservation ended exactly at midnight.
+  await page.route("**/api/bookings?*", async (route) => {
+    const response = await route.fetch();
+    const rows: Booking[] = await response.json();
+    const previous = rows.find(
+      (b) =>
+        b.instrumentName === "SQUID" &&
+        b.measurementType === "Same-day scan 10",
+    );
+    expect(previous).toBeDefined();
+    const midnight = fromIST(date + "T00:00");
+    await route.fulfill({
+      response,
+      json: [
+        ...rows,
+        {
+          ...previous,
+          id: "midnight-overrun",
+          status: "in_progress",
+          startsAt: new Date(Date.parse(midnight) - 3600000).toISOString(),
+          endsAt: midnight,
+        },
+      ],
+    });
+  });
+  await page.getByRole("button", { name: "Refresh schedule" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Still in use from another date" }),
+  ).toBeVisible();
   await expect(page.locator(".booking-tile")).toHaveCount(2);
 });

@@ -566,11 +566,25 @@ export function createApp(db: DB, options: Options) {
         return;
       }
       if (error && typeof error === "object" && "code" in error) {
-        if (error.code === "23P01" || error.code === "23505") {
+        if (
+          error.code === "23P01" ||
+          (error.code === "23505" &&
+            "constraint" in error &&
+            error.constraint === "one_actual_operator")
+        ) {
           res.status(409).json({
             error:
               "This slot conflicts with another booking, maintenance, buffers, or active usage. Refresh the schedule and choose another time.",
           });
+          return;
+        }
+        if (error.code === "23505") {
+          res
+            .status(409)
+            .json({
+              error:
+                "This entry already exists. Refresh the page to see the current record.",
+            });
           return;
         }
         if (error.code === "23514" || error.code === "23503") {
