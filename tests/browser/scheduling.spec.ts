@@ -2,11 +2,9 @@ import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { istInput } from "../../shared/scheduling-ui.js";
-async function login(page: Page) {
+async function login(page: Page, email = "browser-admin@example.test") {
   await page.goto("/");
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill("browser-admin@example.test");
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
@@ -333,4 +331,50 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
     path: info.outputPath("phase2-furnace-agenda.png"),
     fullPage: true,
   });
+});
+
+test("a member can reserve two adjacent slots on the selected lab date", async ({
+  page,
+}, info) => {
+  const date = info.project.name === "phone" ? "2040-03-07" : "2040-03-06";
+  await login(page, `browser-weekly-member-${info.project.name}@example.test`);
+  const sample = await write(page, "/samples", {
+    compound: "Adjacent slots " + info.project.name,
+  });
+  const me = (await (await page.request.get("/api/session")).json()).user;
+  await navigate(page, "Calendar");
+  await page
+    .getByRole("combobox", { name: "View", exact: true })
+    .selectOption("day");
+  await page.getByLabel("Date", { exact: true }).fill(date);
+  await page
+    .getByRole("combobox", { name: "Filter instrument" })
+    .selectOption({ label: "SQUID" });
+  for (const hour of ["10", "11"]) {
+    await page
+      .getByRole("button", { name: "Book instrument", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    const start = dialog.getByLabel("Start (IST)", { exact: true });
+    await expect(start).toHaveValue(date + "T09:00");
+    await start.fill(date + "T" + hour + ":00");
+    await expect(dialog.getByLabel("End including cooling (IST)")).toHaveValue(
+      date + "T" + (Number(hour) + 1) + ":00",
+    );
+    await expect(
+      dialog.getByLabel("Who will operate the instrument?"),
+    ).toHaveValue(me.id);
+    await dialog
+      .getByLabel("Measurement / process type")
+      .fill("Same-day scan " + hour);
+    await dialog.getByLabel(new RegExp(sample.code + " ·")).check();
+    await dialog.getByRole("button", { name: "Reserve booking" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(
+      page
+        .locator(".booking-tile")
+        .filter({ hasText: "Same-day scan " + hour }),
+    ).toBeVisible();
+  }
+  await expect(page.locator(".booking-tile")).toHaveCount(2);
 });

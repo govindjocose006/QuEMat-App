@@ -639,13 +639,15 @@ function BookingForm({
   items,
   b,
   initialInstrumentId,
+  calendarDate,
   onSaved,
 }: {
   user: Member;
   items: Instrument[];
   b?: Booking;
   initialInstrumentId?: string;
-  onSaved: () => void;
+  calendarDate: string;
+  onSaved: (booking: Booking) => void;
 }) {
   const [instrumentId, setInstrumentId] = useState(
       b?.instrumentId ??
@@ -665,12 +667,35 @@ function BookingForm({
     [sampleSearch, setSampleSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [startsAt, setStartsAt] = useState(() =>
-    istInput(b?.startsAt ?? new Date().toISOString()),
-  );
+  const [operatorId, setOperatorId] = useState(b?.operatorId ?? user.id);
+  const [startsAt, setStartsAt] = useState(() => {
+    if (b) return istInput(b.startsAt);
+    const now = istInput(new Date().toISOString());
+    return calendarDate === now.slice(0, 10) ? now : calendarDate + "T09:00";
+  });
   const [endsAt, setEndsAt] = useState(() =>
-    istInput(b?.endsAt ?? new Date(Date.now() + 3600000).toISOString()),
+    b
+      ? istInput(b.endsAt)
+      : istInput(
+          new Date(Date.parse(fromIST(startsAt)) + 3600000).toISOString(),
+        ),
   );
+  function changeStart(value: string) {
+    if (!b && value) {
+      const duration =
+        startsAt && endsAt
+          ? Date.parse(fromIST(endsAt)) - Date.parse(fromIST(startsAt))
+          : 0;
+      setEndsAt(
+        istInput(
+          new Date(
+            Date.parse(fromIST(value)) + (duration > 0 ? duration : 3600000),
+          ).toISOString(),
+        ),
+      );
+    }
+    setStartsAt(value);
+  }
   const instrument = items.find((i) => i.id === instrumentId);
   useEffect(() => {
     let live = true;
@@ -742,20 +767,24 @@ function BookingForm({
     ])
       if (f.has(key)) details[key] = field(f, key);
     try {
-      await api(b ? `/bookings/${b.id}` : "/bookings", b ? "PUT" : "POST", {
-        instrumentId,
-        operatorId: field(f, "operatorId"),
-        participantIds: f.getAll("participants"),
-        sampleIds: selected,
-        measurementType: field(f, "measurementType"),
-        project: field(f, "project"),
-        startsAt: fromIST(field(f, "startsAt")),
-        endsAt: fromIST(field(f, "endsAt")),
-        setupNotes: field(f, "setupNotes"),
-        details,
-        ...(b ? { version: b.version } : {}),
-      });
-      onSaved();
+      const saved = await api<Booking>(
+        b ? `/bookings/${b.id}` : "/bookings",
+        b ? "PUT" : "POST",
+        {
+          instrumentId,
+          operatorId: field(f, "operatorId"),
+          participantIds: f.getAll("participants"),
+          sampleIds: selected,
+          measurementType: field(f, "measurementType"),
+          project: field(f, "project"),
+          startsAt: fromIST(field(f, "startsAt")),
+          endsAt: fromIST(field(f, "endsAt")),
+          setupNotes: field(f, "setupNotes"),
+          details,
+          ...(b ? { version: b.version } : {}),
+        },
+      );
+      onSaved(saved);
     } catch (e) {
       setError(messageOf(e));
     } finally {
@@ -815,7 +844,8 @@ function BookingForm({
                 Who will operate the instrument?
                 <select
                   name="operatorId"
-                  defaultValue={b?.operatorId ?? user.id}
+                  value={operatorId}
+                  onChange={(e) => setOperatorId(e.target.value)}
                   required
                 >
                   {operators.map((o) => (
@@ -855,7 +885,7 @@ function BookingForm({
                   type="datetime-local"
                   name="startsAt"
                   value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
+                  onChange={(e) => changeStart(e.target.value)}
                   required
                 />
               </label>
@@ -1292,6 +1322,9 @@ export function Schedule({
       (!instrument || b.instrumentId === instrument) &&
       (!mine || b.bookedBy === user.id || b.operatorId === user.id),
   );
+  const visibleWindows = windows.filter(
+    (w) => !instrument || w.instrumentId === instrument,
+  );
   const days: string[] = [];
   for (let d = start; d < end; d = addDays(d, 1)) days.push(d);
   async function saveBlock(e: FormEvent<HTMLFormElement>) {
@@ -1531,15 +1564,13 @@ export function Schedule({
       )}
       <details>
         <summary>Allocated availability windows</summary>
-        {windows
-          .filter((w) => !instrument || w.instrumentId === instrument)
-          .map((w) => (
-            <p key={w.id}>
-              {items.find((i) => i.id === w.instrumentId)?.name}:{" "}
-              {formatDate(w.startsAt)} → {formatDate(w.endsAt)} · {w.reference}
-            </p>
-          ))}
-        {!windows.length && (
+        {visibleWindows.map((w) => (
+          <p key={w.id}>
+            {items.find((i) => i.id === w.instrumentId)?.name}:{" "}
+            {formatDate(w.startsAt)} → {formatDate(w.endsAt)} · {w.reference}
+          </p>
+        ))}
+        {!loading && !error && !visibleWindows.length && (
           <p>No institutionally allocated windows recorded.</p>
         )}
       </details>
@@ -1554,9 +1585,14 @@ export function Schedule({
               items={items}
               b={editing ?? undefined}
               initialInstrumentId={instrument}
-              onSaved={() => {
+              calendarDate={date}
+              onSaved={(saved) => {
+                const savedDay = day(saved.startsAt);
+                const rangeChanged = savedDay < start || savedDay >= end;
+                if (rangeChanged) setDate(savedDay);
+                if (instrument) setInstrument(saved.instrumentId);
                 setEditing(undefined);
-                void reload();
+                if (!rangeChanged) void reload();
               }}
             />
           </div>
@@ -1593,7 +1629,14 @@ export function Schedule({
             <ErrorNotice message={error} />
             <label>
               Instrument
-              <select name="instrumentId">
+              <select
+                name="instrumentId"
+                defaultValue={
+                  items.some((i) => i.id === instrument && !i.archived)
+                    ? instrument
+                    : undefined
+                }
+              >
                 {items
                   .filter((i) => !i.archived)
                   .map((i) => (

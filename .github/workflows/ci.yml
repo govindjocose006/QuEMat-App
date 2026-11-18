@@ -15,7 +15,6 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
       - run: npm run build
       - run: npm run typecheck:release
       - name: Parse Windows release setup scripts without executing them
@@ -50,6 +49,10 @@ jobs:
           name: browser-test-results
           path: test-results/
           retention-days: 7
+
+      # Keep the audit blocking while allowing functional checks to report independently.
+      - run: npm audit --audit-level=high
+        if: ${{ !cancelled() }}
 
   postgres-concurrency:
     runs-on: ubuntu-latest

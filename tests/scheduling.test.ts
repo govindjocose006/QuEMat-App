@@ -398,6 +398,34 @@ it("rejects simultaneous bookings across two app instances and independently enf
   ).rejects.toMatchObject({ code: "23P01" });
   expect((await db.query("SELECT id FROM bookings")).length).toBe(1);
 });
+it("lists adjacent same-day bookings and simultaneous use of separate instruments for one member", async () => {
+  const member = await client("member@example.test");
+  const first = await create(member, {
+    startsAt: "2040-01-10T09:00:00+05:30",
+    endsAt: "2040-01-10T10:00:00+05:30",
+  });
+  const second = await create(member, {
+    startsAt: first.endsAt,
+    endsAt: "2040-01-10T11:00:00+05:30",
+  });
+  const other = (await instruments(db)).find(
+    (i) => i.id !== instrumentId && i.category === "Magnetic & transport",
+  )!;
+  const simultaneous = await create(member, {
+    instrumentId: other.id,
+    startsAt: first.startsAt,
+    endsAt: first.endsAt,
+  });
+  const response = await member.agent.get("/api/bookings").query({
+    from: "2040-01-10T00:00:00+05:30",
+    to: "2040-01-11T00:00:00+05:30",
+  });
+  expect(response.status).toBe(200);
+  expect(response.body.map((b: Booking) => b.id).sort()).toEqual(
+    [first.id, second.id, simultaneous.id].sort(),
+  );
+});
+
 it("applies buffers and maintenance conflicts, allows exact adjacency, and releases cancelled slots", async () => {
   const c = await client("member@example.test"),
     admin = await client();
