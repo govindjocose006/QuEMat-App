@@ -385,7 +385,7 @@ test("a member can reserve adjacent slots and two instruments at the same time",
     .click();
   const dialog = page.getByRole("dialog");
   await dialog
-    .getByLabel("Instrument", { exact: true })
+    .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption({ label: otherInstrument });
   await dialog.getByLabel("Start (IST)", { exact: true }).fill(date + "T10:00");
   await dialog
