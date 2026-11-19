@@ -70,9 +70,13 @@ test("selected-attendee meeting lifecycle, notes, owned actions, IST export and 
   await page
     .getByLabel("Start (Asia/Kolkata)", { exact: true })
     .fill("2035-03-02T00:15");
-  await page
-    .getByLabel("End (Asia/Kolkata)", { exact: true })
-    .fill("2035-03-02T01:15");
+  const end = page.getByLabel("End (Asia/Kolkata)", { exact: true });
+  await expect(end).toHaveValue("2035-03-02T01:15");
+  await end.fill("2035-03-02T00:00");
+  await expect(
+    page.getByText("End time must be after the meeting start."),
+  ).toBeVisible();
+  await end.fill("2035-03-02T01:15");
   await page
     .getByLabel("Agenda", { exact: true })
     .fill("Synthetic agenda; private to selected attendees and managers");

@@ -5,7 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import type { Instrument, Member } from "../shared/schema.js";
+import { isFurnace, type Instrument, type Member } from "../shared/schema.js";
 import type {
   Sample,
   Booking,
@@ -76,6 +76,7 @@ function Field({
   );
 }
 function Notes({
+  required = false,
   label,
   name,
   value = "",
@@ -83,11 +84,17 @@ function Notes({
   label: string;
   name: string;
   value?: string;
+  required?: boolean;
 }) {
   return (
     <label className="full">
       {label}
-      <textarea name={name} defaultValue={value} maxLength={2000} />
+      <textarea
+        required={required}
+        name={name}
+        defaultValue={value}
+        maxLength={2000}
+      />
     </label>
   );
 }
@@ -482,9 +489,9 @@ function MeasurementFields({
   instrument?: Instrument;
   b?: Booking;
 }) {
-  const d = b?.details,
+  const d = instrument?.id === b?.instrumentId ? b?.details : undefined,
     magnetic = instrument?.category === "Magnetic & transport",
-    furnace = instrument?.category === "Furnace",
+    furnace = isFurnace(instrument?.category),
     sputter = instrument?.name.toLowerCase().includes("sputter");
   return (
     <fieldset className="measurement-fields workflow-section">
@@ -500,139 +507,188 @@ function MeasurementFields({
               ? "Magnetic / transport measurement"
               : "Measurement details"}
       </legend>
-      <div className="form-grid">
-        {magnetic && (
-          <>
-            <Field
-              label="Temperature minimum"
-              name="temperatureMin"
-              type="number"
-              value={d?.temperatureMin}
-            />
-            <Field
-              label="Temperature maximum"
-              name="temperatureMax"
-              type="number"
-              value={d?.temperatureMax}
-            />
-            <label>
-              Temperature unit
-              <select
-                name="temperatureUnit"
-                defaultValue={d?.temperatureUnit ?? "K"}
-              >
-                <option>K</option>
-                <option>°C</option>
-              </select>
-            </label>
-            <Field
-              label="Field minimum"
-              name="fieldMin"
-              type="number"
-              value={d?.fieldMin}
-            />
-            <Field
-              label="Field maximum"
-              name="fieldMax"
-              type="number"
-              value={d?.fieldMax}
-            />
-            <label>
-              Field unit
-              <select name="fieldUnit" defaultValue={d?.fieldUnit ?? "T"}>
-                <option>T</option>
-                <option>Oe</option>
-              </select>
-            </label>
-            <Field
-              label="Sequence (M(T), M(H), ZFC/FC, relaxation, custom)"
-              name="sequence"
-              value={d?.sequence}
-            />
-            <Field
-              label="Sample mass (include units)"
-              name="sampleMass"
-              value={d?.sampleMass}
-            />
-            <Notes label="Mounting notes" name="mounting" value={d?.mounting} />
-            <Notes
-              label="Required accessories / configuration"
-              name="accessories"
-              value={d?.accessories}
-            />
-          </>
-        )}
-        {furnace && (
-          <>
-            <Field
-              label={`Target temperature °C (maximum ${instrument?.maxTemperatureC ?? "not configured"})`}
-              name="targetTemperatureC"
-              type="number"
-              value={d?.targetTemperatureC}
-              required
-            />
-            <Field label="Atmosphere" name="atmosphere" value={d?.atmosphere} />
-            <Notes
-              label="Ramp / hold / cooling stages"
-              name="stages"
-              value={d?.stages}
-            />
-            <Notes label="Crucible notes" name="crucible" value={d?.crucible} />
-            <p className="full notice">
-              Reserve the entire occupancy, including cooling. Completion and
-              unloading must be confirmed explicitly.
-            </p>
-          </>
-        )}
-        {sputter && (
-          <>
-            <Field
-              label="Target material"
-              name="targetMaterial"
-              value={d?.targetMaterial}
-              required
-            />
-            <Field
-              label="Substrate"
-              name="substrate"
-              value={d?.substrate}
-              required
-            />
-            <label>
-              Mode
-              <select name="mode" defaultValue={d?.mode ?? "RF"}>
-                <option>RF</option>
-                <option>DC</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-            <Field label="Gas" name="gas" value={d?.gas} />
-            {(["pressure", "power", "duration", "thickness"] as const).map(
-              (k) => (
-                <Field
-                  key={k}
-                  label={`${k[0].toUpperCase() + k.slice(1)} (include units)`}
-                  name={k}
-                  value={d?.[k]}
-                />
-              ),
-            )}
-            <Notes
-              label="Preparation notes"
-              name="preparation"
-              value={d?.preparation}
-            />
-            <Notes label="Cleaning plan" name="cleaning" value={d?.cleaning} />
-          </>
-        )}
-        <Notes
-          label="Setup requirements and notes"
-          name="setupNotes"
-          value={b?.setupNotes}
-        />
-      </div>
+      {furnace && (
+        <div className="form-grid">
+          {" "}
+          <Field
+            label={`Target temperature °C (maximum ${instrument?.maxTemperatureC ?? "not configured"})`}
+            name="targetTemperatureC"
+            type="number"
+            value={d?.targetTemperatureC}
+            required
+          />
+          <p className="field-hint">
+            Include cooling and unloading in the reservation.
+          </p>
+        </div>
+      )}
+      {sputter && (
+        <div className="form-grid">
+          {" "}
+          <Field
+            label="Target material"
+            name="targetMaterial"
+            value={d?.targetMaterial}
+            required
+          />
+          <Field
+            label="Substrate"
+            name="substrate"
+            value={d?.substrate}
+            required
+          />
+        </div>
+      )}
+      <OptionalFields
+        title="Optional setup details"
+        initialOpen={
+          !!b?.setupNotes ||
+          (!!b &&
+            Object.keys(b.details).some(
+              (k) =>
+                !["targetTemperatureC", "targetMaterial", "substrate"].includes(
+                  k,
+                ),
+            ))
+        }
+      >
+        <div className="form-grid">
+          {magnetic && (
+            <>
+              <Field
+                label="Temperature minimum"
+                name="temperatureMin"
+                type="number"
+                value={d?.temperatureMin}
+              />
+              <Field
+                label="Temperature maximum"
+                name="temperatureMax"
+                type="number"
+                value={d?.temperatureMax}
+              />
+              <label>
+                Temperature unit
+                <select
+                  name="temperatureUnit"
+                  defaultValue={d?.temperatureUnit ?? "K"}
+                >
+                  <option>K</option>
+                  <option>°C</option>
+                </select>
+              </label>
+              <Field
+                label="Field minimum"
+                name="fieldMin"
+                type="number"
+                value={d?.fieldMin}
+              />
+              <Field
+                label="Field maximum"
+                name="fieldMax"
+                type="number"
+                value={d?.fieldMax}
+              />
+              <label>
+                Field unit
+                <select name="fieldUnit" defaultValue={d?.fieldUnit ?? "T"}>
+                  <option>T</option>
+                  <option>Oe</option>
+                </select>
+              </label>
+              <Field
+                label="Sequence (M(T), M(H), ZFC/FC, relaxation, custom)"
+                name="sequence"
+                value={d?.sequence}
+              />
+              <Field
+                label="Sample mass (include units)"
+                name="sampleMass"
+                value={d?.sampleMass}
+              />
+              <Notes
+                label="Mounting notes"
+                name="mounting"
+                value={d?.mounting}
+              />
+              <Notes
+                label="Required accessories / configuration"
+                name="accessories"
+                value={d?.accessories}
+              />
+            </>
+          )}
+          {furnace && (
+            <>
+              <Field
+                label="Atmosphere"
+                name="atmosphere"
+                value={d?.atmosphere}
+              />
+              <Notes
+                label="Ramp / hold / cooling stages"
+                name="stages"
+                value={d?.stages}
+              />
+              <Notes
+                label="Crucible notes"
+                name="crucible"
+                value={d?.crucible}
+              />
+            </>
+          )}
+          {sputter && (
+            <>
+              <label>
+                Mode
+                <select name="mode" defaultValue={d?.mode ?? "RF"}>
+                  <option>RF</option>
+                  <option>DC</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <Field label="Gas" name="gas" value={d?.gas} />
+              {(["pressure", "power", "duration", "thickness"] as const).map(
+                (k) => (
+                  <Field
+                    key={k}
+                    label={`${k[0].toUpperCase() + k.slice(1)} (include units)`}
+                    name={k}
+                    value={d?.[k]}
+                  />
+                ),
+              )}
+              <Notes
+                label="Preparation notes"
+                name="preparation"
+                value={d?.preparation}
+              />
+              <Notes
+                label="Cleaning plan"
+                name="cleaning"
+                value={d?.cleaning}
+              />
+            </>
+          )}
+          <Notes
+            label="Setup requirements and notes"
+            name="setupNotes"
+            value={b?.setupNotes}
+          />
+        </div>
+      </OptionalFields>
     </fieldset>
   );
+}
+function unavailableReason(i: Instrument) {
+  if (i.archived) return "Archived";
+  if (i.status !== "available") return i.status.replaceAll("_", " ");
+  if (
+    isFurnace(i.category) &&
+    (i.maxTemperatureC === null || i.category !== "Furnace")
+  )
+    return "Furnace setup incomplete";
+  return "";
 }
 function BookingForm({
   user,
@@ -651,8 +707,9 @@ function BookingForm({
 }) {
   const [instrumentId, setInstrumentId] = useState(
       b?.instrumentId ??
-        items.find((i) => i.id === initialInstrumentId && !i.archived)?.id ??
-        items.find((i) => !i.archived)?.id ??
+        items.find((i) => i.id === initialInstrumentId && !unavailableReason(i))
+          ?.id ??
+        items.find((i) => !unavailableReason(i))?.id ??
         "",
     ),
     [samples, setSamples] = useState<Sample[]>([]),
@@ -830,11 +887,19 @@ function BookingForm({
                   value={instrumentId}
                   onChange={(e) => setInstrumentId(e.target.value)}
                 >
+                  {!instrumentId && (
+                    <option value="">No bookable instruments</option>
+                  )}
                   {items
-                    .filter((i) => !i.archived)
+                    .filter((i) => !i.archived || i.id === b?.instrumentId)
                     .map((i) => (
-                      <option key={i.id} value={i.id}>
+                      <option
+                        key={i.id}
+                        value={i.id}
+                        disabled={!!unavailableReason(i)}
+                      >
                         {i.name}
+                        {unavailableReason(i) && " — " + unavailableReason(i)}
                       </option>
                     ))}
                 </select>
@@ -893,7 +958,9 @@ function BookingForm({
                 />
               </label>
               <label>
-                End including cooling (IST)
+                {isFurnace(instrument?.category)
+                  ? "End including cooling (IST)"
+                  : "End time (IST)"}
                 <input
                   type="datetime-local"
                   name="endsAt"
@@ -1033,7 +1100,13 @@ function BookingForm({
             </p>
             <button
               className="primary"
-              disabled={busy || optionsLoading || optionsFailed}
+              disabled={
+                busy ||
+                optionsLoading ||
+                optionsFailed ||
+                !instrument ||
+                !!unavailableReason(instrument)
+              }
             >
               {busy ? "Saving…" : b ? "Save changes" : "Reserve booking"}
             </button>
@@ -1078,6 +1151,28 @@ function BookingDetails({
   const manager = managesOperations(user.appRole),
     own = manager || b.bookedBy === user.id || b.operatorId === user.id,
     scheduled = ["requested", "confirmed"].includes(b.status);
+  const actions: Record<string, string> = {};
+  if (
+    b.status === "confirmed" &&
+    b.kind === "booking" &&
+    (manager || b.operatorId === user.id)
+  )
+    actions.checkin = "Check in";
+  if (b.status === "requested" && manager)
+    Object.assign(actions, {
+      confirm: "Approve booking",
+      reject: "Reject booking",
+    });
+  if (scheduled) actions.cancel = "Cancel reservation";
+  if (b.status === "in_progress")
+    Object.assign(actions, {
+      complete: "Complete run",
+      interrupt: "Interrupt and release",
+      overrun: "Report overrun",
+    });
+  const [action, setAction] = useState("");
+  const closing = action === "complete" || action === "interrupt";
+
   async function act(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -1173,7 +1268,7 @@ function BookingDetails({
           Result data ↗
         </a>
       )}
-      {b.category === "Furnace" && (
+      {isFurnace(b.category) && (
         <p>Unloading: {b.unloaded ? "Confirmed" : "Not confirmed"}</p>
       )}
       {own &&
@@ -1189,58 +1284,62 @@ function BookingDetails({
             <form onSubmit={act}>
               <label>
                 Action
-                <select name="action">
-                  {b.status === "confirmed" &&
-                    b.kind === "booking" &&
-                    (manager || b.operatorId === user.id) && (
-                      <option value="checkin">
-                        Check in — confirm actual usage
-                      </option>
-                    )}
-                  {b.status === "requested" && manager && (
-                    <>
-                      <option value="confirm">Approve booking</option>
-                      <option value="reject">Reject booking</option>
-                    </>
-                  )}
-                  {scheduled && (
-                    <option value="cancel">Cancel reservation</option>
-                  )}
-                  {b.status === "in_progress" && (
-                    <>
-                      <option value="complete">Complete measurement</option>
-                      <option value="interrupt">
-                        Interrupt and release safely
-                      </option>
-                      <option value="overrun">Report overrun</option>
-                    </>
-                  )}
+                <select
+                  name="action"
+                  required
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                >
+                  <option value="">Choose an action</option>
+                  {Object.entries(actions).map(([code, label]) => (
+                    <option key={code} value={code}>
+                      {label}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <Notes label="Completion summary / reason" name="summary" />
-              <Notes
-                label="Handover notes"
-                name="handoverNotes"
-                value={b.handoverNotes}
-              />
-              {b.status === "in_progress" && (
-                <>
-                  <Field label="Result data link" name="dataLink" type="url" />
-                  <Field
-                    label="Estimated overrun end (Asia/Kolkata)"
-                    name="overrunUntil"
-                    type="datetime-local"
-                  />
-                  {b.category === "Furnace" && (
-                    <label className="check-row">
-                      <input name="unloaded" type="checkbox" />I confirm cooling
-                      is complete and the furnace is unloaded.
-                    </label>
-                  )}
-                </>
+              {closing && (
+                <Notes
+                  key="summary"
+                  label="Completion summary (required)"
+                  name="summary"
+                  required
+                />
               )}
-              <button className="primary" disabled={busy}>
-                {busy ? "Saving…" : "Apply action"}
+              {["cancel", "reject"].includes(action) && (
+                <Notes key="reason" label="Reason (optional)" name="summary" />
+              )}
+              {(closing || action === "overrun") && (
+                <Notes
+                  label="Handover notes"
+                  name="handoverNotes"
+                  required
+                  value={b.handoverNotes}
+                />
+              )}
+              {closing && (
+                <Field
+                  label="Result data link (optional)"
+                  name="dataLink"
+                  type="url"
+                />
+              )}
+              {action === "overrun" && (
+                <Field
+                  label="Estimated overrun end (Asia/Kolkata)"
+                  name="overrunUntil"
+                  type="datetime-local"
+                  required
+                />
+              )}
+              {closing && isFurnace(b.category) && (
+                <label className="check-row">
+                  <input name="unloaded" type="checkbox" required />I confirm
+                  cooling is complete and the furnace is unloaded.
+                </label>
+              )}
+              <button className="primary" disabled={!action || busy}>
+                {busy ? "Saving…" : actions[action] || "Apply action"}
               </button>
             </form>
           </>
@@ -1337,6 +1436,7 @@ export function Schedule({
   const visibleWindows = windows.filter(
     (w) => !instrument || w.instrumentId === instrument,
   );
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const days: string[] = [];
   for (let d = start; d < end; d = addDays(d, 1)) days.push(d);
   async function saveBlock(e: FormEvent<HTMLFormElement>) {
@@ -1376,7 +1476,63 @@ export function Schedule({
         </button>
       </div>
       <ErrorNotice message={error} />
-      <div className="schedule-controls">
+      <div className="calendar-navigation">
+        <div
+          className="action-row"
+          role="group"
+          aria-label="Calendar date navigation"
+        >
+          <button className="secondary" onClick={() => moveDate(-1)}>
+            Previous
+          </button>
+          <button className="secondary" onClick={() => setDate(day())}>
+            Today
+          </button>
+          <button className="secondary" onClick={() => moveDate(1)}>
+            Next
+          </button>
+        </div>
+        {managesOperations(user.appRole) && (
+          <details className="calendar-management">
+            <summary>Manage availability</summary>
+            <div className="action-row">
+              <button
+                className="secondary"
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("maintenance");
+                }}
+              >
+                Add maintenance
+              </button>
+              <button
+                className="secondary"
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("availability");
+                }}
+              >
+                Add allocated window
+              </button>
+            </div>
+          </details>
+        )}
+      </div>
+      <button
+        className="secondary calendar-filter-toggle"
+        type="button"
+        aria-expanded={filtersOpen}
+        aria-controls="calendar-filters"
+        onClick={() => setFiltersOpen(!filtersOpen)}
+      >
+        Filters ·{" "}
+        {items.find((i) => i.id === instrument)?.name || "All instruments"}
+        {mine && " · My bookings"}
+      </button>
+      <div
+        id="calendar-filters"
+        className={`schedule-controls ${filtersOpen ? "filters-open" : ""}`}
+      >
         <label>
           View
           <select value={view} onChange={(e) => setView(e.target.value)}>
@@ -1422,48 +1578,6 @@ export function Schedule({
         >
           Refresh schedule
         </button>
-      </div>
-      <div className="calendar-navigation">
-        <div
-          className="action-row"
-          role="group"
-          aria-label="Calendar date navigation"
-        >
-          <button className="secondary" onClick={() => moveDate(-1)}>
-            Previous
-          </button>
-          <button className="secondary" onClick={() => setDate(day())}>
-            Today
-          </button>
-          <button className="secondary" onClick={() => moveDate(1)}>
-            Next
-          </button>
-        </div>
-        {managesOperations(user.appRole) && (
-          <details className="calendar-management">
-            <summary>Manage availability</summary>
-            <div className="action-row">
-              <button
-                className="secondary"
-                onClick={() => {
-                  setBlockError("");
-                  setBlock("maintenance");
-                }}
-              >
-                Add maintenance
-              </button>
-              <button
-                className="secondary"
-                onClick={() => {
-                  setBlockError("");
-                  setBlock("availability");
-                }}
-              >
-                Add allocated window
-              </button>
-            </div>
-          </details>
-        )}
       </div>
       <p className="field-hint">
         Requested bookings reserve a slot while awaiting approval. Buffers and
@@ -1848,10 +1962,8 @@ export function LiveUsage({
                       {new Date(running.endsAt).getTime() < now && (
                         <p className="notice error">
                           Overdue — awaiting completion
-                          {running.category === "Furnace"
-                            ? " and unloading"
-                            : ""}
-                          . Next booking may be affected.
+                          {isFurnace(running.category) ? " and unloading" : ""}.
+                          Next booking may be affected.
                         </p>
                       )}
                       <p className="field-hint">
@@ -1911,7 +2023,7 @@ export function LiveUsage({
                       {lastHandover.handoverNotes ||
                         "No handover notes recorded."}
                     </p>
-                    {lastHandover.category === "Furnace" && (
+                    {isFurnace(lastHandover.category) && (
                       <p>
                         {lastHandover.unloaded
                           ? "Unloading confirmed"

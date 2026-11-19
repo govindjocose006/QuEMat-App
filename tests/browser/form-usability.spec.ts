@@ -89,7 +89,7 @@ test("booking sample search preserves selection, collapsed optional fields and i
     .getByLabel("Start (IST)", { exact: true })
     .fill("2037-01-02T10:00");
   await page
-    .getByLabel("End including cooling (IST)", { exact: true })
+    .getByLabel("End time (IST)", { exact: true })
     .fill("2037-01-02T11:00");
   await page.getByLabel("Find a sample", { exact: true }).fill(sample.code);
   await page
@@ -128,6 +128,7 @@ test("booking sample search preserves selection, collapsed optional fields and i
     .getByLabel(`Weekly ${info.project.name} mentor`, { exact: true })
     .check();
   await optional.click();
+  await page.getByText("Optional setup details", { exact: true }).click();
   await page.getByLabel("Temperature minimum", { exact: true }).fill("2");
   await page.getByLabel("Temperature maximum", { exact: true }).fill("300");
   await dialog.evaluate((el) => (el.scrollTop = 0));

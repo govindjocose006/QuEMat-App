@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
-import { navigate } from "./navigation.js";
+import { navigate, openCalendarFilters } from "./navigation.js";
 test.setTimeout(60000);
 async function login(page: Page, phone: boolean) {
   if (phone) await page.setViewportSize({ width: 360, height: 780 });
@@ -38,6 +38,7 @@ test("instrument shortcut filters schedule and preselects booking; duration resp
   await page
     .getByRole("button", { name: "View schedule for SQUID", exact: true })
     .click();
+  await openCalendarFilters(page);
   await expect(
     page.getByRole("combobox", { name: "Filter instrument", exact: true }),
   ).toHaveValue(squid.id);
@@ -63,7 +64,7 @@ test("instrument shortcut filters schedule and preselects booking; duration resp
     .getByLabel("Start (IST)", { exact: true })
     .fill("2038-03-04T23:30");
   await page
-    .getByLabel("End including cooling (IST)", { exact: true })
+    .getByLabel("End time (IST)", { exact: true })
     .fill("2038-03-05T01:00");
   await expect(
     dialog.getByRole("status").filter({ hasText: "Reserved duration" }),
@@ -73,7 +74,7 @@ test("instrument shortcut filters schedule and preselects booking; duration resp
       .getByLabel("Start (IST)", { exact: true })
       .boundingBox();
     const end = await page
-      .getByLabel("End including cooling (IST)", { exact: true })
+      .getByLabel("End time (IST)", { exact: true })
       .boundingBox();
     expect(Math.abs(start!.y - end!.y)).toBeLessThan(2);
   }

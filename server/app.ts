@@ -414,7 +414,7 @@ export function createApp(db: DB, options: Options) {
   });
   app.put("/api/instruments/:id", administrator, async (req, res) => {
     const { version, ...fields } = instrumentSchema
-        .extend({ version: z.number().int().positive() })
+        .safeExtend({ version: z.number().int().positive() })
         .parse(req.body),
       id = String(req.params.id);
     await db.write(async (tx) => {
@@ -579,12 +579,10 @@ export function createApp(db: DB, options: Options) {
           return;
         }
         if (error.code === "23505") {
-          res
-            .status(409)
-            .json({
-              error:
-                "This entry already exists. Refresh the page to see the current record.",
-            });
+          res.status(409).json({
+            error:
+              "This entry already exists. Refresh the page to see the current record.",
+          });
           return;
         }
         if (error.code === "23514" || error.code === "23503") {

@@ -214,6 +214,7 @@ function MeetingForm({
           dataLinks: [],
         },
   );
+  const invalidTime = istInput(data.endsAt) <= istInput(data.startsAt);
   const [attendeeSearch, setAttendeeSearch] = useState("");
   const [reason, setReason] = useState(""),
     [busy, setBusy] = useState(false),
@@ -228,6 +229,7 @@ function MeetingForm({
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (invalidTime) return;
     setBusy(true);
     setError("");
     try {
@@ -284,7 +286,22 @@ function MeetingForm({
               required
               value={istInput(data.startsAt)}
               onChange={(e) => {
-                if (e.target.value) set("startsAt", fromIST(e.target.value));
+                if (!e.target.value) return;
+                const startsAt = fromIST(e.target.value);
+                setData((d) => {
+                  const duration =
+                    Date.parse(d.endsAt) - Date.parse(d.startsAt);
+                  return {
+                    ...d,
+                    startsAt,
+                    endsAt:
+                      !initial && duration > 0
+                        ? new Date(
+                            Date.parse(startsAt) + duration,
+                          ).toISOString()
+                        : d.endsAt,
+                  };
+                });
               }}
             />
           </label>
@@ -293,6 +310,8 @@ function MeetingForm({
             <input
               type="datetime-local"
               required
+              aria-invalid={invalidTime}
+              aria-describedby={invalidTime ? "meeting-end-error" : undefined}
               value={istInput(data.endsAt)}
               onChange={(e) => {
                 if (e.target.value) set("endsAt", fromIST(e.target.value));
@@ -301,6 +320,11 @@ function MeetingForm({
           </label>
         </div>
       </fieldset>
+      {invalidTime && (
+        <p id="meeting-end-error" role="alert">
+          End time must be after the meeting start.
+        </p>
+      )}
       <p>
         Only selected attendees and application supervisors/administrators can
         view this meeting and its notes. Group meetings also use explicit
@@ -412,7 +436,7 @@ function MeetingForm({
         </label>
       )}
       <div className="action-row workflow-actions">
-        <button className="primary" disabled={busy}>
+        <button className="primary" disabled={busy || invalidTime}>
           {busy
             ? "Saving…"
             : initial
