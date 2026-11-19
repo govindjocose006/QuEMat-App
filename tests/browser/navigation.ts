@@ -18,6 +18,7 @@ export async function signOut(page: Page) {
 }
 
 export async function openCalendarFilters(page: Page) {
+  await page.locator("#calendar-filters").waitFor({ state: "attached" });
   const toggle = page.getByRole("button", { name: /^Filters ·/ });
   if (
     (await toggle.isVisible()) &&

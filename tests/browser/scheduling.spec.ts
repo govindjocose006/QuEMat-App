@@ -77,7 +77,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     .selectOption(resource.id);
   await expect(
     page.getByRole("dialog").locator(`option[value="${unavailable.id}"]`),
-  ).toBeDisabled();
+  ).toHaveJSProperty("disabled", true);
   await page.getByLabel("Measurement / process type").fill("Magnetization/VSM");
   await page.getByText("Optional setup details", { exact: true }).click();
   await page.getByLabel("Temperature minimum", { exact: true }).fill("2");
