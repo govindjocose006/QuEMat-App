@@ -66,7 +66,7 @@ function Content({ content: c }: { content: ReportContent }) {
       {c.bookings.map((b) => (
         <article className="weekly-linked" key={b.id}>
           <strong>
-            {b.instrumentName} · {b.measurementType}
+            {[b.instrumentName, b.measurementType].filter(Boolean).join(" · ")}
           </strong>
           <p>
             Operator: {b.operatorName} · Status: {b.status}
@@ -675,8 +675,10 @@ function ReportEditor({
                       }
                     />
                     <span>
-                      {b.instrumentName} · {b.measurementType} ·{" "}
-                      {formatDate(b.startsAt)} · {b.status}
+                      {[b.instrumentName, b.measurementType]
+                        .filter(Boolean)
+                        .join(" · ")}{" "}
+                      · {formatDate(b.startsAt)} · {b.status}
                       {b.actualStart
                         ? " · Actual check-in recorded"
                         : " · Scheduled only"}

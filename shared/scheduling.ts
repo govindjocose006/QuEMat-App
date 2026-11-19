@@ -83,7 +83,7 @@ export const bookingSchema = z
     operatorId: id,
     participantIds: z.array(id).max(30).default([]),
     sampleIds: z.array(id).min(1).max(30),
-    measurementType: text(150).min(1),
+    measurementType: text(150).default(""),
     project: text(500).default(""),
     startsAt: instant,
     endsAt: instant,

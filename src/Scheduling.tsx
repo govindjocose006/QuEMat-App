@@ -459,7 +459,7 @@ export function BookingSummary({ b }: { b: Booking }) {
   return (
     <>
       <h3>
-        {b.instrumentName} · {b.measurementType}
+        {[b.instrumentName, b.measurementType].filter(Boolean).join(" · ")}
       </h3>
       <Status value={b.status.replaceAll("_", " ")} />
       <p>
@@ -639,13 +639,15 @@ function BookingForm({
   items,
   b,
   initialInstrumentId,
+  calendarDate,
   onSaved,
 }: {
   user: Member;
   items: Instrument[];
   b?: Booking;
   initialInstrumentId?: string;
-  onSaved: () => void;
+  calendarDate: string;
+  onSaved: (booking: Booking) => void;
 }) {
   const [instrumentId, setInstrumentId] = useState(
       b?.instrumentId ??
@@ -665,12 +667,35 @@ function BookingForm({
     [sampleSearch, setSampleSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [startsAt, setStartsAt] = useState(() =>
-    istInput(b?.startsAt ?? new Date().toISOString()),
-  );
+  const [operatorId, setOperatorId] = useState(b?.operatorId ?? user.id);
+  const [startsAt, setStartsAt] = useState(() => {
+    if (b) return istInput(b.startsAt);
+    const now = istInput(new Date().toISOString());
+    return calendarDate === now.slice(0, 10) ? now : calendarDate + "T09:00";
+  });
   const [endsAt, setEndsAt] = useState(() =>
-    istInput(b?.endsAt ?? new Date(Date.now() + 3600000).toISOString()),
+    b
+      ? istInput(b.endsAt)
+      : istInput(
+          new Date(Date.parse(fromIST(startsAt)) + 3600000).toISOString(),
+        ),
   );
+  function changeStart(value: string) {
+    if (!b && value) {
+      const duration =
+        startsAt && endsAt
+          ? Date.parse(fromIST(endsAt)) - Date.parse(fromIST(startsAt))
+          : 0;
+      setEndsAt(
+        istInput(
+          new Date(
+            Date.parse(fromIST(value)) + (duration > 0 ? duration : 3600000),
+          ).toISOString(),
+        ),
+      );
+    }
+    setStartsAt(value);
+  }
   const instrument = items.find((i) => i.id === instrumentId);
   useEffect(() => {
     let live = true;
@@ -742,20 +767,24 @@ function BookingForm({
     ])
       if (f.has(key)) details[key] = field(f, key);
     try {
-      await api(b ? `/bookings/${b.id}` : "/bookings", b ? "PUT" : "POST", {
-        instrumentId,
-        operatorId: field(f, "operatorId"),
-        participantIds: f.getAll("participants"),
-        sampleIds: selected,
-        measurementType: field(f, "measurementType"),
-        project: field(f, "project"),
-        startsAt: fromIST(field(f, "startsAt")),
-        endsAt: fromIST(field(f, "endsAt")),
-        setupNotes: field(f, "setupNotes"),
-        details,
-        ...(b ? { version: b.version } : {}),
-      });
-      onSaved();
+      const saved = await api<Booking>(
+        b ? `/bookings/${b.id}` : "/bookings",
+        b ? "PUT" : "POST",
+        {
+          instrumentId,
+          operatorId: field(f, "operatorId"),
+          participantIds: f.getAll("participants"),
+          sampleIds: selected,
+          measurementType: field(f, "measurementType"),
+          project: field(f, "project"),
+          startsAt: fromIST(field(f, "startsAt")),
+          endsAt: fromIST(field(f, "endsAt")),
+          setupNotes: field(f, "setupNotes"),
+          details,
+          ...(b ? { version: b.version } : {}),
+        },
+      );
+      onSaved(saved);
     } catch (e) {
       setError(messageOf(e));
     } finally {
@@ -792,8 +821,7 @@ function BookingForm({
               Reservation
             </legend>
             <p className="field-hint">
-              Choose the instrument, operator, and measurement. All times are in
-              IST.
+              Choose the instrument and operator. All times are in IST.
             </p>
             <div className="form-grid">
               <label>
@@ -815,7 +843,8 @@ function BookingForm({
                 Who will operate the instrument?
                 <select
                   name="operatorId"
-                  defaultValue={b?.operatorId ?? user.id}
+                  value={operatorId}
+                  onChange={(e) => setOperatorId(e.target.value)}
                   required
                 >
                   {operators.map((o) => (
@@ -826,27 +855,31 @@ function BookingForm({
                 </select>
               </label>
               <label className="field-full">
-                Measurement / process type
+                Measurement / process type{" "}
+                {instrument?.isPpms ? "(required for PPMS)" : "(optional)"}
                 <input
                   name="measurementType"
-                  defaultValue={b?.measurementType ?? ""}
-                  list="measurement-options"
-                  required
+                  key={instrumentId}
+                  defaultValue={
+                    instrumentId === b?.instrumentId ? b.measurementType : ""
+                  }
+                  list={instrument?.isPpms ? "measurement-options" : undefined}
+                  required={instrument?.isPpms}
                   maxLength={150}
                 />
-                <datalist id="measurement-options">
-                  {[
-                    "Magnetization/VSM",
-                    "Heat capacity",
-                    "Resistivity/transport",
-                    "ADR/magnetocaloric",
-                    "Annealing",
-                    "Deposition",
-                    "Other",
-                  ].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </datalist>
+                {instrument?.isPpms && (
+                  <datalist id="measurement-options">
+                    {[
+                      "Magnetization/VSM",
+                      "Heat capacity",
+                      "Resistivity/transport",
+                      "ADR/magnetocaloric",
+                      "Other",
+                    ].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </datalist>
+                )}
               </label>
 
               <label>
@@ -855,7 +888,7 @@ function BookingForm({
                   type="datetime-local"
                   name="startsAt"
                   value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
+                  onChange={(e) => changeStart(e.target.value)}
                   required
                 />
               </label>
@@ -1234,6 +1267,7 @@ export function Schedule({
     [editing, setEditing] = useState<Booking | null | undefined>(),
     [selected, setSelected] = useState<Booking | null>(null),
     [block, setBlock] = useState<"maintenance" | "availability" | null>(null),
+    [blockError, setBlockError] = useState(""),
     [busy, setBusy] = useState(false);
   const start = view === "month" ? date.slice(0, 7) + "-01" : date;
   const moveDate = (direction: number) =>
@@ -1292,12 +1326,23 @@ export function Schedule({
       (!instrument || b.instrumentId === instrument) &&
       (!mine || b.bookedBy === user.id || b.operatorId === user.id),
   );
+  const rangeStart = Date.parse(fromIST(start + "T00:00"));
+  const rangeEnd = Date.parse(fromIST(end + "T00:00"));
+  const outsideRange = filtered.filter(
+    (b) =>
+      b.status === "in_progress" &&
+      (Date.parse(b.endsAt) <= rangeStart ||
+        Date.parse(b.startsAt) >= rangeEnd),
+  );
+  const visibleWindows = windows.filter(
+    (w) => !instrument || w.instrumentId === instrument,
+  );
   const days: string[] = [];
   for (let d = start; d < end; d = addDays(d, 1)) days.push(d);
   async function saveBlock(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
-    setError("");
+    setBlockError("");
     const f = new FormData(e.currentTarget);
     try {
       await api("/" + block, "POST", {
@@ -1309,7 +1354,7 @@ export function Schedule({
       setBlock(null);
       await reload();
     } catch (e) {
-      setError(messageOf(e));
+      setBlockError(messageOf(e));
     } finally {
       setBusy(false);
     }
@@ -1400,13 +1445,19 @@ export function Schedule({
             <div className="action-row">
               <button
                 className="secondary"
-                onClick={() => setBlock("maintenance")}
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("maintenance");
+                }}
               >
                 Add maintenance
               </button>
               <button
                 className="secondary"
-                onClick={() => setBlock("availability")}
+                onClick={() => {
+                  setBlockError("");
+                  setBlock("availability");
+                }}
               >
                 Add allocated window
               </button>
@@ -1479,7 +1530,7 @@ export function Schedule({
                   )}
                   <strong>{b.instrumentName}</strong>
                   <span>{b.operatorName}</span>
-                  <span>{b.measurementType}</span>
+                  {b.measurementType && <span>{b.measurementType}</span>}
                   {!!b.sampleSnapshots.length && (
                     <span>
                       {b.sampleSnapshots.map((s) => s.compound).join(", ")}
@@ -1505,41 +1556,29 @@ export function Schedule({
           </section>
         ))}
       </div>
-      {filtered.some(
-        (b) =>
-          b.status === "in_progress" &&
-          (day(b.endsAt) < start || day(b.startsAt) >= end),
-      ) && (
+      {outsideRange.length > 0 && (
         <section className="panel">
           <h3>Still in use from another date</h3>
-          {filtered
-            .filter(
-              (b) =>
-                b.status === "in_progress" &&
-                (day(b.endsAt) < start || day(b.startsAt) >= end),
-            )
-            .map((b) => (
-              <button
-                key={b.id}
-                className="secondary"
-                onClick={() => setSelected(b)}
-              >
-                {b.instrumentName} — {b.operatorName}
-              </button>
-            ))}
+          {outsideRange.map((b) => (
+            <button
+              key={b.id}
+              className="secondary"
+              onClick={() => setSelected(b)}
+            >
+              {b.instrumentName} — {b.operatorName}
+            </button>
+          ))}
         </section>
       )}
       <details>
         <summary>Allocated availability windows</summary>
-        {windows
-          .filter((w) => !instrument || w.instrumentId === instrument)
-          .map((w) => (
-            <p key={w.id}>
-              {items.find((i) => i.id === w.instrumentId)?.name}:{" "}
-              {formatDate(w.startsAt)} → {formatDate(w.endsAt)} · {w.reference}
-            </p>
-          ))}
-        {!windows.length && (
+        {visibleWindows.map((w) => (
+          <p key={w.id}>
+            {items.find((i) => i.id === w.instrumentId)?.name}:{" "}
+            {formatDate(w.startsAt)} → {formatDate(w.endsAt)} · {w.reference}
+          </p>
+        ))}
+        {!loading && !error && !visibleWindows.length && (
           <p>No institutionally allocated windows recorded.</p>
         )}
       </details>
@@ -1554,9 +1593,14 @@ export function Schedule({
               items={items}
               b={editing ?? undefined}
               initialInstrumentId={instrument}
-              onSaved={() => {
+              calendarDate={date}
+              onSaved={(saved) => {
+                const savedDay = day(saved.startsAt);
+                const rangeChanged = savedDay < start || savedDay >= end;
+                if (rangeChanged) setDate(savedDay);
+                if (instrument) setInstrument(saved.instrumentId);
                 setEditing(undefined);
-                void reload();
+                if (!rangeChanged) void reload();
               }}
             />
           </div>
@@ -1590,10 +1634,17 @@ export function Schedule({
           onClose={() => setBlock(null)}
         >
           <form className="dialog-body" onSubmit={saveBlock}>
-            <ErrorNotice message={error} />
+            <ErrorNotice message={blockError} />
             <label>
               Instrument
-              <select name="instrumentId">
+              <select
+                name="instrumentId"
+                defaultValue={
+                  items.some((i) => i.id === instrument && !i.archived)
+                    ? instrument
+                    : undefined
+                }
+              >
                 {items
                   .filter((i) => !i.archived)
                   .map((i) => (
@@ -1789,8 +1840,9 @@ export function LiveUsage({
                         {running.operatorName} · {sampleLabels(running)}
                       </p>
                       <p>
-                        {running.measurementType} · checked in{" "}
-                        {formatDate(running.actualStart!)}
+                        {running.measurementType &&
+                          running.measurementType + " · "}
+                        checked in {formatDate(running.actualStart!)}
                       </p>
                       <p>Scheduled until {formatDate(running.endsAt)}</p>
                       {new Date(running.endsAt).getTime() < now && (
@@ -1815,8 +1867,10 @@ export function LiveUsage({
                   {scheduled && !running && (
                     <>
                       <p>
-                        {scheduled.operatorName} · {scheduled.measurementType} ·{" "}
-                        {sampleLabels(scheduled)}
+                        {[scheduled.operatorName, scheduled.measurementType]
+                          .filter(Boolean)
+                          .join(" · ")}{" "}
+                        · {sampleLabels(scheduled)}
                       </p>
                       <p>
                         {formatDate(scheduled.startsAt)} –{" "}
@@ -1831,8 +1885,10 @@ export function LiveUsage({
                     <>
                       <strong>{formatDate(next.startsAt)}</strong>
                       <p>
-                        {next.operatorName} · {next.measurementType} ·{" "}
-                        {next.status.replaceAll("_", " ")}
+                        {[next.operatorName, next.measurementType]
+                          .filter(Boolean)
+                          .join(" · ")}{" "}
+                        · {next.status.replaceAll("_", " ")}
                       </p>
                       {next.sampleSnapshots.length > 0 && (
                         <p>Next samples: {sampleLabels(next)}</p>
@@ -1894,8 +1950,8 @@ export function LiveUsage({
         )}
         {upcoming.slice(0, 10).map((b) => (
           <p key={b.id}>
-            {b.instrumentName} · {b.measurementType} · {formatDate(b.startsAt)}{" "}
-            · {b.status.replaceAll("_", " ")}
+            {[b.instrumentName, b.measurementType].filter(Boolean).join(" · ")}{" "}
+            · {formatDate(b.startsAt)} · {b.status.replaceAll("_", " ")}
           </p>
         ))}
         {upcoming.length > 10 && (

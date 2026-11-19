@@ -5,4 +5,4 @@ export function managesOperations(role: string) {
 export const istInput = (value: string) =>
   new Date(new Date(value).getTime() + 330 * 60000).toISOString().slice(0, 16);
 export const fromIST = (value: string) =>
-  new Date(value + ":00+05:30").toISOString();
+  new Date(value + "+05:30").toISOString();

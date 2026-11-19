@@ -87,6 +87,7 @@ export const instrumentSchema = z.object({
 });
 export type InstrumentInput = z.infer<typeof instrumentSchema>;
 export type Instrument = InstrumentInput & {
+  isPpms: boolean;
   id: string;
   version: number;
   updatedAt: string;

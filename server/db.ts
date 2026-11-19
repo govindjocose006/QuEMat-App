@@ -218,7 +218,7 @@ export async function instruments(
   archived = false,
 ): Promise<Instrument[]> {
   const rows =
-    await db.query<Instrument>(`SELECT id,name,category,location,description,status,priority,max_temperature_c AS "maxTemperatureC",
+    await db.query<Instrument>(`SELECT id,name,(COALESCE(seed_key = 'initial-0', false) OR name ~* '\\m(ppms|physical property measurement system)\\M') AS "isPpms",category,location,description,status,priority,max_temperature_c AS "maxTemperatureC",
     booking_rules AS "bookingRules",scheduling_mode AS "schedulingMode",coordinator_approval AS "coordinatorApproval",
     setup_minutes AS "setupMinutes",cleanup_minutes AS "cleanupMinutes",training_policy AS "trainingPolicy",training_note AS "trainingNote",
     archived,sort_order AS "sortOrder",version,updated_at AS "updatedAt" FROM instruments ${archived ? "" : "WHERE archived=0"} ORDER BY priority DESC, sort_order, name`);

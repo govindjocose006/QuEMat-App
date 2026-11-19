@@ -1,12 +1,11 @@
+import type { Booking } from "../../shared/scheduling.js";
 import { navigate } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { istInput } from "../../shared/scheduling-ui.js";
-async function login(page: Page) {
+import { fromIST, istInput } from "../../shared/scheduling-ui.js";
+async function login(page: Page, email = "browser-admin@example.test") {
   await page.goto("/");
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill("browser-admin@example.test");
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page
     .getByLabel("Password", { exact: true })
     .fill("Browser-tests-only-passphrase!");
@@ -333,4 +332,124 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
     path: info.outputPath("phase2-furnace-agenda.png"),
     fullPage: true,
   });
+});
+
+test("a member can reserve adjacent slots and two instruments at the same time", async ({
+  page,
+}, info) => {
+  const date = info.project.name === "phone" ? "2040-03-07" : "2040-03-06";
+  await login(page, `browser-weekly-member-${info.project.name}@example.test`);
+  const sample = await write(page, "/samples", {
+    compound: "Adjacent slots " + info.project.name,
+  });
+  const me = (await (await page.request.get("/api/session")).json()).user;
+  await navigate(page, "Calendar");
+  await page
+    .getByRole("combobox", { name: "View", exact: true })
+    .selectOption("day");
+  await page.getByLabel("Date", { exact: true }).fill(date);
+  await page
+    .getByRole("combobox", { name: "Filter instrument" })
+    .selectOption({ label: "SQUID" });
+  for (const hour of ["10", "11"]) {
+    await page
+      .getByRole("button", { name: "Book instrument", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    const start = dialog.getByLabel("Start (IST)", { exact: true });
+    await expect(start).toHaveValue(date + "T09:00");
+    await start.fill(date + "T" + hour + ":00");
+    await expect(dialog.getByLabel("End including cooling (IST)")).toHaveValue(
+      date + "T" + (Number(hour) + 1) + ":00",
+    );
+    await expect(
+      dialog.getByLabel("Who will operate the instrument?"),
+    ).toHaveValue(me.id);
+    const measurement = dialog.getByLabel("Measurement / process type");
+    await expect(measurement).toHaveJSProperty("required", false);
+    await expect(dialog.locator("#measurement-options")).toHaveCount(0);
+    if (hour === "10") await measurement.fill("Same-day scan " + hour);
+    await dialog.getByLabel(new RegExp(sample.code + " ·")).check();
+    await dialog.getByRole("button", { name: "Reserve booking" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(
+      page
+        .locator(".booking-tile")
+        .filter({ hasText: hour + ":00–" + (Number(hour) + 1) + ":00" }),
+    ).toBeVisible();
+  }
+  await expect(page.locator(".booking-tile")).toHaveCount(2);
+
+  const otherInstrument = `Weekly ${info.project.name} PPMS`;
+  await page
+    .getByRole("button", { name: "Book instrument", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("combobox", { name: "Instrument", exact: true })
+    .selectOption({ label: otherInstrument });
+  await expect(
+    dialog.getByLabel("Measurement / process type"),
+  ).toHaveJSProperty("required", true);
+  await expect(dialog.locator("#measurement-options option")).toHaveText([
+    "Magnetization/VSM",
+    "Heat capacity",
+    "Resistivity/transport",
+    "ADR/magnetocaloric",
+    "Other",
+  ]);
+  await dialog.getByLabel("Start (IST)", { exact: true }).fill(date + "T10:00");
+  await dialog
+    .getByLabel("Measurement / process type")
+    .fill("Parallel measurement");
+  await dialog.getByLabel(new RegExp(sample.code + " ·")).check();
+  await dialog.getByRole("button", { name: "Reserve booking" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  const filter = page.getByRole("combobox", { name: "Filter instrument" });
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: otherInstrument }),
+  ).toContainText("10:00–11:00");
+  await filter.selectOption("");
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: "10:00–11:00" }),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: "SQUID" }),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(".booking-tile").filter({ hasText: otherInstrument }),
+  ).toHaveCount(1);
+  await filter.selectOption({ label: "SQUID" });
+
+  // A run may still be active after its reservation ended exactly at midnight.
+  await page.route("**/api/bookings?*", async (route) => {
+    const response = await route.fetch();
+    const rows: Booking[] = await response.json();
+    const previous = rows.find(
+      (b) =>
+        b.instrumentName === "SQUID" &&
+        b.measurementType === "Same-day scan 10",
+    );
+    expect(previous).toBeDefined();
+    const midnight = fromIST(date + "T00:00");
+    await route.fulfill({
+      response,
+      json: [
+        ...rows,
+        {
+          ...previous,
+          id: "midnight-overrun",
+          status: "in_progress",
+          startsAt: new Date(Date.parse(midnight) - 3600000).toISOString(),
+          endsAt: midnight,
+        },
+      ],
+    });
+  });
+  await page.getByRole("button", { name: "Refresh schedule" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Still in use from another date" }),
+  ).toBeVisible();
+  await expect(page.locator(".booking-tile")).toHaveCount(2);
 });

@@ -219,7 +219,7 @@ export function Overview({
               {reservations.slice(0, 3).map((b) => (
                 <li key={b.id}>
                   <strong>{b.instrumentName}</strong>
-                  <span>{b.measurementType}</span>
+                  {b.measurementType && <span>{b.measurementType}</span>}
                   <span>
                     {formatDate(b.startsAt)} – {formatDate(b.endsAt)}
                   </span>

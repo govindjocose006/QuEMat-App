@@ -89,7 +89,7 @@ export function installScheduling(
           id,
           b.id,
           `${b.id}:${b.version}:${verb}`,
-          `${b.instrumentName}: ${verb}. ${b.measurementType}.`,
+          `${b.instrumentName}: ${verb}.${b.measurementType ? ` ${b.measurementType}.` : ""}`,
         ],
       );
   }
@@ -236,6 +236,8 @@ export function installScheduling(
         409,
         "This instrument is archived, under maintenance, or out of service.",
       );
+    if (i.isPpms && !input.measurementType)
+      fail(400, "Enter a measurement type for the PPMS booking.");
     if (Date.parse(input.endsAt) <= Date.now())
       fail(400, "A reservation must end in the future.");
     if (Date.parse(input.endsAt) - Date.parse(input.startsAt) > 90 * 86400000)
