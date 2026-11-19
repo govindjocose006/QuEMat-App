@@ -459,7 +459,7 @@ export function BookingSummary({ b }: { b: Booking }) {
   return (
     <>
       <h3>
-        {b.instrumentName} · {b.measurementType}
+        {[b.instrumentName, b.measurementType].filter(Boolean).join(" · ")}
       </h3>
       <Status value={b.status.replaceAll("_", " ")} />
       <p>
@@ -821,8 +821,7 @@ function BookingForm({
               Reservation
             </legend>
             <p className="field-hint">
-              Choose the instrument, operator, and measurement. All times are in
-              IST.
+              Choose the instrument and operator. All times are in IST.
             </p>
             <div className="form-grid">
               <label>
@@ -856,27 +855,31 @@ function BookingForm({
                 </select>
               </label>
               <label className="field-full">
-                Measurement / process type
+                Measurement / process type{" "}
+                {instrument?.isPpms ? "(required for PPMS)" : "(optional)"}
                 <input
                   name="measurementType"
-                  defaultValue={b?.measurementType ?? ""}
-                  list="measurement-options"
-                  required
+                  key={instrumentId}
+                  defaultValue={
+                    instrumentId === b?.instrumentId ? b.measurementType : ""
+                  }
+                  list={instrument?.isPpms ? "measurement-options" : undefined}
+                  required={instrument?.isPpms}
                   maxLength={150}
                 />
-                <datalist id="measurement-options">
-                  {[
-                    "Magnetization/VSM",
-                    "Heat capacity",
-                    "Resistivity/transport",
-                    "ADR/magnetocaloric",
-                    "Annealing",
-                    "Deposition",
-                    "Other",
-                  ].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </datalist>
+                {instrument?.isPpms && (
+                  <datalist id="measurement-options">
+                    {[
+                      "Magnetization/VSM",
+                      "Heat capacity",
+                      "Resistivity/transport",
+                      "ADR/magnetocaloric",
+                      "Other",
+                    ].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </datalist>
+                )}
               </label>
 
               <label>
@@ -1527,7 +1530,7 @@ export function Schedule({
                   )}
                   <strong>{b.instrumentName}</strong>
                   <span>{b.operatorName}</span>
-                  <span>{b.measurementType}</span>
+                  {b.measurementType && <span>{b.measurementType}</span>}
                   {!!b.sampleSnapshots.length && (
                     <span>
                       {b.sampleSnapshots.map((s) => s.compound).join(", ")}
@@ -1837,8 +1840,9 @@ export function LiveUsage({
                         {running.operatorName} · {sampleLabels(running)}
                       </p>
                       <p>
-                        {running.measurementType} · checked in{" "}
-                        {formatDate(running.actualStart!)}
+                        {running.measurementType &&
+                          running.measurementType + " · "}
+                        checked in {formatDate(running.actualStart!)}
                       </p>
                       <p>Scheduled until {formatDate(running.endsAt)}</p>
                       {new Date(running.endsAt).getTime() < now && (
@@ -1863,8 +1867,10 @@ export function LiveUsage({
                   {scheduled && !running && (
                     <>
                       <p>
-                        {scheduled.operatorName} · {scheduled.measurementType} ·{" "}
-                        {sampleLabels(scheduled)}
+                        {[scheduled.operatorName, scheduled.measurementType]
+                          .filter(Boolean)
+                          .join(" · ")}{" "}
+                        · {sampleLabels(scheduled)}
                       </p>
                       <p>
                         {formatDate(scheduled.startsAt)} –{" "}
@@ -1879,8 +1885,10 @@ export function LiveUsage({
                     <>
                       <strong>{formatDate(next.startsAt)}</strong>
                       <p>
-                        {next.operatorName} · {next.measurementType} ·{" "}
-                        {next.status.replaceAll("_", " ")}
+                        {[next.operatorName, next.measurementType]
+                          .filter(Boolean)
+                          .join(" · ")}{" "}
+                        · {next.status.replaceAll("_", " ")}
                       </p>
                       {next.sampleSnapshots.length > 0 && (
                         <p>Next samples: {sampleLabels(next)}</p>
@@ -1942,8 +1950,8 @@ export function LiveUsage({
         )}
         {upcoming.slice(0, 10).map((b) => (
           <p key={b.id}>
-            {b.instrumentName} · {b.measurementType} · {formatDate(b.startsAt)}{" "}
-            · {b.status.replaceAll("_", " ")}
+            {[b.instrumentName, b.measurementType].filter(Boolean).join(" · ")}{" "}
+            · {formatDate(b.startsAt)} · {b.status.replaceAll("_", " ")}
           </p>
         ))}
         {upcoming.length > 10 && (

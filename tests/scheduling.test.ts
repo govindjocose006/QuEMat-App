@@ -398,6 +398,23 @@ it("rejects simultaneous bookings across two app instances and independently enf
   ).rejects.toMatchObject({ code: "23P01" });
   expect((await db.query("SELECT id FROM bookings")).length).toBe(1);
 });
+it("requires a measurement only for PPMS bookings", async () => {
+  const c = await client("member@example.test");
+  const items = await instruments(db);
+  const ppms = items.find((i) => i.name === "PPMS")!;
+  const squid = items.find((i) => i.name === "SQUID")!;
+  const response = await c.write(
+    "/bookings",
+    booking({ instrumentId: ppms.id, measurementType: " " }),
+  );
+  expect(response.status).toBe(400);
+  expect(response.body.error).toContain("PPMS");
+  expect(
+    (await create(c, { instrumentId: squid.id, measurementType: undefined }))
+      .measurementType,
+  ).toBe("");
+});
+
 it("lists adjacent same-day bookings and simultaneous use of separate instruments for one member", async () => {
   const member = await client("member@example.test");
   const first = await create(member, {

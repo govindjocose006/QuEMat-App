@@ -365,16 +365,17 @@ test("a member can reserve adjacent slots and two instruments at the same time",
     await expect(
       dialog.getByLabel("Who will operate the instrument?"),
     ).toHaveValue(me.id);
-    await dialog
-      .getByLabel("Measurement / process type")
-      .fill("Same-day scan " + hour);
+    const measurement = dialog.getByLabel("Measurement / process type");
+    await expect(measurement).toHaveJSProperty("required", false);
+    await expect(dialog.locator("#measurement-options")).toHaveCount(0);
+    if (hour === "10") await measurement.fill("Same-day scan " + hour);
     await dialog.getByLabel(new RegExp(sample.code + " ·")).check();
     await dialog.getByRole("button", { name: "Reserve booking" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(
       page
         .locator(".booking-tile")
-        .filter({ hasText: "Same-day scan " + hour }),
+        .filter({ hasText: hour + ":00–" + (Number(hour) + 1) + ":00" }),
     ).toBeVisible();
   }
   await expect(page.locator(".booking-tile")).toHaveCount(2);
@@ -387,6 +388,16 @@ test("a member can reserve adjacent slots and two instruments at the same time",
   await dialog
     .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption({ label: otherInstrument });
+  await expect(
+    dialog.getByLabel("Measurement / process type"),
+  ).toHaveJSProperty("required", true);
+  await expect(dialog.locator("#measurement-options option")).toHaveText([
+    "Magnetization/VSM",
+    "Heat capacity",
+    "Resistivity/transport",
+    "ADR/magnetocaloric",
+    "Other",
+  ]);
   await dialog.getByLabel("Start (IST)", { exact: true }).fill(date + "T10:00");
   await dialog
     .getByLabel("Measurement / process type")
