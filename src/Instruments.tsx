@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from "react";
-import type { Instrument, InstrumentInput } from "../shared/schema.js";
+import {
+  isFurnace,
+  type Instrument,
+  type InstrumentInput,
+} from "../shared/schema.js";
 import { operationalStatuses } from "../shared/options.js";
 import { api } from "./api.js";
 import {
@@ -50,6 +54,13 @@ export function InstrumentCard({
       </div>
       <p className="category">{i.category}</p>
       <h3>{i.name}</h3>
+      {isFurnace(i.category) &&
+        (i.maxTemperatureC === null || i.category !== "Furnace") && (
+          <p className="notice">
+            Booking unavailable. An administrator must confirm the furnace type
+            and maximum temperature in instrument settings.
+          </p>
+        )}
       {i.location && <p className="instrument-location">{i.location}</p>}
       <div className="card-facts">
         {i.maxTemperatureC !== null ? (
@@ -175,6 +186,7 @@ export function InstrumentEditor({
   onSaved: () => Promise<void>;
 }) {
   const value = instrument ?? blank;
+  const [furnace, setFurnace] = useState(isFurnace(value.category));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -201,7 +213,7 @@ export function InstrumentEditor({
         instrument ? "PUT" : "POST",
         {
           name: str("name"),
-          category: str("category"),
+          category: furnace ? "Furnace" : str("category"),
           location: str("location"),
           description: str("description"),
           status: str("status"),
@@ -252,15 +264,30 @@ export function InstrumentEditor({
             />
           </label>
           <label>
-            Category
-            <input
-              name="category"
-              defaultValue={value.category}
-              required
-              minLength={2}
-              maxLength={80}
-            />
+            Instrument type
+            <select
+              value={furnace ? "furnace" : "general"}
+              onChange={(e) => setFurnace(e.target.value === "furnace")}
+            >
+              <option value="general">General instrument</option>
+              <option value="furnace">Furnace</option>
+            </select>
           </label>
+          {!furnace && (
+            <label>
+              Category
+              <input
+                name="category"
+                defaultValue={isFurnace(value.category) ? "" : value.category}
+                onBlur={(e) => {
+                  if (isFurnace(e.target.value)) setFurnace(true);
+                }}
+                required
+                minLength={2}
+                maxLength={80}
+              />
+            </label>
+          )}
           <label>
             Location
             <input
@@ -283,12 +310,15 @@ export function InstrumentEditor({
               name="maxTemperatureC"
               type="number"
               min="0.01"
+              required={furnace}
               max="10000"
               step="any"
               defaultValue={value.maxTemperatureC ?? ""}
             />
             <small className="field-hint">
-              Leave blank when not specified by the lab.
+              {furnace
+                ? "Required for furnace bookings."
+                : "Optional for this instrument."}
             </small>
           </label>
           <label className="full">

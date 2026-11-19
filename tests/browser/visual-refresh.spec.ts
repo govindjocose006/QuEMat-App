@@ -1,3 +1,4 @@
+import { openCalendarFilters } from "./navigation.js";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
 import { navigate, signOut } from "./navigation.js";
@@ -94,6 +95,7 @@ test("instrument operating status and overnight calendar timeline stay distinct"
   await card
     .getByRole("button", { name: "View schedule for SQUID", exact: true })
     .click();
+  await openCalendarFilters(page);
   await page.getByLabel("Date", { exact: true }).fill("2039-03-03");
   await expect(page.locator(".calendar-timeline .reservation-bar")).toHaveCount(
     2,

@@ -1,3 +1,4 @@
+import { isFurnace } from "../shared/schema.js";
 import type { Express, RequestHandler, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -235,6 +236,14 @@ export function installScheduling(
       fail(
         409,
         "This instrument is archived, under maintenance, or out of service.",
+      );
+    if (
+      isFurnace(i.category) &&
+      (i.category !== "Furnace" || i.maxTemperatureC === null)
+    )
+      fail(
+        409,
+        "An administrator must confirm the furnace type and maximum temperature before booking.",
       );
     if (i.isPpms && !input.measurementType)
       fail(400, "Enter a measurement type for the PPMS booking.");
@@ -486,6 +495,17 @@ export function installScheduling(
         const i = (await instruments(tx, true)).find(
           (i) => i.id === before.instrumentId,
         )!;
+        if (
+          isFurnace(before.category) &&
+          (!i.maxTemperatureC ||
+            !before.details.targetTemperatureC ||
+            before.details.targetTemperatureC <= 0 ||
+            before.details.targetTemperatureC > i.maxTemperatureC)
+        )
+          fail(
+            409,
+            "Confirm the configured furnace limit and reschedule with a valid target temperature.",
+          );
         if (i.archived || i.status !== "available")
           fail(409, "This instrument is not operational.");
         if (
@@ -518,7 +538,7 @@ export function installScheduling(
           fail(409, "Only actual usage can be completed or interrupted.");
         if (!input.summary.trim() || !input.handoverNotes.trim())
           fail(400, "Record a completion summary and handover notes.");
-        if (before.category === "Furnace" && !input.unloaded)
+        if (isFurnace(before.category) && !input.unloaded)
           fail(
             400,
             "Confirm that the furnace is unloaded before releasing it.",

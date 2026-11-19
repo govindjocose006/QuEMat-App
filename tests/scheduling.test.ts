@@ -398,6 +398,27 @@ it("rejects simultaneous bookings across two app instances and independently enf
   ).rejects.toMatchObject({ code: "23P01" });
   expect((await db.query("SELECT id FROM bookings")).length).toBe(1);
 });
+it("normalizes furnace categories and requires a maximum at configuration time", async () => {
+  const admin = await client();
+  const prototype = (await instruments(db)).find(
+    (i) => i.category === "Furnace",
+  )!;
+  const invalid = await admin.write("/instruments", {
+    ...prototype,
+    name: "Review furnace",
+    category: "furnace",
+    maxTemperatureC: null,
+  });
+  expect(invalid.status).toBe(400);
+  const saved = await admin.write("/instruments", {
+    ...prototype,
+    name: "Review furnace",
+    category: "furnace",
+  });
+  expect(saved.status).toBe(201);
+  expect(saved.body.category).toBe("Furnace");
+});
+
 it("requires a measurement only for PPMS bookings", async () => {
   const c = await client("member@example.test");
   const items = await instruments(db);

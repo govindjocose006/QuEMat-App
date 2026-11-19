@@ -64,27 +64,37 @@ const safeUrl = z
     (v) => ["https:", "http:"].includes(new URL(v).protocol),
     "Use an HTTP or HTTPS link.",
   );
-export const instrumentSchema = z.object({
-  name: text(150).min(2),
-  category: text(80).min(2),
-  location: text(200),
-  description: text(2000),
-  status: z.enum(operationalStatuses),
-  priority: z.boolean(),
-  maxTemperatureC: z.number().positive().max(10000).nullable(),
-  bookingRules: text(2000),
-  schedulingMode: z.enum(["internal", "allocated"]),
-  coordinatorApproval: z.boolean(),
-  setupMinutes: z.number().int().min(0).max(10080),
-  cleanupMinutes: z.number().int().min(0).max(10080),
-  trainingPolicy: text(2000),
-  trainingNote: text(250),
-  trainedUsers: z.array(text(120).min(1)).max(100),
-  sopLinks: z
-    .array(z.object({ label: text(150).min(1), url: safeUrl }))
-    .max(20),
-  archived: z.boolean(),
-});
+export function isFurnace(category: string | undefined) {
+  return /^furnaces?$/i.test(category?.trim() ?? "");
+}
+export const instrumentSchema = z
+  .object({
+    name: text(150).min(2),
+    category: text(80)
+      .min(2)
+      .transform((v) => (isFurnace(v) ? "Furnace" : v)),
+    location: text(200),
+    description: text(2000),
+    status: z.enum(operationalStatuses),
+    priority: z.boolean(),
+    maxTemperatureC: z.number().positive().max(10000).nullable(),
+    bookingRules: text(2000),
+    schedulingMode: z.enum(["internal", "allocated"]),
+    coordinatorApproval: z.boolean(),
+    setupMinutes: z.number().int().min(0).max(10080),
+    cleanupMinutes: z.number().int().min(0).max(10080),
+    trainingPolicy: text(2000),
+    trainingNote: text(250),
+    trainedUsers: z.array(text(120).min(1)).max(100),
+    sopLinks: z
+      .array(z.object({ label: text(150).min(1), url: safeUrl }))
+      .max(20),
+    archived: z.boolean(),
+  })
+  .refine((i) => !isFurnace(i.category) || i.maxTemperatureC !== null, {
+    path: ["maxTemperatureC"],
+    message: "Set the furnace maximum temperature.",
+  });
 export type InstrumentInput = z.infer<typeof instrumentSchema>;
 export type Instrument = InstrumentInput & {
   isPpms: boolean;

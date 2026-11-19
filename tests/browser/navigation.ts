@@ -16,3 +16,13 @@ export async function signOut(page: Page) {
     await page.locator(".account-menu > summary").click();
   await button.click();
 }
+
+export async function openCalendarFilters(page: Page) {
+  await page.locator("#calendar-filters").waitFor({ state: "attached" });
+  const toggle = page.getByRole("button", { name: /^Filters ·/ });
+  if (
+    (await toggle.isVisible()) &&
+    (await toggle.getAttribute("aria-expanded")) === "false"
+  )
+    await toggle.click();
+}

@@ -750,3 +750,16 @@ dialog:has(.booking-form) {
     display: none;
   }
 }
+
+.calendar-filter-toggle {
+  display: none;
+}
+@media (max-width: 700px) {
+  .calendar-filter-toggle {
+    display: block;
+    margin: 0.5rem 0;
+  }
+  .schedule-page #calendar-filters:not(.filters-open) {
+    display: none;
+  }
+}

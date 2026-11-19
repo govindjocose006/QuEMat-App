@@ -1,3 +1,4 @@
+import { openCalendarFilters } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import { navigate, signOut } from "./navigation.js";
 async function login(
@@ -129,6 +130,7 @@ test("calendar retains newer date results when an older response arrives last", 
     if (date === "2032-01-01") oldCompleted = true;
   });
   await navigate(page, "Calendar");
+  await openCalendarFilters(page);
   await page.getByLabel("Date", { exact: true }).fill("2032-01-01");
   await expect.poll(() => oldStarted).toBe(true);
   await expect(

@@ -1,5 +1,5 @@
 import type { Booking } from "../../shared/scheduling.js";
-import { navigate } from "./navigation.js";
+import { navigate, openCalendarFilters } from "./navigation.js";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { fromIST, istInput } from "../../shared/scheduling-ui.js";
@@ -51,6 +51,11 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     name: `${info.project.name} scheduling PPMS`,
     priority: false,
   });
+  const unavailable = await write(page, "/instruments", {
+    ...resource,
+    name: `Offline ${info.project.name}`,
+    status: "maintenance",
+  });
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Lab overview", exact: true }),
@@ -70,7 +75,11 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     .getByRole("dialog")
     .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption(resource.id);
+  await expect(
+    page.getByRole("dialog").locator(`option[value="${unavailable.id}"]`),
+  ).toHaveJSProperty("disabled", true);
   await page.getByLabel("Measurement / process type").fill("Magnetization/VSM");
+  await page.getByText("Optional setup details", { exact: true }).click();
   await page.getByLabel("Temperature minimum", { exact: true }).fill("2");
   await page.getByLabel("Temperature maximum", { exact: true }).fill("300");
   await page.getByLabel("Field maximum", { exact: true }).fill("5");
@@ -91,7 +100,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     .getByLabel("Start (IST)", { exact: true })
     .fill(istInput(new Date(Date.now() - 60000).toISOString()));
   await page
-    .getByLabel("End including cooling (IST)")
+    .getByLabel("End time (IST)")
     .fill(istInput(new Date(Date.now() + 1800000).toISOString()));
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -99,7 +108,7 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
   await page
     .getByRole("combobox", { name: "Action", exact: true })
     .selectOption("checkin");
-  await page.getByRole("button", { name: "Apply action" }).click();
+  await page.getByRole("button", { name: "Check in", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(tile).toContainText("in progress");
   await tile.click();
@@ -107,14 +116,15 @@ test("samples, magnetic booking, reschedule, actual usage, handover and notifica
     .getByRole("combobox", { name: "Action", exact: true })
     .selectOption("complete");
   await page
-    .getByLabel("Completion summary / reason")
+    .getByLabel("Completion summary (required)")
     .fill("Synthetic scan complete");
   await page
     .getByLabel("Handover notes", { exact: true })
     .fill("Holder cleared");
-  await page.getByRole("button", { name: "Apply action" }).click();
+  await page.getByRole("button", { name: "Complete run", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(tile).toContainText("completed");
+  await openCalendarFilters(page);
   for (const view of ["day", "month", "week"]) {
     await page
       .getByRole("combobox", { name: "View", exact: true })
@@ -257,6 +267,7 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
     .click();
   await expect(page.getByRole("alert").last()).toContainText("maximum");
   await page.getByLabel("Target temperature", { exact: false }).fill("1000");
+  await page.getByText("Optional setup details", { exact: true }).click();
   await page
     .getByLabel("Ramp / hold / cooling stages")
     .fill("Synthetic planned stages");
@@ -272,22 +283,27 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
   await page
     .getByRole("combobox", { name: "Action", exact: true })
     .selectOption("checkin");
-  await page.getByRole("button", { name: "Apply action" }).click();
+  await page.getByRole("button", { name: "Check in", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await tile.click();
+  const action = page.getByRole("combobox", { name: "Action", exact: true });
+  await action.selectOption("overrun");
+  await expect(
+    page.getByLabel("Estimated overrun end (Asia/Kolkata)"),
+  ).toHaveJSProperty("required", true);
+  await expect(page.getByLabel("I confirm cooling")).toHaveCount(0);
+  await expect(page.getByLabel("Result data link (optional)")).toHaveCount(0);
   await page
     .getByRole("combobox", { name: "Action", exact: true })
     .selectOption("complete");
-  await page.getByLabel("Completion summary / reason").fill("Run complete");
+  await page.getByLabel("Completion summary (required)").fill("Run complete");
   await page
     .getByLabel("Handover notes", { exact: true })
     .fill("Unloaded and safe");
-  await page.getByRole("button", { name: "Apply action" }).click();
-  await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
-    "unloaded",
-  );
+  await page.getByRole("button", { name: "Complete run", exact: true }).click();
+  await expect(page.getByLabel("I confirm cooling")).toBeFocused();
   await page.getByLabel("I confirm cooling").check();
-  await page.getByRole("button", { name: "Apply action" }).click();
+  await page.getByRole("button", { name: "Complete run", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(tile).toContainText("completed");
   await page
@@ -301,6 +317,7 @@ test("furnace maximum and unloading, quick sample creation, sputtering and maint
   await page.getByLabel(new RegExp(`QEM-.*Oxide-${info.project.name}`)).check();
   await page.getByLabel("Target material", { exact: true }).fill("Test target");
   await page.getByLabel("Substrate", { exact: true }).fill("Test substrate");
+  await page.getByText("Optional setup details", { exact: true }).click();
   await page.getByLabel("Pressure (include units)").fill("1 Pa");
   await page.getByLabel("Power (include units)").fill("50 W");
   await accessible(page);
@@ -344,6 +361,7 @@ test("a member can reserve adjacent slots and two instruments at the same time",
   });
   const me = (await (await page.request.get("/api/session")).json()).user;
   await navigate(page, "Calendar");
+  await openCalendarFilters(page);
   await page
     .getByRole("combobox", { name: "View", exact: true })
     .selectOption("day");
@@ -359,7 +377,7 @@ test("a member can reserve adjacent slots and two instruments at the same time",
     const start = dialog.getByLabel("Start (IST)", { exact: true });
     await expect(start).toHaveValue(date + "T09:00");
     await start.fill(date + "T" + hour + ":00");
-    await expect(dialog.getByLabel("End including cooling (IST)")).toHaveValue(
+    await expect(dialog.getByLabel("End time (IST)")).toHaveValue(
       date + "T" + (Number(hour) + 1) + ":00",
     );
     await expect(
