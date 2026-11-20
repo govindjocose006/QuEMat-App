@@ -31,12 +31,14 @@ async function accessible(page: Page) {
     ),
   ).toBe(true);
 }
-for (const role of ["member", "supervisor", "other"] as const)
+for (const role of ["member", "mentor", "supervisor", "other"] as const)
   test(`${role} sees role-appropriate priorities and can reach the complete lab view`, async ({
     page,
   }, info) => {
     await login(page, role, info.project.name);
-    await expect(page.locator(".focus-grid > section")).toHaveCount(3);
+    await expect(page.locator(".focus-grid > section")).toHaveCount(
+      role === "supervisor" ? 1 : 3,
+    );
     await expect(page.locator(".focus-loading")).toHaveCount(0);
     await expect(page.locator(".usage-card")).toHaveCount(0);
     await expect(
@@ -55,7 +57,17 @@ for (const role of ["member", "supervisor", "other"] as const)
       path: info.outputPath(`workspace-focus-${role}.png`),
       fullPage: true,
     });
-    const lab = page.locator("summary").filter({ hasText: "Lab activity" });
+    const activityTitle =
+      role === "supervisor" ? "All lab activity" : "Lab activity";
+    const lab = page
+      .locator("summary")
+      .filter({ has: page.getByText(activityTitle, { exact: true }) });
+    await expect(
+      page.getByRole("heading", { name: "Lab status", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Assigned to you", exact: true }),
+    ).toHaveCount(role === "supervisor" ? 0 : 1);
     await lab.focus();
     await page.keyboard.press("Enter");
     await expect(
@@ -65,6 +77,9 @@ for (const role of ["member", "supervisor", "other"] as const)
       }),
     ).toBeVisible();
     await expect(page.locator(".usage-card").first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lab status", exact: true }),
+    ).toHaveCount(role === "supervisor" ? 1 : 0);
     await accessible(page);
     await lab.focus();
     await page.keyboard.press("Space");

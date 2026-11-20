@@ -314,6 +314,55 @@ export function Overview({
       </button>
     </Panel>
   );
+  const weeklyCard = (
+    <Panel
+      title={supervisor ? "Weekly reports" : "My weekly report"}
+      icon="weekly"
+    >
+      <ReadState resource={weekly} label="weekly progress" />
+      {weekly.data && !weekly.error && (
+        <>
+          <p className="focus-caption">{weekLabel(weekly.data.week)}</p>
+          {supervisor && weekly.data.review ? (
+            <>
+              <p className="focus-number">
+                {weekly.data.review.awaitingReview}
+                <span>awaiting your review</span>
+              </p>
+              <p className="focus-caption">
+                {weekly.data.review.submitted} submitted ·{" "}
+                {weekly.data.review.missing} not yet submitted
+              </p>
+              <p className="focus-empty">
+                Open reports to read progress and leave feedback.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="focus-report-state">{weekly.data.mine}</p>
+              {weekly.data.openActions > 0 && (
+                <p className="focus-warning">
+                  {weekly.data.openActions} open report follow-ups
+                </p>
+              )}
+              <p className="focus-privacy">
+                <Icon name="lock" />
+                Drafts are private to you. Submitted reports are shared only
+                with the supervisor.
+              </p>
+            </>
+          )}
+        </>
+      )}
+      <button
+        className="text-button focus-link"
+        onClick={() => onWeekly(supervisor)}
+      >
+        {supervisor ? "View weekly progress" : "Open Weekly Progress"}
+        <Icon name="arrow" />
+      </button>
+    </Panel>
+  );
   return (
     <div className="focused-overview">
       <div className="focus-intro">
@@ -334,7 +383,7 @@ export function Overview({
         )}
       </div>
       <div
-        className={`focus-grid${issues.data && issues.data.counts[key] > 0 ? " has-attention" : ""}`}
+        className={`focus-grid${supervisor ? " supervisor-decisions" : ""}${issues.data && issues.data.counts[key] > 0 ? " has-attention" : ""}`}
       >
         {!supervisor && reservationCard}
         <Panel
@@ -410,95 +459,15 @@ export function Overview({
             </button>
           )}
         </Panel>
-        <Panel
-          title={supervisor ? "Weekly reports" : "My weekly report"}
-          icon="weekly"
-        >
-          <ReadState resource={weekly} label="weekly progress" />
-          {weekly.data && !weekly.error && (
-            <>
-              <p className="focus-caption">{weekLabel(weekly.data.week)}</p>
-              {supervisor && weekly.data.review ? (
-                <>
-                  <p className="focus-number">
-                    {weekly.data.review.awaitingReview}
-                    <span>awaiting your review</span>
-                  </p>
-                  <p className="focus-caption">
-                    {weekly.data.review.submitted} submitted ·{" "}
-                    {weekly.data.review.missing} not yet submitted
-                  </p>
-                  <p className="focus-empty">
-                    Open reports to read progress and leave feedback.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="focus-report-state">{weekly.data.mine}</p>
-                  {weekly.data.openActions > 0 && (
-                    <p className="focus-warning">
-                      {weekly.data.openActions} open report follow-ups
-                    </p>
-                  )}
-                  <p className="focus-privacy">
-                    <Icon name="lock" />
-                    Drafts are private to you. Submitted reports are shared only
-                    with the supervisor.
-                  </p>
-                </>
-              )}
-            </>
-          )}
-          <button
-            className="text-button focus-link"
-            onClick={() => onWeekly(supervisor)}
-          >
-            {supervisor ? "View weekly progress" : "Open Weekly Progress"}
-            <Icon name="arrow" />
-          </button>
-        </Panel>
-        {supervisor && (
-          <Panel title="Lab status" icon="instruments">
-            <ReadState resource={monitoring} label="lab status" />
-            {snapshot && !monitoring.error && (
-              <>
-                <p className="focus-caption">
-                  Confirmed usage and instrument status
-                </p>
-                <dl className="focus-stats">
-                  <div>
-                    <dt>In use</dt>
-                    <dd>{running}</dd>
-                  </div>
-                  <div>
-                    <dt>Maintenance / out of service</dt>
-                    <dd>{unavailable}</dd>
-                  </div>
-                  <div>
-                    <dt>Registered instruments</dt>
-                    <dd>{instruments.length}</dd>
-                  </div>
-                </dl>
-                <p className="focus-caption">
-                  Open Lab activity below for reservations, handovers and
-                  routine issues.
-                </p>
-              </>
-            )}
-            <button
-              className="text-button focus-link"
-              onClick={() => onNavigate("instruments")}
-            >
-              Open instruments <Icon name="arrow" />
-            </button>
-          </Panel>
-        )}
+        {!supervisor && weeklyCard}
       </div>
-      <p className="focus-update">
-        {snapshot
-          ? `Usage last checked ${formatDate(snapshot.refreshedAt)} · IST`
-          : "Checking the lab…"}
-      </p>
+      {!supervisor && (
+        <p className="focus-update">
+          {snapshot
+            ? `Usage last checked ${formatDate(snapshot.refreshedAt)} · IST`
+            : "Checking the lab…"}
+        </p>
+      )}
       <div className="overview-explore">
         <Disclosure
           title="Meetings, notices & action items"
@@ -510,13 +479,50 @@ export function Overview({
           </button>
         </Disclosure>
         <Disclosure
-          title="Lab activity"
+          title={supervisor ? "All lab activity" : "Lab activity"}
           hint={
-            issues.data && !issues.error
-              ? `${issues.data.counts.urgent} urgent unresolved issues · instrument activity, handovers and orders`
-              : "Instrument activity, handovers, issues and orders"
+            supervisor
+              ? "Lab status, reports and routine work"
+              : issues.data && !issues.error
+                ? `${issues.data.counts.urgent} urgent unresolved issues · instrument activity, handovers and orders`
+                : "Instrument activity, handovers, issues and orders"
           }
         >
+          {supervisor && (
+            <div className="supervisor-lab-summary">
+              <Panel title="Lab status" icon="instruments">
+                <ReadState resource={monitoring} label="lab status" />
+                {snapshot && !monitoring.error && (
+                  <>
+                    <p className="focus-caption">
+                      Confirmed usage and instrument status
+                    </p>
+                    <dl className="focus-stats">
+                      <div>
+                        <dt>In use</dt>
+                        <dd>{running}</dd>
+                      </div>
+                      <div>
+                        <dt>Maintenance / out of service</dt>
+                        <dd>{unavailable}</dd>
+                      </div>
+                      <div>
+                        <dt>Registered instruments</dt>
+                        <dd>{instruments.length}</dd>
+                      </div>
+                    </dl>
+                  </>
+                )}
+                <button
+                  className="text-button focus-link"
+                  onClick={() => onNavigate("instruments")}
+                >
+                  Open instruments <Icon name="arrow" />
+                </button>
+              </Panel>
+              {weeklyCard}
+            </div>
+          )}
           <div className="overview-layout">
             <LiveUsage
               user={user}
