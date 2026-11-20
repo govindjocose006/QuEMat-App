@@ -506,11 +506,17 @@ function ReportEditor({
       <div className="report-state">
         <span>
           {report?.latestRevision
-            ? `Submitted revision ${report.latestRevision}${report.hasDraft ? " · Revision draft saved" : ""}`
+            ? `Submitted to supervisor · Revision ${report.latestRevision}${report.hasDraft ? " · Revision draft saved" : ""}`
             : "Not submitted"}
         </span>
         <span className={dirty ? "draft-unsaved" : ""} aria-live="polite">
-          {dirty ? "Unsaved changes" : !report ? "No saved draft yet" : "Saved"}
+          {dirty
+            ? "Unsaved changes"
+            : !report
+              ? "No saved draft yet"
+              : report.draftSavedAt
+                ? `Draft last saved ${formatDate(report.draftSavedAt)} IST`
+                : "Saved"}
         </span>
       </div>
       <p className="form-intro">

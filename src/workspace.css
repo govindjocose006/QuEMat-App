@@ -2038,3 +2038,11 @@
     flex: 1 1 140px;
   }
 }
+
+.slot-finder {
+  display: grid;
+  gap: 1rem;
+}
+.slot-finder .primary {
+  justify-self: start;
+}

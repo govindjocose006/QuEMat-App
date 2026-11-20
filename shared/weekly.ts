@@ -140,6 +140,7 @@ export type WeeklyReport = {
   latestRevision: number;
   firstSubmittedAt: string | null;
   hasDraft?: boolean;
+  draftSavedAt?: string;
   draft?: ReportInput;
   canReview: boolean;
   revisions: WeeklyRevision[];

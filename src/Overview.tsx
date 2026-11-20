@@ -6,9 +6,13 @@ import {
   type ReactNode,
 } from "react";
 import type { Instrument, Member } from "../shared/schema.js";
-import type { MonitoringSnapshot } from "../shared/scheduling.js";
+import type { Booking, MonitoringSnapshot } from "../shared/scheduling.js";
 import { issueStatusLabels, type IssueSummary } from "../shared/issues.js";
-import { fromIST, istInput } from "../shared/scheduling-ui.js";
+import {
+  fromIST,
+  istInput,
+  managesOperations,
+} from "../shared/scheduling-ui.js";
 import { weekLabel } from "../shared/weekly.js";
 import { api } from "./api.js";
 import { ErrorNotice, Icon, formatDate, messageOf } from "./components.js";
@@ -159,6 +163,7 @@ export function Overview({
   onNavigate,
   onIssue,
   onWeekly,
+  onBooking,
   onCollaboration,
   onInstruments,
 }: {
@@ -166,6 +171,7 @@ export function Overview({
   onNavigate: (page: Page) => void;
   onIssue: (id: string) => void;
   onWeekly: (review: boolean) => void;
+  onBooking: (booking: Booking, action?: "checkin") => void;
   onCollaboration: (selection: {
     kind: "meeting" | "notice";
     id: string;
@@ -185,14 +191,48 @@ export function Overview({
   ).slice(0, 10);
   const start = Date.parse(fromIST(date + "T00:00"));
   const end = start + 86400000;
-  const reservations =
-    snapshot?.bookings.filter(
+  const now = Date.parse(snapshot?.refreshedAt ?? new Date().toISOString());
+  const upcoming = (snapshot?.bookings ?? [])
+    .filter(
       (b) =>
+        b.kind === "booking" &&
         (b.operatorId === user.id || b.bookedBy === user.id) &&
-        ["requested", "confirmed", "in_progress"].includes(b.status) &&
         (b.status === "in_progress" ||
-          (Date.parse(b.startsAt) < end && Date.parse(b.endsAt) > start)),
-    ) ?? [];
+          (["requested", "confirmed"].includes(b.status) &&
+            Date.parse(b.endsAt) > now)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.status === "in_progress") -
+          Number(a.status === "in_progress") ||
+        Date.parse(a.startsAt) - Date.parse(b.startsAt),
+    );
+  const today = upcoming.filter(
+    (b) => b.status === "in_progress" || Date.parse(b.startsAt) < end,
+  );
+  const reservations = today.length ? today : upcoming.slice(0, 1);
+  function canCheckIn(b: Booking) {
+    const instrument = snapshot?.instruments.find(
+      (i) => i.id === b.instrumentId,
+    );
+    return (
+      b.status === "confirmed" &&
+      (b.operatorId === user.id || managesOperations(user.appRole)) &&
+      instrument?.status === "available" &&
+      !instrument.archived &&
+      Date.parse(b.startsAt) <= now &&
+      now < Date.parse(b.endsAt) &&
+      !snapshot?.bookings.some(
+        (other) =>
+          other.instrumentId === b.instrumentId &&
+          other.id !== b.id &&
+          (other.status === "in_progress" ||
+            (other.actualEnd &&
+              Date.parse(other.actualEnd) + other.cleanupMinutes * 60000 >
+                now)),
+      )
+    );
+  }
   const instruments = snapshot?.instruments.filter((i) => !i.archived) ?? [];
   const unavailable = instruments.filter(
     (i) => i.status !== "available",
@@ -209,7 +249,7 @@ export function Overview({
   const key = supervisor ? "supervisor" : "assigned";
   const attention = issues.data?.[key] ?? [];
   const reservationCard = (
-    <Panel title="Today’s reservations" icon="calendar">
+    <Panel title="My next booking" icon="calendar">
       <ReadState resource={monitoring} label="reservations" />
       {snapshot && !monitoring.error && (
         <>
@@ -236,6 +276,14 @@ export function Overview({
                         ? "Awaiting approval"
                         : "Reserved · check-in required"}
                   </span>
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      onBooking(b, canCheckIn(b) ? "checkin" : undefined)
+                    }
+                  >
+                    {canCheckIn(b) ? "Check in" : "View booking"}
+                  </button>
                   {b.status === "in_progress" &&
                     Date.parse(b.endsAt) < Date.parse(snapshot.refreshedAt) && (
                       <span className="focus-warning">
@@ -247,7 +295,7 @@ export function Overview({
             </ul>
           ) : (
             <p className="focus-empty">
-              No reservations today. Plan your next measurement in the calendar.
+              No upcoming bookings in the next 90 days.
             </p>
           )}
           {reservations.length > 3 && (
@@ -290,23 +338,27 @@ export function Overview({
       >
         {!supervisor && reservationCard}
         <Panel
-          title={supervisor ? "Needs your attention" : "Assigned to you"}
+          title={supervisor ? "Needs your decision" : "Assigned to you"}
           icon="issues"
         >
           <ReadState resource={issues} label="assigned work" />
           {issues.data && !issues.error && (
             <>
-              <p className="focus-caption">
-                {supervisor
-                  ? "Supervisor attention requested"
-                  : "Open issues you are handling"}
-              </p>
-              <p className="focus-number">
-                {issues.data.counts[key]}
-                <span>
-                  {supervisor ? "escalated issues" : "assigned issues"}
-                </span>
-              </p>
+              {(!supervisor || attention.length > 0) && (
+                <>
+                  <p className="focus-caption">
+                    {supervisor
+                      ? "Supervisor attention requested"
+                      : "Open issues you are handling"}
+                  </p>
+                  <p className="focus-number">
+                    {issues.data.counts[key]}
+                    <span>
+                      {supervisor ? "escalated issues" : "assigned issues"}
+                    </span>
+                  </p>
+                </>
+              )}
               {attention.length ? (
                 <ul className="focus-list">
                   {attention.slice(0, 3).map((i) => (
@@ -323,6 +375,9 @@ export function Overview({
                       </span>
                       {supervisor && (
                         <span>
+                          {i.priority} priority · {i.description.slice(0, 140)}
+                          {i.description.length > 140 ? "…" : ""}
+                          <br />
                           {i.assigneeName
                             ? `Handled by ${i.assigneeName}`
                             : "No handler assigned"}
@@ -334,7 +389,7 @@ export function Overview({
               ) : (
                 <p className="focus-empty">
                   {supervisor
-                    ? "No issues currently request your attention. Routine work is available in Lab activity below."
+                    ? "Nothing needs your decision."
                     : "No issues assigned to you. Meeting actions are available below."}
                 </p>
               )}
@@ -346,12 +401,14 @@ export function Overview({
               )}
             </>
           )}
-          <button
-            className="text-button focus-link"
-            onClick={() => onNavigate("issues")}
-          >
-            Open issues & requests <Icon name="arrow" />
-          </button>
+          {(!supervisor || attention.length > 0) && (
+            <button
+              className="text-button focus-link"
+              onClick={() => onNavigate("issues")}
+            >
+              Open issues & requests <Icon name="arrow" />
+            </button>
+          )}
         </Panel>
         <Panel
           title={supervisor ? "Weekly reports" : "My weekly report"}
@@ -477,7 +534,7 @@ export function Overview({
         {supervisor && (
           <Disclosure
             title="My reservations"
-            hint="Your own bookings and runs for today"
+            hint="Your current run or next reservation"
           >
             {reservationCard}
           </Disclosure>

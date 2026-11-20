@@ -8,6 +8,7 @@ import {
 import type { Instrument, Member, Session } from "../shared/schema.js";
 import { api, setSessionToken } from "./api.js";
 import { pageLabels, useWorkspaceNavigation, type Page } from "./navigation.js";
+import type { Booking } from "../shared/scheduling.js";
 import { Schedule, Samples, Notifications } from "./Scheduling.js";
 import { Overview } from "./Overview.js";
 import { Auth, Onboarding } from "./Auth.js";
@@ -187,6 +188,13 @@ function Workspace({
   const [issueId, setIssueId] = useState<string | null>(null);
   const [weeklyId, setWeeklyId] = useState<string | null>(null);
   const [weeklyReview, setWeeklyReview] = useState(false);
+  const [calendarBooking, setCalendarBooking] = useState<{
+    booking: Booking;
+    action?: "checkin";
+  }>();
+  useEffect(() => {
+    if (page !== "calendar") setCalendarBooking(undefined);
+  }, [page]);
   const [scheduleInstrument, setScheduleInstrument] = useState("");
   useEffect(() => {
     if (page !== "calendar" && page !== "instruments")
@@ -483,6 +491,11 @@ function Workspace({
                 user={user}
                 onNavigate={setPage}
                 onInstruments={acceptInstruments}
+                onBooking={(booking, action) => {
+                  setCalendarBooking({ booking, action });
+                  setScheduleInstrument(booking.instrumentId);
+                  setPage("calendar");
+                }}
                 onIssue={(id) => {
                   setIssueId(id);
                   setPage("issues");
@@ -519,6 +532,7 @@ function Workspace({
             <Schedule
               user={user}
               items={items}
+              initialBooking={calendarBooking}
               initialInstrumentId={scheduleInstrument}
             />
           )}

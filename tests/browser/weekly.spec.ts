@@ -103,6 +103,7 @@ test("weekly drafts, selected records, review-before-submit and revision history
   await expect(page.getByRole("status")).toContainText("Draft saved privately");
   await page.reload();
   await openWeekly(page);
+  await expect(page.getByText(/Draft last saved.*IST/)).toBeVisible();
   await expect(page.getByLabel("Work completed", { exact: true })).toHaveValue(
     `workCompleted: synthetic ${device}`,
   );

@@ -40,10 +40,10 @@ for (const role of ["member", "supervisor", "other"] as const)
     await expect(page.locator(".focus-loading")).toHaveCount(0);
     await expect(page.locator(".usage-card")).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Needs your attention", exact: true }),
+      page.getByRole("heading", { name: "Needs your decision", exact: true }),
     ).toHaveCount(role === "supervisor" ? 1 : 0);
     await expect(
-      page.getByRole("heading", { name: "Today’s reservations", exact: true }),
+      page.getByRole("heading", { name: "My next booking", exact: true }),
     ).toHaveCount(role === "supervisor" ? 0 : 1);
     await expect(
       page.getByRole("button", { name: "Review reports", exact: true }),
@@ -103,6 +103,7 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     const data = await (await route.fetch()).json();
     const booking = {
       id: "today",
+      kind: "booking",
       operatorId: user.id,
       bookedBy: user.id,
       instrumentName: "My PPMS measurement",
@@ -152,7 +153,7 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
   await navigate(page, "Overview");
   const card = page.locator(".focus-card").filter({
     has: page.getByRole("heading", {
-      name: "Today’s reservations",
+      name: "My next booking",
       exact: true,
     }),
   });
