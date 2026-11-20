@@ -67,10 +67,22 @@ test("booking sample search preserves selection, collapsed optional fields and i
     compound: `Forms unselected ${info.project.name}`,
   });
   await navigate(page, "Calendar");
-  await page
-    .getByRole("button", { name: "Book instrument", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Find a free slot" }).click();
   const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("combobox", { name: "Instrument", exact: true })
+    .selectOption(instrument.id);
+  await dialog.getByLabel("Start date (IST)").fill("2037-01-02");
+  await dialog.getByLabel("Duration (minutes)").fill("120");
+  await dialog.getByLabel("Preferred start (IST)").fill("10:00");
+  await accessible(page);
+  await dialog.getByRole("button", { name: "Use this time" }).click();
+  await expect(dialog.getByLabel("Start (IST)", { exact: true })).toHaveValue(
+    "2037-01-02T10:00",
+  );
+  await expect(
+    dialog.getByLabel("End time (IST)", { exact: true }),
+  ).toHaveValue("2037-01-02T12:00");
   await expect(
     page.getByText("Loading samples and operators…", { exact: true }),
   ).toHaveCount(0);
@@ -165,6 +177,22 @@ test("booking sample search preserves selection, collapsed optional fields and i
   expect(saved.details.temperatureMin).toBe(2);
   expect(saved.details.temperatureMax).toBe(300);
   await expect(dialog).toHaveCount(0);
+  await page
+    .locator(".booking-tile")
+    .filter({ hasText: "Synthetic forms scan" })
+    .first()
+    .click();
+  await dialog.getByRole("button", { name: "Book this setup again" }).click();
+  await expect(dialog.getByLabel("Measurement / process type")).toHaveValue(
+    "Synthetic forms scan",
+  );
+  await expect(
+    dialog.getByLabel("Temperature minimum", { exact: true }),
+  ).toHaveValue("2");
+  await expect(dialog.getByLabel("Start (IST)", { exact: true })).toHaveValue(
+    "",
+  );
+  await expect(dialog.locator(".selection-count")).toHaveText("0 selected");
 });
 
 test("weekly sections save privately and reveal invalid link fields before focusing them", async ({

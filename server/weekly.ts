@@ -26,11 +26,12 @@ type Row = {
   week: string;
   draft: ReportInput;
   hasDraft: boolean;
+  updatedAt: string;
   version: number;
   latestRevision: number;
   firstSubmittedAt: string | null;
 };
-const select = `SELECT r.id,r.owner_id AS "ownerId",u.full_name AS "ownerName",to_char(r.week_start,'YYYY-MM-DD') AS week,r.draft,r.has_draft AS "hasDraft",r.version,r.latest_revision AS "latestRevision",r.first_submitted_at AS "firstSubmittedAt" FROM weekly_reports r JOIN users u ON u.id=r.owner_id`;
+const select = `SELECT r.id,r.owner_id AS "ownerId",u.full_name AS "ownerName",to_char(r.week_start,'YYYY-MM-DD') AS week,r.updated_at AS "updatedAt",r.draft,r.has_draft AS "hasDraft",r.version,r.latest_revision AS "latestRevision",r.first_submitted_at AS "firstSubmittedAt" FROM weekly_reports r JOIN users u ON u.id=r.owner_id`;
 const comments = `SELECT c.id,c.revision,u.full_name AS "authorName",c.body,c.kind,to_char(c.due_date,'YYYY-MM-DD') AS "dueDate",c.state,c.version,c.created_at AS "createdAt" FROM weekly_comments c JOIN users u ON u.id=c.author_id WHERE c.report_id=$1 ORDER BY c.created_at,c.id`;
 const expectedVersion = z.object({ version: z.number().int().positive() });
 const digest = (content: ReportContent) =>
@@ -108,10 +109,12 @@ export function installWeekly(
   }
   async function detail(tx: SQL, u: Member, r: Row) {
     await access(tx, u, r);
-    const { draft, hasDraft, ...publicRow } = r;
+    const { draft, hasDraft, updatedAt, ...publicRow } = r;
     return {
       ...publicRow,
-      ...(r.ownerId === u.id ? { draft, hasDraft } : {}),
+      ...(r.ownerId === u.id
+        ? { draft, hasDraft, ...(hasDraft ? { draftSavedAt: updatedAt } : {}) }
+        : {}),
       canReview: await reviewer(tx, u, r.ownerId),
       revisions: await tx.query<WeeklyRevision>(
         'SELECT revision,content,submitted_at AS "submittedAt" FROM weekly_revisions WHERE report_id=$1 ORDER BY revision DESC',

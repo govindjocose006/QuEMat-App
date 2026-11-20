@@ -2038,3 +2038,21 @@
     flex: 1 1 140px;
   }
 }
+
+.slot-finder {
+  display: grid;
+  gap: 1rem;
+}
+.slot-finder .primary {
+  justify-self: start;
+}
+
+.focus-grid.supervisor-decisions {
+  grid-template-columns: minmax(0, 1fr);
+}
+.supervisor-lab-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}

@@ -31,19 +31,21 @@ async function accessible(page: Page) {
     ),
   ).toBe(true);
 }
-for (const role of ["member", "supervisor", "other"] as const)
+for (const role of ["member", "mentor", "supervisor", "other"] as const)
   test(`${role} sees role-appropriate priorities and can reach the complete lab view`, async ({
     page,
   }, info) => {
     await login(page, role, info.project.name);
-    await expect(page.locator(".focus-grid > section")).toHaveCount(3);
+    await expect(page.locator(".focus-grid > section")).toHaveCount(
+      role === "supervisor" ? 1 : 3,
+    );
     await expect(page.locator(".focus-loading")).toHaveCount(0);
     await expect(page.locator(".usage-card")).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Needs your attention", exact: true }),
+      page.getByRole("heading", { name: "Needs your decision", exact: true }),
     ).toHaveCount(role === "supervisor" ? 1 : 0);
     await expect(
-      page.getByRole("heading", { name: "Today’s reservations", exact: true }),
+      page.getByRole("heading", { name: "My next booking", exact: true }),
     ).toHaveCount(role === "supervisor" ? 0 : 1);
     await expect(
       page.getByRole("button", { name: "Review reports", exact: true }),
@@ -55,7 +57,17 @@ for (const role of ["member", "supervisor", "other"] as const)
       path: info.outputPath(`workspace-focus-${role}.png`),
       fullPage: true,
     });
-    const lab = page.locator("summary").filter({ hasText: "Lab activity" });
+    const activityTitle =
+      role === "supervisor" ? "All lab activity" : "Lab activity";
+    const lab = page
+      .locator("summary")
+      .filter({ has: page.getByText(activityTitle, { exact: true }) });
+    await expect(
+      page.getByRole("heading", { name: "Lab status", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Assigned to you", exact: true }),
+    ).toHaveCount(role === "supervisor" ? 0 : 1);
     await lab.focus();
     await page.keyboard.press("Enter");
     await expect(
@@ -65,6 +77,9 @@ for (const role of ["member", "supervisor", "other"] as const)
       }),
     ).toBeVisible();
     await expect(page.locator(".usage-card").first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lab status", exact: true }),
+    ).toHaveCount(role === "supervisor" ? 1 : 0);
     await accessible(page);
     await lab.focus();
     await page.keyboard.press("Space");
@@ -103,6 +118,16 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     const data = await (await route.fetch()).json();
     const booking = {
       id: "today",
+      kind: "booking",
+      instrumentId: data.instruments.find(
+        (i: { name: string }) => i.name === "PPMS",
+      ).id,
+      sampleSnapshots: [],
+      participants: [],
+      details: {},
+      category: "Magnetic & transport",
+      reservedStart: "2033-03-02T18:30:00Z",
+      reservedEnd: "2033-03-02T20:30:00Z",
       operatorId: user.id,
       bookedBy: user.id,
       instrumentName: "My PPMS measurement",
@@ -120,6 +145,7 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
           {
             ...booking,
             id: "active",
+            instrumentId: "other-furnace",
             instrumentName: "Overdue furnace run",
             startsAt: "2033-03-01T19:00:00Z",
             endsAt: "2033-03-01T20:00:00Z",
@@ -152,7 +178,7 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
   await navigate(page, "Overview");
   const card = page.locator(".focus-card").filter({
     has: page.getByRole("heading", {
-      name: "Today’s reservations",
+      name: "My next booking",
       exact: true,
     }),
   });
@@ -167,6 +193,14 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     path: info.outputPath("workspace-focus-reservations.png"),
     fullPage: true,
   });
+  await card.getByRole("button", { name: "Check in", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Booking details" });
+  await expect(
+    dialog.getByRole("combobox", { name: "Action", exact: true }),
+  ).toHaveValue("checkin");
+  await expect(
+    dialog.getByRole("button", { name: "Check in", exact: true }),
+  ).toBeEnabled();
 });
 
 test("a failed overview panel shows a retry without hiding healthy panels or claiming an empty list", async ({

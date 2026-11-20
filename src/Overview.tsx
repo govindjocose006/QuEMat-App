@@ -6,9 +6,13 @@ import {
   type ReactNode,
 } from "react";
 import type { Instrument, Member } from "../shared/schema.js";
-import type { MonitoringSnapshot } from "../shared/scheduling.js";
+import type { Booking, MonitoringSnapshot } from "../shared/scheduling.js";
 import { issueStatusLabels, type IssueSummary } from "../shared/issues.js";
-import { fromIST, istInput } from "../shared/scheduling-ui.js";
+import {
+  fromIST,
+  istInput,
+  managesOperations,
+} from "../shared/scheduling-ui.js";
 import { weekLabel } from "../shared/weekly.js";
 import { api } from "./api.js";
 import { ErrorNotice, Icon, formatDate, messageOf } from "./components.js";
@@ -159,6 +163,7 @@ export function Overview({
   onNavigate,
   onIssue,
   onWeekly,
+  onBooking,
   onCollaboration,
   onInstruments,
 }: {
@@ -166,6 +171,7 @@ export function Overview({
   onNavigate: (page: Page) => void;
   onIssue: (id: string) => void;
   onWeekly: (review: boolean) => void;
+  onBooking: (booking: Booking, action?: "checkin") => void;
   onCollaboration: (selection: {
     kind: "meeting" | "notice";
     id: string;
@@ -185,14 +191,48 @@ export function Overview({
   ).slice(0, 10);
   const start = Date.parse(fromIST(date + "T00:00"));
   const end = start + 86400000;
-  const reservations =
-    snapshot?.bookings.filter(
+  const now = Date.parse(snapshot?.refreshedAt ?? new Date().toISOString());
+  const upcoming = (snapshot?.bookings ?? [])
+    .filter(
       (b) =>
+        b.kind === "booking" &&
         (b.operatorId === user.id || b.bookedBy === user.id) &&
-        ["requested", "confirmed", "in_progress"].includes(b.status) &&
         (b.status === "in_progress" ||
-          (Date.parse(b.startsAt) < end && Date.parse(b.endsAt) > start)),
-    ) ?? [];
+          (["requested", "confirmed"].includes(b.status) &&
+            Date.parse(b.endsAt) > now)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.status === "in_progress") -
+          Number(a.status === "in_progress") ||
+        Date.parse(a.startsAt) - Date.parse(b.startsAt),
+    );
+  const today = upcoming.filter(
+    (b) => b.status === "in_progress" || Date.parse(b.startsAt) < end,
+  );
+  const reservations = today.length ? today : upcoming.slice(0, 1);
+  function canCheckIn(b: Booking) {
+    const instrument = snapshot?.instruments.find(
+      (i) => i.id === b.instrumentId,
+    );
+    return (
+      b.status === "confirmed" &&
+      (b.operatorId === user.id || managesOperations(user.appRole)) &&
+      instrument?.status === "available" &&
+      !instrument.archived &&
+      Date.parse(b.startsAt) <= now &&
+      now < Date.parse(b.endsAt) &&
+      !snapshot?.bookings.some(
+        (other) =>
+          other.instrumentId === b.instrumentId &&
+          other.id !== b.id &&
+          (other.status === "in_progress" ||
+            (other.actualEnd &&
+              Date.parse(other.actualEnd) + other.cleanupMinutes * 60000 >
+                now)),
+      )
+    );
+  }
   const instruments = snapshot?.instruments.filter((i) => !i.archived) ?? [];
   const unavailable = instruments.filter(
     (i) => i.status !== "available",
@@ -209,7 +249,7 @@ export function Overview({
   const key = supervisor ? "supervisor" : "assigned";
   const attention = issues.data?.[key] ?? [];
   const reservationCard = (
-    <Panel title="Today’s reservations" icon="calendar">
+    <Panel title="My next booking" icon="calendar">
       <ReadState resource={monitoring} label="reservations" />
       {snapshot && !monitoring.error && (
         <>
@@ -236,6 +276,14 @@ export function Overview({
                         ? "Awaiting approval"
                         : "Reserved · check-in required"}
                   </span>
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      onBooking(b, canCheckIn(b) ? "checkin" : undefined)
+                    }
+                  >
+                    {canCheckIn(b) ? "Check in" : "View booking"}
+                  </button>
                   {b.status === "in_progress" &&
                     Date.parse(b.endsAt) < Date.parse(snapshot.refreshedAt) && (
                       <span className="focus-warning">
@@ -247,7 +295,7 @@ export function Overview({
             </ul>
           ) : (
             <p className="focus-empty">
-              No reservations today. Plan your next measurement in the calendar.
+              No upcoming bookings in the next 90 days.
             </p>
           )}
           {reservations.length > 3 && (
@@ -263,6 +311,55 @@ export function Overview({
         onClick={() => onNavigate("calendar")}
       >
         View calendar <Icon name="arrow" />
+      </button>
+    </Panel>
+  );
+  const weeklyCard = (
+    <Panel
+      title={supervisor ? "Weekly reports" : "My weekly report"}
+      icon="weekly"
+    >
+      <ReadState resource={weekly} label="weekly progress" />
+      {weekly.data && !weekly.error && (
+        <>
+          <p className="focus-caption">{weekLabel(weekly.data.week)}</p>
+          {supervisor && weekly.data.review ? (
+            <>
+              <p className="focus-number">
+                {weekly.data.review.awaitingReview}
+                <span>awaiting your review</span>
+              </p>
+              <p className="focus-caption">
+                {weekly.data.review.submitted} submitted ·{" "}
+                {weekly.data.review.missing} not yet submitted
+              </p>
+              <p className="focus-empty">
+                Open reports to read progress and leave feedback.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="focus-report-state">{weekly.data.mine}</p>
+              {weekly.data.openActions > 0 && (
+                <p className="focus-warning">
+                  {weekly.data.openActions} open report follow-ups
+                </p>
+              )}
+              <p className="focus-privacy">
+                <Icon name="lock" />
+                Drafts are private to you. Submitted reports are shared only
+                with the supervisor.
+              </p>
+            </>
+          )}
+        </>
+      )}
+      <button
+        className="text-button focus-link"
+        onClick={() => onWeekly(supervisor)}
+      >
+        {supervisor ? "View weekly progress" : "Open Weekly Progress"}
+        <Icon name="arrow" />
       </button>
     </Panel>
   );
@@ -286,27 +383,31 @@ export function Overview({
         )}
       </div>
       <div
-        className={`focus-grid${issues.data && issues.data.counts[key] > 0 ? " has-attention" : ""}`}
+        className={`focus-grid${supervisor ? " supervisor-decisions" : ""}${issues.data && issues.data.counts[key] > 0 ? " has-attention" : ""}`}
       >
         {!supervisor && reservationCard}
         <Panel
-          title={supervisor ? "Needs your attention" : "Assigned to you"}
+          title={supervisor ? "Needs your decision" : "Assigned to you"}
           icon="issues"
         >
           <ReadState resource={issues} label="assigned work" />
           {issues.data && !issues.error && (
             <>
-              <p className="focus-caption">
-                {supervisor
-                  ? "Supervisor attention requested"
-                  : "Open issues you are handling"}
-              </p>
-              <p className="focus-number">
-                {issues.data.counts[key]}
-                <span>
-                  {supervisor ? "escalated issues" : "assigned issues"}
-                </span>
-              </p>
+              {(!supervisor || attention.length > 0) && (
+                <>
+                  <p className="focus-caption">
+                    {supervisor
+                      ? "Supervisor attention requested"
+                      : "Open issues you are handling"}
+                  </p>
+                  <p className="focus-number">
+                    {issues.data.counts[key]}
+                    <span>
+                      {supervisor ? "escalated issues" : "assigned issues"}
+                    </span>
+                  </p>
+                </>
+              )}
               {attention.length ? (
                 <ul className="focus-list">
                   {attention.slice(0, 3).map((i) => (
@@ -323,6 +424,9 @@ export function Overview({
                       </span>
                       {supervisor && (
                         <span>
+                          {i.priority} priority · {i.description.slice(0, 140)}
+                          {i.description.length > 140 ? "…" : ""}
+                          <br />
                           {i.assigneeName
                             ? `Handled by ${i.assigneeName}`
                             : "No handler assigned"}
@@ -334,7 +438,7 @@ export function Overview({
               ) : (
                 <p className="focus-empty">
                   {supervisor
-                    ? "No issues currently request your attention. Routine work is available in Lab activity below."
+                    ? "Nothing needs your decision."
                     : "No issues assigned to you. Meeting actions are available below."}
                 </p>
               )}
@@ -346,102 +450,24 @@ export function Overview({
               )}
             </>
           )}
-          <button
-            className="text-button focus-link"
-            onClick={() => onNavigate("issues")}
-          >
-            Open issues & requests <Icon name="arrow" />
-          </button>
-        </Panel>
-        <Panel
-          title={supervisor ? "Weekly reports" : "My weekly report"}
-          icon="weekly"
-        >
-          <ReadState resource={weekly} label="weekly progress" />
-          {weekly.data && !weekly.error && (
-            <>
-              <p className="focus-caption">{weekLabel(weekly.data.week)}</p>
-              {supervisor && weekly.data.review ? (
-                <>
-                  <p className="focus-number">
-                    {weekly.data.review.awaitingReview}
-                    <span>awaiting your review</span>
-                  </p>
-                  <p className="focus-caption">
-                    {weekly.data.review.submitted} submitted ·{" "}
-                    {weekly.data.review.missing} not yet submitted
-                  </p>
-                  <p className="focus-empty">
-                    Open reports to read progress and leave feedback.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="focus-report-state">{weekly.data.mine}</p>
-                  {weekly.data.openActions > 0 && (
-                    <p className="focus-warning">
-                      {weekly.data.openActions} open report follow-ups
-                    </p>
-                  )}
-                  <p className="focus-privacy">
-                    <Icon name="lock" />
-                    Drafts are private to you. Submitted reports are shared only
-                    with the supervisor.
-                  </p>
-                </>
-              )}
-            </>
-          )}
-          <button
-            className="text-button focus-link"
-            onClick={() => onWeekly(supervisor)}
-          >
-            {supervisor ? "View weekly progress" : "Open Weekly Progress"}
-            <Icon name="arrow" />
-          </button>
-        </Panel>
-        {supervisor && (
-          <Panel title="Lab status" icon="instruments">
-            <ReadState resource={monitoring} label="lab status" />
-            {snapshot && !monitoring.error && (
-              <>
-                <p className="focus-caption">
-                  Confirmed usage and instrument status
-                </p>
-                <dl className="focus-stats">
-                  <div>
-                    <dt>In use</dt>
-                    <dd>{running}</dd>
-                  </div>
-                  <div>
-                    <dt>Maintenance / out of service</dt>
-                    <dd>{unavailable}</dd>
-                  </div>
-                  <div>
-                    <dt>Registered instruments</dt>
-                    <dd>{instruments.length}</dd>
-                  </div>
-                </dl>
-                <p className="focus-caption">
-                  Open Lab activity below for reservations, handovers and
-                  routine issues.
-                </p>
-              </>
-            )}
+          {(!supervisor || attention.length > 0) && (
             <button
               className="text-button focus-link"
-              onClick={() => onNavigate("instruments")}
+              onClick={() => onNavigate("issues")}
             >
-              Open instruments <Icon name="arrow" />
+              Open issues & requests <Icon name="arrow" />
             </button>
-          </Panel>
-        )}
+          )}
+        </Panel>
+        {!supervisor && weeklyCard}
       </div>
-      <p className="focus-update">
-        {snapshot
-          ? `Usage last checked ${formatDate(snapshot.refreshedAt)} · IST`
-          : "Checking the lab…"}
-      </p>
+      {!supervisor && (
+        <p className="focus-update">
+          {snapshot
+            ? `Usage last checked ${formatDate(snapshot.refreshedAt)} · IST`
+            : "Checking the lab…"}
+        </p>
+      )}
       <div className="overview-explore">
         <Disclosure
           title="Meetings, notices & action items"
@@ -453,13 +479,50 @@ export function Overview({
           </button>
         </Disclosure>
         <Disclosure
-          title="Lab activity"
+          title={supervisor ? "All lab activity" : "Lab activity"}
           hint={
-            issues.data && !issues.error
-              ? `${issues.data.counts.urgent} urgent unresolved issues · instrument activity, handovers and orders`
-              : "Instrument activity, handovers, issues and orders"
+            supervisor
+              ? "Lab status, reports and routine work"
+              : issues.data && !issues.error
+                ? `${issues.data.counts.urgent} urgent unresolved issues · instrument activity, handovers and orders`
+                : "Instrument activity, handovers, issues and orders"
           }
         >
+          {supervisor && (
+            <div className="supervisor-lab-summary">
+              <Panel title="Lab status" icon="instruments">
+                <ReadState resource={monitoring} label="lab status" />
+                {snapshot && !monitoring.error && (
+                  <>
+                    <p className="focus-caption">
+                      Confirmed usage and instrument status
+                    </p>
+                    <dl className="focus-stats">
+                      <div>
+                        <dt>In use</dt>
+                        <dd>{running}</dd>
+                      </div>
+                      <div>
+                        <dt>Maintenance / out of service</dt>
+                        <dd>{unavailable}</dd>
+                      </div>
+                      <div>
+                        <dt>Registered instruments</dt>
+                        <dd>{instruments.length}</dd>
+                      </div>
+                    </dl>
+                  </>
+                )}
+                <button
+                  className="text-button focus-link"
+                  onClick={() => onNavigate("instruments")}
+                >
+                  Open instruments <Icon name="arrow" />
+                </button>
+              </Panel>
+              {weeklyCard}
+            </div>
+          )}
           <div className="overview-layout">
             <LiveUsage
               user={user}
@@ -477,7 +540,7 @@ export function Overview({
         {supervisor && (
           <Disclosure
             title="My reservations"
-            hint="Your own bookings and runs for today"
+            hint="Your current run or next reservation"
           >
             {reservationCard}
           </Disclosure>

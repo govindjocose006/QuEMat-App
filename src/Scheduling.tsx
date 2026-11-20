@@ -19,6 +19,7 @@ import {
   istInput,
   fromIST,
 } from "../shared/scheduling-ui.js";
+import { SlotFinder, type Slot } from "./SlotFinder.js";
 import { api } from "./api.js";
 import {
   bookingDuration,
@@ -673,7 +674,7 @@ function MeasurementFields({
           <Notes
             label="Setup requirements and notes"
             name="setupNotes"
-            value={b?.setupNotes}
+            value={instrument?.id === b?.instrumentId ? b?.setupNotes : ""}
           />
         </div>
       </OptionalFields>
@@ -695,6 +696,8 @@ function BookingForm({
   items,
   b,
   initialInstrumentId,
+  slot,
+  template,
   calendarDate,
   onSaved,
 }: {
@@ -702,6 +705,8 @@ function BookingForm({
   items: Instrument[];
   b?: Booking;
   initialInstrumentId?: string;
+  slot?: Slot;
+  template?: Booking;
   calendarDate: string;
   onSaved: (booking: Booking) => void;
 }) {
@@ -726,16 +731,22 @@ function BookingForm({
     [busy, setBusy] = useState(false);
   const [operatorId, setOperatorId] = useState(b?.operatorId ?? user.id);
   const [startsAt, setStartsAt] = useState(() => {
+    if (slot) return slot.startsAt;
+    if (template) return "";
     if (b) return istInput(b.startsAt);
     const now = istInput(new Date().toISOString());
     return calendarDate === now.slice(0, 10) ? now : calendarDate + "T09:00";
   });
   const [endsAt, setEndsAt] = useState(() =>
-    b
-      ? istInput(b.endsAt)
-      : istInput(
-          new Date(Date.parse(fromIST(startsAt)) + 3600000).toISOString(),
-        ),
+    slot
+      ? slot.endsAt
+      : b
+        ? istInput(b.endsAt)
+        : startsAt
+          ? istInput(
+              new Date(Date.parse(fromIST(startsAt)) + 3600000).toISOString(),
+            )
+          : "",
   );
   function changeStart(value: string) {
     if (!b && value) {
@@ -754,6 +765,7 @@ function BookingForm({
     setStartsAt(value);
   }
   const instrument = items.find((i) => i.id === instrumentId);
+  const setup = instrumentId === template?.instrumentId ? template : b;
   useEffect(() => {
     let live = true;
     setOptionsLoading(true);
@@ -854,8 +866,9 @@ function BookingForm({
       <div hidden={quick}>
         <form onSubmit={submit} className="booking-form" aria-busy={busy}>
           <p className="form-intro">
-            Choose the resource, time and samples, then add the setup details
-            for your instrument.
+            {template
+              ? "Review the copied instrument settings, choose a new time and select the samples for this run."
+              : "Choose the resource, time and samples, then add the setup details for your instrument."}
           </p>
           <ErrorNotice message={error} />
           {optionsLoading && (
@@ -926,7 +939,9 @@ function BookingForm({
                   name="measurementType"
                   key={instrumentId}
                   defaultValue={
-                    instrumentId === b?.instrumentId ? b.measurementType : ""
+                    instrumentId === setup?.instrumentId
+                      ? setup.measurementType
+                      : ""
                   }
                   list={instrument?.isPpms ? "measurement-options" : undefined}
                   required={instrument?.isPpms}
@@ -1091,7 +1106,11 @@ function BookingForm({
               including buffers.
             </p>
           )}
-          <MeasurementFields key={instrumentId} instrument={instrument} b={b} />
+          <MeasurementFields
+            key={instrumentId}
+            instrument={instrument}
+            b={setup}
+          />
           <div className="workflow-actions booking-actions">
             <p className="field-hint">
               {b
@@ -1140,11 +1159,15 @@ function BookingDetails({
   user,
   onChanged,
   onEdit,
+  onRepeat,
+  initialAction,
 }: {
   b: Booking;
   user: Member;
   onChanged: () => void;
   onEdit: () => void;
+  onRepeat?: () => void;
+  initialAction?: "checkin";
 }) {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -1170,7 +1193,9 @@ function BookingDetails({
       interrupt: "Interrupt and release",
       overrun: "Report overrun",
     });
-  const [action, setAction] = useState("");
+  const [action, setAction] = useState<string>(
+    initialAction && actions[initialAction] ? initialAction : "",
+  );
   const closing = action === "complete" || action === "interrupt";
 
   async function act(e: FormEvent<HTMLFormElement>) {
@@ -1271,6 +1296,11 @@ function BookingDetails({
       {isFurnace(b.category) && (
         <p>Unloading: {b.unloaded ? "Confirmed" : "Not confirmed"}</p>
       )}
+      {onRepeat && (
+        <button className="secondary" onClick={onRepeat}>
+          Book this setup again
+        </button>
+      )}
       {own &&
         ((b.kind === "maintenance" && manager) || b.kind === "booking") &&
         active(b) && (
@@ -1351,12 +1381,20 @@ export function Schedule({
   user,
   items,
   initialInstrumentId = "",
+  initialBooking,
 }: {
   user: Member;
   items: Instrument[];
   initialInstrumentId?: string;
+  initialBooking?: { booking: Booking; action?: "checkin" };
 }) {
-  const [date, setDate] = useState(day()),
+  const [finder, setFinder] = useState(false);
+  const [slot, setSlot] = useState<Slot>();
+  const [template, setTemplate] = useState<Booking>();
+  const [initialAction, setInitialAction] = useState(initialBooking?.action);
+  const [date, setDate] = useState(
+      initialBooking ? day(initialBooking.booking.startsAt) : day(),
+    ),
     [view, setView] = useState("week"),
     [instrument, setInstrument] = useState(initialInstrumentId),
     [mine, setMine] = useState(false),
@@ -1364,7 +1402,9 @@ export function Schedule({
     [windows, setWindows] = useState<Availability[]>([]),
     [error, setError] = useState(""),
     [editing, setEditing] = useState<Booking | null | undefined>(),
-    [selected, setSelected] = useState<Booking | null>(null),
+    [selected, setSelected] = useState<Booking | null>(
+      initialBooking?.booking ?? null,
+    ),
     [block, setBlock] = useState<"maintenance" | "availability" | null>(null),
     [blockError, setBlockError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -1471,9 +1511,21 @@ export function Schedule({
           </h2>
           <p>All times in IST · planned reservations and recorded usage</p>
         </div>
-        <button className="primary" onClick={() => setEditing(null)}>
-          Book instrument
-        </button>
+        <div className="action-row">
+          <button className="secondary" onClick={() => setFinder(true)}>
+            Find a free slot
+          </button>
+          <button
+            className="primary"
+            onClick={() => {
+              setTemplate(undefined);
+              setSlot(undefined);
+              setEditing(null);
+            }}
+          >
+            Book instrument
+          </button>
+        </div>
       </div>
       <ErrorNotice message={error} />
       <div className="calendar-navigation">
@@ -1696,6 +1748,21 @@ export function Schedule({
           <p>No institutionally allocated windows recorded.</p>
         )}
       </details>
+      {finder && (
+        <Modal title="Find a free slot" onClose={() => setFinder(false)}>
+          <SlotFinder
+            items={items.filter((i) => !unavailableReason(i))}
+            initialInstrumentId={instrument}
+            initialDate={date}
+            choose={(chosen) => {
+              setFinder(false);
+              setTemplate(undefined);
+              setSlot(chosen);
+              setEditing(null);
+            }}
+          />
+        </Modal>
+      )}
       {editing !== undefined && (
         <Modal
           title={editing ? "Edit booking" : "Book instrument"}
@@ -1706,7 +1773,11 @@ export function Schedule({
               user={user}
               items={items}
               b={editing ?? undefined}
-              initialInstrumentId={instrument}
+              initialInstrumentId={
+                slot?.instrumentId ?? template?.instrumentId ?? instrument
+              }
+              slot={editing ? undefined : slot}
+              template={editing ? undefined : template}
               calendarDate={date}
               onSaved={(saved) => {
                 const savedDay = day(saved.startsAt);
@@ -1721,16 +1792,56 @@ export function Schedule({
         </Modal>
       )}
       {selected && (
-        <Modal title="Booking details" onClose={() => setSelected(null)}>
+        <Modal
+          title="Booking details"
+          onClose={() => {
+            setSelected(null);
+            setInitialAction(undefined);
+          }}
+        >
           <div className="dialog-body">
             <BookingDetails
               b={selected}
               user={user}
+              initialAction={initialAction}
+              onRepeat={
+                selected.kind === "booking" &&
+                (selected.bookedBy === user.id ||
+                  selected.operatorId === user.id) &&
+                items.some(
+                  (i) =>
+                    i.id === selected.instrumentId && !unavailableReason(i),
+                )
+                  ? () => {
+                      // Each run needs its own sample, mass, mounting, preparation and handover.
+                      setTemplate({
+                        ...selected,
+                        setupNotes: "",
+                        details: {
+                          ...selected.details,
+                          sampleMass: "",
+                          mounting: "",
+                          preparation: "",
+                          targetMaterial: "",
+                          substrate: "",
+                        },
+                      });
+                      setSlot(undefined);
+                      setSelected(null);
+                      setInitialAction(undefined);
+                      setEditing(null);
+                    }
+                  : undefined
+              }
               onChanged={() => {
                 setSelected(null);
+                setInitialAction(undefined);
                 void reload();
               }}
               onEdit={() => {
+                setSlot(undefined);
+                setTemplate(undefined);
+                setInitialAction(undefined);
                 setEditing(selected);
                 setSelected(null);
               }}
