@@ -1,9 +1,12 @@
 # Phase 4 production release — guarded operator workflow
 
-The user accepted the isolated Phase 4 preview, including the repeated-open fix.
-This guide prepares the release of PR #8. It does not authorize migration, merge
-or deployment merely because a branch exists or CI passed. Production remains on
-the accepted monitoring-audit release until the separately authorized steps pass.
+Release status: PR #8 merged as `df0049c` on 2026-10-25 (Asia/Kolkata), following
+user acceptance of the isolated preview and explicit production release
+authorization. The Windows operator completed backup, migration 006 and verify;
+production deployment is READY and private production acceptance remains pending.
+Keep this guide as the record of the guarded process. Do not rerun completed
+setup/backup/migration steps. Neither this guide nor passing CI authorizes a new
+migration, merge, deployment or restore.
 
 ## Independent authorization
 

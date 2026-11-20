@@ -1,9 +1,12 @@
 # Phase 4 — chemicals and order tracking
 
-Implemented on `feature/phase-4-chemical-orders` for isolated preview review.
-Production remains on the accepted monitoring-audit release. This phase needs the
-additive `006_chemical_orders.sql` migration; builds do not run it automatically.
-No production migration or release is authorized by this guide.
+Released through PR #8 as `df0049c` on 2026-10-25 (Asia/Kolkata), after
+user-confirmed preview acceptance and explicit release authorization. The Windows
+operator applied and verified additive migration `006_chemical_orders.sql`, with
+all 31 original tables passing preservation checks. Production deployment is READY;
+health checks migration 006, client assets match the reviewed build and protected
+APIs reject anonymous requests. Private production acceptance remains pending.
+Builds do not run migrations automatically; do not rerun the completed migration.
 
 ## Workflow
 
@@ -119,5 +122,8 @@ accessibility. Actual CI and live outcomes are recorded in the Phase 4 PR;
 implementation does not imply live readiness or production release.
 
 The separately guarded [production release guide](phase-4-release.md) and
-migration-006 backup/preservation tooling are prepared for review. Previous migration-specific release scripts
-must not be reused or widened to authorize 006. Keep all backups/receipts untouched.
+migration-006 backup/preservation tooling are retained as completed release
+evidence. Previous migration-specific release scripts must not be reused or widened
+to authorize 006. Keep all backups/receipts untouched. The preview-only commands
+above are reference instructions for the isolated synthetic environment, not a
+request to repeat production setup or migration.
