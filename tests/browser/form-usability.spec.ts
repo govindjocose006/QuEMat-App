@@ -70,7 +70,7 @@ test("booking sample search preserves selection, collapsed optional fields and i
   await page.getByRole("button", { name: "Find a free slot" }).click();
   const dialog = page.getByRole("dialog");
   await dialog
-    .getByLabel("Instrument", { exact: true })
+    .getByRole("combobox", { name: "Instrument", exact: true })
     .selectOption(instrument.id);
   await dialog.getByLabel("Start date (IST)").fill("2037-01-02");
   await dialog.getByLabel("Duration (minutes)").fill("120");
