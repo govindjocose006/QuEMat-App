@@ -156,6 +156,7 @@ it("keeps drafts private, submits immutable snapshots and retains first timestam
   let r = await draft(c);
   expect((await s.get(`/weekly/reports/${r.id}`)).status).toBe(404);
   r = await submit(c, r);
+  expect(r.draftSavedAt).toBeUndefined();
   const first = r.firstSubmittedAt;
   const saved = await c.write(
     `/weekly/reports/${r.id}`,
@@ -167,6 +168,8 @@ it("keeps drafts private, submits immutable snapshots and retains first timestam
   );
   expect(saved.status).toBe(200);
   const visible = (await s.get(`/weekly/reports/${r.id}`)).body;
+  expect(Date.parse(saved.body.draftSavedAt)).toBeGreaterThan(0);
+  expect(visible.draftSavedAt).toBeUndefined();
   expect(visible.draft).toBeUndefined();
   expect(JSON.stringify(visible)).not.toContain("Private revision draft");
   expect(visible.revisions[0].content.results).toBe("Calibration observations");

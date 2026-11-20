@@ -104,6 +104,15 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     const booking = {
       id: "today",
       kind: "booking",
+      instrumentId: data.instruments.find(
+        (i: { name: string }) => i.name === "PPMS",
+      ).id,
+      sampleSnapshots: [],
+      participants: [],
+      details: {},
+      category: "Magnetic & transport",
+      reservedStart: "2033-03-02T18:30:00Z",
+      reservedEnd: "2033-03-02T20:30:00Z",
       operatorId: user.id,
       bookedBy: user.id,
       instrumentName: "My PPMS measurement",
@@ -121,6 +130,7 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
           {
             ...booking,
             id: "active",
+            instrumentId: "other-furnace",
             instrumentName: "Overdue furnace run",
             startsAt: "2033-03-01T19:00:00Z",
             endsAt: "2033-03-01T20:00:00Z",
@@ -168,6 +178,14 @@ test("today respects IST, keeps overdue active runs visible, and excludes other 
     path: info.outputPath("workspace-focus-reservations.png"),
     fullPage: true,
   });
+  await card.getByRole("button", { name: "Check in", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Booking details" });
+  await expect(
+    dialog.getByRole("combobox", { name: "Action", exact: true }),
+  ).toHaveValue("checkin");
+  await expect(
+    dialog.getByRole("button", { name: "Check in", exact: true }),
+  ).toBeEnabled();
 });
 
 test("a failed overview panel shows a retry without hiding healthy panels or claiming an empty list", async ({
